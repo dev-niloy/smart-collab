@@ -27,27 +27,27 @@ tasks:
 
   - id: t2
     desc: "prisma migrate dev --name add_project. verify table exists via psql. update prisma client + smoke test (prisma.project.count returns 0)"
-    files: [backend/prisma/migrations/, backend/src/config/__tests__/prisma.test.ts]
-    status: active
-    receipt: null
+    files: [backend/prisma/migrations/20260603144944_add_project/, backend/src/config/__tests__/prisma.test.ts]
+    status: done
+    receipt: "prisma migrate dev --name add_project: applied to docker postgres. psql \\dt: projects table present alongside users, sessions, activity_logs. prisma client regenerated v5.22.0. jest prisma suite 3/3 (raw SELECT 1, user.count, project.count all numeric)"
 
   - id: t3
     desc: "project.constant.ts (STATUSES, SORT_KEYS, DEFAULT_LIMIT=10, MAX_LIMIT=50) + project.validation.ts (createProjectSchema, updateProjectSchema, listProjectsQuerySchema, projectIdParamSchema) + Zod unit tests"
     files: [backend/src/app/modules/project/project.constant.ts, backend/src/app/modules/project/project.validation.ts, backend/src/app/modules/project/__tests__/project.validation.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "jest project.validation suite 19/19: constants (STATUSES has 3, PAST_DEADLINE_MESSAGE matches assessment verbatim), create (minimal valid, empty name reject, >200 char reject, bad status reject, bad date reject, past deadline PASSES validation since service guards), update (partial ok, empty body rejects), list (defaults page=1 limit=10 sort=created, coerce strings, cap limit at 50, reject negative page, reject unknown sort, drop unknown status silently, keep known status), projectId (valid uuid + non-uuid reject). typecheck + lint clean."
 
   - id: t4
     desc: "project.service.ts CRUD core: create, findById, update, remove. Past-deadline guard (throws ApiError.unprocessable with assessment-verbatim message). Service unit tests against real prisma (cleanup demo project rows after)"
     files: [backend/src/app/modules/project/project.service.ts, backend/src/app/modules/project/__tests__/project.service.crud.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "jest project.service.crud 10/10: create (inserts with createdBy + default active, rejects past deadline -> 422 PAST_DEADLINE with assessment-verbatim message, throws ApiError instance), findById (returns project, 404 PROJECT_NOT_FOUND), update (patches, 404, rejects past deadline), remove (deletes, 404). Prisma P2025 mapped to 404 in update + remove. ensureFutureDeadline exported for reuse. createdBy FK onDelete: Restrict prevents user delete with projects."
 
   - id: t5
     desc: "project.service.ts list({q, status, sort, page, limit}): Prisma where with contains-insensitive, status filter, orderBy switch, skip/take pagination, return {data, total, page, limit}. Tests for each filter, sort, pagination, empty result"
     files: [backend/src/app/modules/project/project.service.ts, backend/src/app/modules/project/__tests__/project.service.list.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "jest project.service.list 7/7: returns shape {data,total,page,limit} with 5 seeded rows, filters by status (3 active), case-insensitive name contains (2 Website*), combines q+status, sort=deadline orders nearest-first, pagination limit=2 page=2 returns disjoint slice (3 active total), empty array on no match. Uses $transaction to fetch data+count atomically. orderBy switch: created->createdAt desc, deadline->deadline asc, updated->updatedAt desc. BACKEND TOTAL 117/117 jest passing."
 
   # ── Phase B: backend controller + routes ────────────────────────────────────
   - id: t6
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t2
+next_task: t6
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
