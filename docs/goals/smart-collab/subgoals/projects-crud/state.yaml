@@ -53,8 +53,8 @@ tasks:
   - id: t6
     desc: "project.controller.ts (thin) + project.routes.ts (requireAuth on all; requireRole('admin','project_manager') on POST/PATCH/DELETE) + mount under /api/v1/projects. Integration happy-path tests (admin creates, all roles list, admin updates, admin deletes)"
     files: [backend/src/app/modules/project/project.controller.ts, backend/src/app/modules/project/project.routes.ts, backend/src/app/routes/index.ts, backend/src/app/modules/project/__tests__/project.routes.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "jest project.routes 13/13: 401 unauth list, admin POST 201 (createdBy set), PM POST 201, member POST 403 FORBIDDEN_ROLE, POST past-deadline 422 PAST_DEADLINE assessment-verbatim, POST invalid body 422 VALIDATION_ERROR, all 3 roles GET list, admin PATCH 200, member PATCH 403, PATCH missing id 404 PROJECT_NOT_FOUND, admin DELETE 204 then GET 404, member DELETE 403, GET invalid uuid 422. Routes mounted at /api/v1/projects via app/routes/index.ts. requireAuth applied via router.use; requireRole('admin','project_manager') applied per mutate route. Service P2025 mapping switched from instanceof PrismaClientKnownRequestError to duck-typed err.code === 'P2025' to survive jest.resetModules in integration tests. BACKEND TOTAL 130/130 jest passing (was 117, +13)."
 
   - id: t7
     desc: "integration negative paths: 401 unauth, 403 member tries POST/PATCH/DELETE, 404 missing id, 422 invalid body, pagination cap enforcement (limit=999 -> 50)"
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t6
+next_task: t7
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
