@@ -115,8 +115,8 @@ tasks:
   - id: t16
     desc: "DeleteProjectButton component using shadcn AlertDialog. Confirm copy: 'Delete project? This cannot be undone.' Fires useDeleteProject + router.push('/projects'). Wired into detail page Delete button. Test confirm + cancel paths"
     files: [frontend/src/components/projects/delete-project-button.tsx, frontend/src/components/projects/__tests__/delete-project-button.test.tsx, frontend/src/app/projects/[id]/page.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "destructive Button opens controlled AlertDialog (base-ui Trigger has no asChild so opens imperatively via setOpen, Trigger omitted, dialog controlled by `open` state). Copy verbatim: 'Delete project?' title, 'This cannot be undone.' description. Confirm fires useDeleteProject.mutateAsync(id) -> toast.success(Deleted name) -> router.push('/projects'). Cancel closes w/o calling delete. API error -> toast.error. Detail page Delete stub replaced. Tests 3/3 (opens w/ copy, confirm calls deleteSpy + push, cancel closes w/o calls). Detail tests still 4/4. Frontend 66/66, typecheck + lint clean. Phase D complete (t12-t16)."
 
   # ── Phase E: wrap ───────────────────────────────────────────────────────────
   - id: t17
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t16
+next_task: t17
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
