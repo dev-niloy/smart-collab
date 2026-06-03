@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 2                  # GSD — board sliced, awaiting Phase 3
+phase: 3                  # Superpowers — TDD per task starting at t1
 
 # Locked Phase 1 decisions (also in progress.md Decisions):
 #   - RBAC: Admin + PM mutate; Member read-only
@@ -22,13 +22,13 @@ tasks:
   - id: t1
     desc: "prisma: add Project model + ProjectStatus enum (active|completed|on_hold) + createdBy FK to User. @@index on [status, createdAt]. snake_case @@map(projects)"
     files: [backend/prisma/schema.prisma]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "prisma format + validate: valid | Project model: id uuid, name, description?, deadline, status enum default active, createdBy FK Restrict (prevent user delete with projects), createdAt/updatedAt | indexes [status,createdAt] + [deadline] + [createdBy] | @@map(projects) | User.projects relation added under name ProjectCreatedBy | enum ProjectStatus[active|completed|on_hold]"
 
   - id: t2
     desc: "prisma migrate dev --name add_project. verify table exists via psql. update prisma client + smoke test (prisma.project.count returns 0)"
     files: [backend/prisma/migrations/, backend/src/config/__tests__/prisma.test.ts]
-    status: todo
+    status: active
     receipt: null
 
   - id: t3
@@ -133,10 +133,10 @@ tasks:
 
 blockers: []
 
-next_task: t1
+next_task: t2
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
-  gsd: false              # flips true when user OKs board
+  gsd: true               # locked 2026-06-03 by user
   superpowers: false
   ralph_wiggum: false
