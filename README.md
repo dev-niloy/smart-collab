@@ -55,7 +55,10 @@ cp .env backend/.env
 npm run db:migrate
 npm run db:seed
 
-# 6. Run both apps (two terminals)
+# 6a. Run everything in one terminal (recommended)
+npm run dev              # postgres + backend + frontend; Ctrl+C tears it all down
+
+# 6b. Or split across two terminals
 npm run dev:backend      # -> http://localhost:4000
 npm run dev:frontend     # -> http://localhost:3000
 ```
@@ -138,6 +141,7 @@ Branches:
 
 | Script                 | What it does                                      |
 |------------------------|---------------------------------------------------|
+| `npm run dev`          | Start full stack (postgres + backend + frontend); Ctrl+C stops all |
 | `npm run dev:backend`  | Start backend in watch mode                       |
 | `npm run dev:frontend` | Start Next.js dev server                          |
 | `npm test`             | Run backend + frontend test suites                |
