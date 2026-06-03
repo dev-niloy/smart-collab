@@ -93,45 +93,45 @@ tasks:
   # ── Phase D: auth module (mirrors solvemeet pattern) ───────────────────────
   - id: t13
     desc: "auth.constant.ts (JWT TTLs, cookie names ACCESS_COOKIE/REFRESH_COOKIE, ROLES) + auth.validation.ts (signupSchema, loginSchema, demoLoginSchema with role enum)"
-    files: [backend/src/app/modules/auth/auth.constant.ts, backend/src/app/modules/auth/auth.validation.ts]
-    status: todo
-    receipt: null
+    files: [backend/src/app/modules/auth/auth.constant.ts, backend/src/app/modules/auth/auth.validation.ts, backend/src/app/modules/auth/__tests__/auth.validation.test.ts]
+    status: done
+    receipt: "jest auth.validation suite 12/12: constants distinct cookie names, ROLES has 3 tokens, BCRYPT_ROUNDS>=10, signup happy + bad email/short pw/empty name/email lowercased, login + missing pw, demoLogin 3 roles + unknown role rejected"
 
   - id: t14
     desc: "auth.service.ts — register + login: bcrypt hash, JWT sign access+refresh, store refresh hash in Session row; unit tests on password hashing + token issuance"
-    files: [backend/src/app/modules/auth/auth.service.ts, backend/src/app/modules/auth/__tests__/auth.service.register.test.ts, backend/src/app/modules/auth/__tests__/auth.service.login.test.ts]
-    status: todo
-    receipt: null
+    files: [backend/src/app/modules/auth/auth.service.ts, backend/src/app/modules/auth/auth.tokens.ts, backend/src/app/modules/auth/__tests__/auth.service.register.test.ts, backend/src/app/modules/auth/__tests__/auth.service.login.test.ts]
+    status: done
+    receipt: "jest 8/8: register hashes pw with bcrypt + issues token pair, persists Session row tied to refresh, strips passwordHash from response, duplicate email -> 409 EMAIL_TAKEN | login valid creds, wrong pw -> 401 INVALID_CREDENTIALS, unknown email -> same 401 (no enumeration, dummy bcrypt for timing), throws ApiError | auth.tokens.ts: signAccess/Refresh with JWT_ALGO=HS256, verifyAccess/Refresh, hashRefreshToken=sha256 (high-entropy input, bcrypt overkill), ttlToMs parser"
 
   - id: t15
     desc: "auth.service.ts — logout + refresh rotation (delete old session row, issue new pair) + me; unit tests on rotation correctness + reuse detection"
     files: [backend/src/app/modules/auth/auth.service.ts, backend/src/app/modules/auth/__tests__/auth.service.refresh.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "jest 9/9: refresh rotates (old session removed, fresh pair, new session row), garbage token -> 401, REUSE DETECTION proven (replay after rotation -> 401 REFRESH_REUSE + ALL user sessions burned), tampered signature -> ApiError | logout deletes session row, idempotent, swallows garbage | me returns user without passwordHash, unknown id -> 401"
 
   - id: t16
     desc: "auth.controller.ts — thin request->service->response handlers; sets/clears httpOnly cookies (SameSite policy from env); no business logic"
-    files: [backend/src/app/modules/auth/auth.controller.ts]
-    status: todo
-    receipt: null
+    files: [backend/src/app/modules/auth/auth.controller.ts, backend/src/app/modules/auth/auth.cookies.ts, backend/src/app/modules/auth/__tests__/auth.cookies.test.ts, backend/src/types/express.d.ts]
+    status: done
+    receipt: "jest auth.cookies suite 4/4: both cookies httpOnly + distinct names, sameSite=lax + no secure in dev, sameSite=none + secure in prod, clearAuthCookies emits expired Set-Cookie | controller: signup 201, login 200, demoLogin 200, refresh 200, logout 204, me 200 (all delegate to service) | Express type aug: req.user with id/email/role | express.d.ts global namespace declaration"
 
   - id: t17
-    desc: "auth.routes.ts — wire POST /auth/signup, /login, /logout, /refresh, /demo-login + GET /me; mount under /api/v1/auth in root router; integration test happy path"
-    files: [backend/src/app/modules/auth/auth.routes.ts, backend/src/app/routes/index.ts, backend/src/app/modules/auth/__tests__/auth.routes.test.ts]
-    status: todo
-    receipt: null
+    desc: "auth.routes.ts — wire POST /auth/signup, /login, /logout, /refresh, /demo-login + GET /me; mount under /api/v1/auth in root router; integration test happy path. ORDER NOTE: built after t18 since /me route uses requireAuth."
+    files: [backend/src/app/modules/auth/auth.routes.ts, backend/src/app/routes/index.ts, backend/src/app/modules/auth/__tests__/auth.routes.test.ts, backend/jest.config.js]
+    status: done
+    receipt: "jest auth.routes integration suite 8/8: signup 201 + cookies, bad payload 422, dup 409 EMAIL_TAKEN, FULL FLOW (signup -> me 200 -> logout 204 -> me 401), wrong pw 401, demo-login admin -> me with admin role, refresh rotates new cookies, refresh without cookie 401 MISSING_REFRESH | mount /api/v1/auth | jest maxWorkers:1 added to prevent shared-DB stomping between parallel workers"
 
   - id: t18
-    desc: "middlewares/auth.ts — verify access cookie JWT, hydrate req.user, 401 ApiError on missing/invalid/expired; unit tests on each branch"
+    desc: "middlewares/auth.ts — verify access cookie JWT, hydrate req.user, 401 ApiError on missing/invalid/expired; unit tests on each branch. ORDER NOTE: built before t17 to unblock /me route."
     files: [backend/src/app/middlewares/auth.ts, backend/src/app/middlewares/__tests__/auth.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "jest requireAuth suite 4/4: missing cookie -> 401 MISSING_TOKEN, tampered jwt -> 401 INVALID_TOKEN, valid cookie -> 200 with req.user hydrated (id, role), refresh-type token used as access -> 401 INVALID_TOKEN (type discriminator check)"
 
   - id: t19
     desc: "middlewares/rbac.ts — requireRole(...roles) guard, 403 ApiError; integration test using a temp /test/admin-only + /test/pm-only routes hit with each demo user"
     files: [backend/src/app/middlewares/rbac.ts, backend/src/app/middlewares/__tests__/rbac.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "jest requireRole suite 6/6: admin passes admin-only, pm blocked 403 FORBIDDEN_ROLE, member blocked, admin+pm pass /pm-or-admin while member blocked, missing auth chains to requireAuth 401 first, all 3 roles pass /anyone-authed | coverage check on auth+middleware files: 91.68% lines / 96.55% functions / 92.92% statements — well above 80% target | backend total tests now 77/77, typecheck + lint clean"
 
   # ── Phase E: frontend foundation ───────────────────────────────────────────
   - id: t20
@@ -179,7 +179,7 @@ tasks:
 
 blockers: []
 
-next_task: t13
+next_task: t20
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user

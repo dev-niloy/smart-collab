@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts. This file holds the story.
 
 ## Session log
+- 2026-06-03: Phase 3 — Phase D complete (t13-t19: auth module fully wired). Backend 77/77 tests, coverage 92% on auth+middleware. Order swap: built t18 (requireAuth) before t17 (routes) since /me uses requireAuth. RBAC integration with 3-role matrix proven. Refresh-token reuse detection proven. Next: Phase E frontend foundation (t20-t25).
 - 2026-06-03: Phase 3 — Phase C complete (t10-t12: prisma schema + init migration + idempotent demo seed). DB has 4 tables, prisma client wrapper with global singleton, 26/26 backend tests. Next: Phase D auth module (t13-t19, biggest phase).
 - 2026-06-03: Phase 3 — Phase B complete (t6-t9: express boot + healthz, typed env loader, ApiError + zod handler + error middleware, validate middleware). Backend test count 20/20. Scope correction: skipped AppError (not in solvemeet pattern, just ApiError). Next: Phase C prisma (t10-t12).
 - 2026-06-03: Phase 3 — Phase A complete (t1-t5: monorepo root, docker postgres on 5433, backend toolchain, Next.js frontend, GH Actions CI). Stopping for user checkpoint per per-phase cadence. Next: Phase B backend core (t6-t9).
