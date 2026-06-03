@@ -9,7 +9,7 @@ const PROTECTED_PREFIXES = ['/dashboard', '/projects', '/tasks', '/team'];
 // Routes that should redirect away when already logged in.
 const GUEST_PREFIXES = ['/login', '/signup'];
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const hasAccess = req.cookies.has(ACCESS_COOKIE);
