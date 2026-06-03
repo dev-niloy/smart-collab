@@ -34,6 +34,12 @@ const envSchema = z.object({
   DEMO_ADMIN_PW: z.string().min(1),
   DEMO_PM_PW: z.string().min(1),
   DEMO_MEMBER_PW: z.string().min(1),
+  // Defaults to enabled so the assessment Demo Login button works out of the box.
+  // Set to "false" on production deploys after assessment to disable demo accounts.
+  ENABLE_DEMO_LOGIN: z
+    .string()
+    .default('true')
+    .transform((v) => v.toLowerCase() !== 'false'),
 });
 
 export type Env = z.infer<typeof envSchema>;
