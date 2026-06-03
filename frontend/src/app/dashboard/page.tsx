@@ -22,21 +22,36 @@ export default function DashboardPage() {
               <CardTitle>Projects</CardTitle>
               <CardDescription>Total active projects.</CardDescription>
             </CardHeader>
-            <CardContent className="text-3xl font-semibold">—</CardContent>
+            <CardContent
+              className="text-3xl font-semibold"
+              aria-label="No data yet"
+            >
+              <span aria-hidden="true">—</span>
+            </CardContent>
           </Card>
           <Card>
             <CardHeader>
               <CardTitle>Tasks</CardTitle>
               <CardDescription>Open tasks across all projects.</CardDescription>
             </CardHeader>
-            <CardContent className="text-3xl font-semibold">—</CardContent>
+            <CardContent
+              className="text-3xl font-semibold"
+              aria-label="No data yet"
+            >
+              <span aria-hidden="true">—</span>
+            </CardContent>
           </Card>
           <Card>
             <CardHeader>
               <CardTitle>Team</CardTitle>
               <CardDescription>Members across projects.</CardDescription>
             </CardHeader>
-            <CardContent className="text-3xl font-semibold">—</CardContent>
+            <CardContent
+              className="text-3xl font-semibold"
+              aria-label="No data yet"
+            >
+              <span aria-hidden="true">—</span>
+            </CardContent>
           </Card>
         </div>
 
