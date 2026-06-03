@@ -38,7 +38,9 @@ cd smart-collab
 
 # 2. Copy env template
 cp .env.example .env
-# edit .env — fill DATABASE_URL, JWT secrets, demo passwords
+# edit .env — REQUIRED before step 5:
+#   - JWT_ACCESS_SECRET, JWT_REFRESH_SECRET (>=32 chars; openssl rand -base64 48)
+#   - DEMO_ADMIN_PW, DEMO_PM_PW, DEMO_MEMBER_PW (seed throws if missing)
 
 # 3. Start dev Postgres
 npm run db:up
@@ -47,7 +49,9 @@ npm run db:up
 npm --prefix backend install
 npm --prefix frontend install
 
-# 5. Migrate + seed
+# 5. Migrate + seed (env from step 2 must be set)
+#    backend/.env is read by both prisma and the seed script
+cp .env backend/.env
 npm run db:migrate
 npm run db:seed
 
