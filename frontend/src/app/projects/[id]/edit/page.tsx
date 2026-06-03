@@ -100,7 +100,7 @@ export default function EditProjectPage() {
     try {
       await updateMutation.mutateAsync({
         name: data.name,
-        description: data.description ? data.description : undefined,
+        description: data.description ?? '',
         deadline: new Date(data.deadline),
         status: data.status,
       });
