@@ -72,8 +72,8 @@ tasks:
   - id: t9
     desc: "lib/schemas/project.ts (mirror backend Zod) + lib/projects.ts (createProject, listProjects, getProject, updateProject, deleteProject) using existing apiGet/apiPost/apiPatch/apiDelete"
     files: [frontend/src/lib/schemas/project.ts, frontend/src/lib/projects.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "schemas/project.ts mirrors backend Zod: createProjectSchema (name 1-200, optional description 5000, deadline coerce date, status enum default active), updateProjectSchema (all optional + at-least-one refine), listProjectsQuerySchema (q, status, sort default 'created', page default 1, limit default 10 capped at 50). Exports Project, ProjectListResponse, ProjectStatus, SortKey, PROJECT_MAX_LIMIT=50, PAST_DEADLINE_MESSAGE. projects.ts API client: listProjects(params) builds query string via URLSearchParams, getProject/createProject/updateProject unwrap { project }, serializes Date deadline -> ISO, deleteProject sends DELETE (void). Tests: 8/8 schema (defaults, refusals, limit cap), 8/8 client (query encoding, ISO serialization, void delete, ApiError propagation on 422 PAST_DEADLINE). Frontend 37/37 vitest, typecheck + lint clean. Zod v4 syntax: `{error: 'msg'}` not v3 errorMap."
 
   - id: t10
     desc: "hooks/useProjects.ts: useProjects(filters), useProject(id), useCreateProject, useUpdateProject, useDeleteProject with TanStack invalidation on ['projects'] + ['project', id]. Unit tests stubbing fetch"
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t9
+next_task: t10
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
