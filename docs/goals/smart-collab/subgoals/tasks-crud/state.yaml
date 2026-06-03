@@ -14,38 +14,38 @@ tasks:
   - id: t1
     desc: "prisma: add Task model + TaskStatus (todo|in_progress|completed) + TaskPriority (low|medium|high) enums + FKs (projectId Cascade, createdBy Restrict, assignedTo SetNull). Indexes on [projectId, status], [assignedTo], [dueDate]. snake_case @@map(tasks)"
     files: [backend/prisma/schema.prisma]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "Task model added with all required fields + 3 FKs (projectId Cascade, createdBy Restrict, assignedTo SetNull). Both enums declared. 3 indexes. User model extended with tasksCreated + tasksAssigned back-relations. Project model extended with tasks back-relation."
 
   - id: t2
     desc: "create + apply migration add_task; smoke test row count via prisma client"
-    files: [backend/prisma/migrations/<ts>_add_task/migration.sql, backend/src/config/__tests__/prisma.task.test.ts]
-    status: todo
-    receipt: null
+    files: [backend/prisma/migrations/20260603170707_add_task/migration.sql, backend/src/config/__tests__/prisma.test.ts]
+    status: done
+    receipt: "Migration 20260603170707_add_task applied to docker postgres. prisma generate ran. Added one assertion to existing prisma.test.ts: prisma.task.count() resolves to number. 4 prisma smoke tests pass."
 
   - id: t3
     desc: "task.constant.ts: STATUSES, PRIORITIES, SORT_KEYS, DEFAULT_LIMIT=10, MAX_LIMIT=50, PAST_DEADLINE_MESSAGE (reuse text 'Please select a valid deadline.'), DUPLICATE_TASK_TITLE_MESSAGE 'Task title already exists in this project.', REASSIGN_COMPLETED_MESSAGE 'Cannot reassign a completed task.'"
     files: [backend/src/app/modules/task/task.constant.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "All constants exported: STATUSES (todo|in_progress|completed), PRIORITIES (low|medium|high), SORT_KEYS (created|dueDate|priority|updated), DEFAULT_LIMIT=10, MAX_LIMIT=50, DEFAULT_PAGE=1, DEFAULT_SORT='created', UNASSIGNED='unassigned' literal. 3 assessment §4 verbatim messages."
 
   - id: t4
     desc: "task.validation.ts: Zod schemas createTaskSchema, updateTaskSchema (refine: at least one field), listTasksQuerySchema (q, status, priority, assignedTo accepts uuid or 'unassigned', sort, page, limit capped at 50), taskIdParamSchema. Validation unit tests"
     files: [backend/src/app/modules/task/task.validation.ts, backend/src/app/modules/task/__tests__/task.validation.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "createTaskSchema (projectId uuid, title 1-200, optional description 5000, dueDate coerce, status default todo, priority default medium, assignedTo nullable optional uuid). updateTaskSchema all optional + at-least-one refine. listTasksQuerySchema: status/priority transform unknown -> undefined; assignedTo accepts uuid OR 'unassigned' literal, drops invalid silently; sort enum; limit cap 50. taskIdParamSchema + projectIdParamSchema. 15/15 validation tests pass."
 
   - id: t5
     desc: "task.service.ts CRUD core: create (check project exists + dup title in project, sets createdBy from actor), findById (include creator+assignee), update (guards: future deadline, no dup title, no reassign-while-completed), remove. P2025 -> 404 (duck-typed). Service unit tests against real prisma"
     files: [backend/src/app/modules/task/task.service.ts, backend/src/app/modules/task/__tests__/task.service.crud.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "Service exports create/findById/update/remove with creator+assignee embed via userSelect (id,email,name,role). create: ensureFutureDeadline + ensureProjectExists + ensureTitleUnique. update: re-reads current row to check title diff + reassign-while-completed (also catches PATCH transitioning to completed AND reassigning in same call). remove: hard delete + P2025 -> 404. All exceptions via ApiError. 19/19 service.crud tests pass incl cascade (deleting parent project removes tasks)."
 
   - id: t6
     desc: "task.service.ts list({projectId, q, status, priority, assignedTo, sort, page, limit}): Prisma where with project filter, contains-insensitive title, status/priority equality, assignedTo eq or null when 'unassigned'. orderBy switch (created/dueDate/priority/updated). $transaction(findMany,count). Tests for each filter, sort, pagination, unassigned filter"
     files: [backend/src/app/modules/task/task.service.ts, backend/src/app/modules/task/__tests__/task.service.list.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "list returns {data,total,page,limit}. buildAssignedToWhere maps UNASSIGNED -> null, uuid -> eq. orderBy switch: created->createdAt desc, dueDate->dueDate asc, priority->priority desc + createdAt desc tiebreak (postgres enum order low<med<high so desc puts high first), updated->updatedAt desc. $transaction(findMany,count). 11/11 list tests: filter by projectId, status, priority, assignee uuid, unassigned, q contains, sort dueDate ascending, sort priority high-first, pagination disjoint slice, cross-project list, embedded creator+assignee. BACKEND TOTAL 181/181 jest (+46 for tasks)."
 
   # ── Phase B: backend controller + routes + users endpoint ────────────────────
   - id: t7
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t1
+next_task: t7
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
