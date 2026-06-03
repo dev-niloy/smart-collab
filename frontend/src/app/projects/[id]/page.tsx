@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { useProject } from '@/hooks/useProjects';
 import { useRole } from '@/hooks/useUser';
+import { DeleteProjectButton } from '@/components/projects/delete-project-button';
 import type { ProjectStatus } from '@/lib/schemas/project';
 
 const STATUS_LABEL: Record<ProjectStatus, string> = {
@@ -125,9 +126,7 @@ export default function ProjectDetailPage() {
                   <Link href={`/projects/${project.id}/edit`}>
                     <Button variant="outline">Edit</Button>
                   </Link>
-                  <Button variant="destructive" disabled aria-label="Delete (coming in t16)">
-                    Delete
-                  </Button>
+                  <DeleteProjectButton projectId={project.id} projectName={project.name} />
                 </div>
               ) : null}
             </CardContent>
