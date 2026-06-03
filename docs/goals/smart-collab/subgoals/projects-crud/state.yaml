@@ -78,8 +78,8 @@ tasks:
   - id: t10
     desc: "hooks/useProjects.ts: useProjects(filters), useProject(id), useCreateProject, useUpdateProject, useDeleteProject with TanStack invalidation on ['projects'] + ['project', id]. Unit tests stubbing fetch"
     files: [frontend/src/hooks/useProjects.ts, frontend/src/hooks/__tests__/useProjects.test.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "useProjects(params) -> useQuery ['projects', params] with staleTime 10s. useProject(id) -> useQuery ['project', id], enabled gated on id presence. useCreateProject/useUpdateProject(id): onSuccess setQueryData(['project', id], project) + invalidate ['projects']. useDeleteProject: onSuccess removeQueries(['project', id]) + invalidate ['projects']. Exports PROJECTS_KEY, projectKey(id). Tests 7/7 via renderHook + QueryClientProvider wrapper: list fetch with params, useProject(undefined) idle (no fetch), useProject(id) fetches + unwraps, create/update prime detail cache + invalidate list, delete removes detail + invalidates list, create propagates ApiError on 422 PAST_DEADLINE. Frontend 44/44 vitest (was 37, +7), typecheck + lint clean."
 
   - id: t11
     desc: "shadcn add: select, alert-dialog, badge, textarea. Smoke render tests for each (Badge variants)"
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t10
+next_task: t11
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
