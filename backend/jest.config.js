@@ -19,4 +19,6 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'json-summary'],
   clearMocks: true,
   restoreMocks: true,
+  // Backend tests touch a shared dev Postgres. Serialize to avoid worker stomping.
+  maxWorkers: 1,
 };
