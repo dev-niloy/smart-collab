@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authRoutes from '../modules/auth/auth.routes';
+import projectRoutes from '../modules/project/project.routes';
 
 const router = Router();
 
@@ -8,5 +9,6 @@ router.get('/healthz', (_req, res) => {
 });
 
 router.use('/api/v1/auth', authRoutes);
+router.use('/api/v1/projects', projectRoutes);
 
 export default router;

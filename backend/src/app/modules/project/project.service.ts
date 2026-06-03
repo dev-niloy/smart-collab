@@ -1,5 +1,4 @@
 import type { Project, ProjectStatus, Prisma } from '@prisma/client';
-import { Prisma as PrismaNS } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
 import { PAST_DEADLINE_MESSAGE, DEFAULT_LIMIT, DEFAULT_PAGE, type SortKey } from './project.constant';
@@ -9,6 +8,10 @@ const ensureFutureDeadline = (deadline: Date) => {
   if (deadline.getTime() < Date.now()) {
     throw ApiError.unprocessable(PAST_DEADLINE_MESSAGE, 'PAST_DEADLINE');
   }
+};
+
+const isRecordNotFound = (err: unknown): boolean => {
+  return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'P2025';
 };
 
 const create = async (input: CreateProjectInput, actorId: string): Promise<Project> => {
@@ -43,7 +46,7 @@ const update = async (id: string, input: UpdateProjectInput): Promise<Project> =
       },
     });
   } catch (err) {
-    if (err instanceof PrismaNS.PrismaClientKnownRequestError && err.code === 'P2025') {
+    if (isRecordNotFound(err)) {
       throw ApiError.notFound('Project not found', 'PROJECT_NOT_FOUND');
     }
     throw err;
@@ -54,7 +57,7 @@ const remove = async (id: string): Promise<void> => {
   try {
     await prisma.project.delete({ where: { id } });
   } catch (err) {
-    if (err instanceof PrismaNS.PrismaClientKnownRequestError && err.code === 'P2025') {
+    if (isRecordNotFound(err)) {
       throw ApiError.notFound('Project not found', 'PROJECT_NOT_FOUND');
     }
     throw err;
