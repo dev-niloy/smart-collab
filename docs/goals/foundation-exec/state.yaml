@@ -1,0 +1,340 @@
+# GoalBuddy v2 state.yaml — foundation-exec
+# Board truth. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "Foundation — Smart Project & Task Collaboration System"
+  slug: "foundation-exec"
+  kind: existing_plan
+  tranche: "Complete the 8-point foundation oracle: monorepo + backend raw-auth stack + RBAC + Prisma schema/seed + Next.js+shadcn shell with auth pages + CI + deploy plumbing. No product-domain features in this tranche."
+  status: active
+  oracle:
+    signal: |
+      Backend boots; GET /healthz returns {ok:true}. Frontend boots at :3000.
+      Signup -> login -> /dashboard -> logout round-trips. Demo Login button works for each of 3 roles (admin, project_manager, team_member).
+      Protected backend route without token -> 401 (ApiError shape). Wrong-role route -> 403 (ApiError shape).
+      Backend jest green, coverage >=80% on auth+middleware files. Frontend vitest green, coverage >=70% on auth pages + api lib.
+      GitHub Actions ci.yml green on PR from feature/foundation -> develop.
+    cadence: "after each Worker package and at final audit"
+    final_proof: "T999 receipt mapping each of the 8 oracle points to a concrete Worker receipt + command output, with full_outcome_complete: true"
+  intake:
+    original_request: "Build the EAP 4.0 Assessment project. Start with foundation: monorepo + Express+Prisma backend with raw auth + Next.js+shadcn frontend + RBAC + demo seed."
+    interpreted_outcome: "Working monorepo where both apps boot, raw-auth round-trips end-to-end across 3 roles, and CI + deploy plumbing are wired (no public push)."
+    input_shape: existing_plan
+    audience: "EAP 4.0 assessment reviewer + portfolio viewer; operator solvemeet@gmail.com"
+    authority: approved
+    proof_type: demo
+    completion_proof: "8-point oracle holds end-to-end (manual walkthrough + suites + CI)"
+    likely_misfire: "Reaching for an auth library under pressure; or marking foundation done after backend boots without proving the full 8-point walkthrough; or sliding product features into this subgoal."
+    blind_spots_considered:
+      - "Access token transport (httpOnly cookie vs Authorization header) - must be decided before auth.service.ts"
+      - "Refresh token rotation/revocation strategy"
+      - "User model schema must be locked here to prevent later migration churn"
+      - "CORS allowlist must be env-driven, no wildcard in non-dev"
+      - "Demo passwords env-driven and README-documented"
+      - "shadcn + next-themes provider lands here to avoid retrofit during section 10"
+    existing_plan_facts:
+      - "Hand-shaped charter at docs/goals/smart-collab/subgoals/foundation/goal.md is the authoritative scope source"
+      - "Backend module pattern mirrors solvemeet_backend_api/src/app/modules/<feature>/{constant,controller,routes,service,validation}.ts"
+      - "Monorepo: /backend + /frontend at repo root"
+      - "User model: id uuid, email unique, name, passwordHash, role enum [admin|project_manager|team_member], createdAt, updatedAt"
+      - "Session table holds hashed refresh tokens"
+      - "ActivityLog placeholder table lands here to prevent later migration churn"
+      - "Demo Login endpoint: POST /auth/demo-login body {role}"
+      - "Branches: feature/foundation off develop; main protected; explicit operator OK for push/merge"
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: bundled_not_installed
+  worker: bundled_not_installed
+  judge: bundled_not_installed
+
+visual_board:
+  selected: local
+  local:
+    status: starting
+    url: null
+    command: "npx goalbuddy board docs/goals/foundation-exec"
+
+active_task: T001
+
+tasks:
+
+  - id: T001
+    type: judge
+    assignee: Judge
+    status: active
+    reasoning_hint: high
+    objective: "Validate the preserved existing_plan facts against the hand-shaped charter and surface contradictions, gaps, risk, or sequencing issues before any Worker is queued."
+    inputs:
+      - "docs/goals/foundation-exec/goal.md (this board's charter)"
+      - "docs/goals/smart-collab/subgoals/foundation/goal.md (authoritative scope source)"
+      - "docs/goals/smart-collab/goal.md (parent SPEC for stack + constraints)"
+      - "EAP 4.0 Assessment Task .md (original brief, gitignored)"
+    constraints:
+      - "Read-only. Do not edit implementation files."
+      - "Do not load product skills or browse external repos."
+      - "Hands off docs/goals/smart-collab/** - frozen experiment record."
+      - "If charters disagree, flag it; do not silently reconcile."
+    expected_output:
+      - "Plan-validation verdict: ready | needs_revision"
+      - "Confirmed Worker slice sequence (vertical packages, largest safe useful)"
+      - "Risk callouts (token transport decision, env wiring, secrets handling)"
+      - "Recommended first Worker objective + allowed_files + verify + stop_if"
+      - "Any blockers requiring operator input (e.g. credentials, hosting choice)"
+    receipt: null
+
+  - id: T002
+    type: pm
+    assignee: PM
+    status: queued
+    reasoning_hint: medium
+    objective: "Decide access-token transport: httpOnly cookie vs Authorization header. Record decision + rationale before T006 (auth module) begins."
+    inputs:
+      - "T001 receipt"
+      - "Next.js App Router middleware capability (cookie reads)"
+      - "CORS + credentials implications"
+    constraints:
+      - "Decision recorded in goal.md decisions block and in this receipt."
+      - "Whichever path is chosen must work for browser (frontend) and curl/test (backend integration tests)."
+    expected_output:
+      - "transport: cookie | header"
+      - "Rationale (XSS surface, CSRF surface, mobile path, Next middleware reads, test ergonomics)"
+      - "Implied changes to auth.service.ts and frontend lib/api.ts"
+    receipt: null
+
+  - id: T003
+    type: scout
+    assignee: Scout
+    status: queued
+    reasoning_hint: low
+    objective: "Inventory solvemeet_backend_api module shape: list exact files in a representative module (e.g. src/app/modules/Auth/), exports, error/middleware/route composition pattern, and global error handler shape. Produce concrete file list Worker mirrors in /backend."
+    inputs:
+      - "solvemeet_backend_api/src/app/modules/Auth/ (read-only)"
+      - "solvemeet_backend_api/src/app/errors/ (read-only)"
+      - "solvemeet_backend_api/src/app/middlewares/ (read-only)"
+      - "solvemeet_backend_api/src/app/routes/ (read-only)"
+      - "solvemeet_backend_api/src/app.ts and src/server.ts (read-only)"
+    constraints:
+      - "Read-only. No edits to solvemeet_backend_api/."
+      - "Concrete file paths and export names, not generic descriptions."
+    expected_output:
+      - "Per-module file list + each export's responsibility"
+      - "Global error handler signature + ApiError class shape"
+      - "Route composition pattern (root router -> module routes)"
+      - "Validation middleware signature"
+      - "Anything NOT to copy (legacy code, project-specific helpers)"
+    receipt: null
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Bootstrap monorepo: root README.md + .env.example + .gitignore review + /backend Express+TS+Prisma skeleton (app.ts, server.ts, config/env.ts, errors/ApiError.ts, middlewares/{auth,rbac,validate,error}.ts, modules/ empty, routes/ root, tsconfig, eslint, prettier, jest config) booting to GET /healthz. Initialize feature/foundation branch off develop."
+    allowed_files:
+      - "README.md"
+      - ".env.example"
+      - ".gitignore"
+      - "backend/**"
+    verify:
+      - "cd backend && npm install"
+      - "cd backend && npm run lint"
+      - "cd backend && npm run build"
+      - "cd backend && npm test -- --passWithNoTests"
+      - "cd backend && timeout 5 npm run dev || true  # boot smoke"
+      - "curl -s http://localhost:<port>/healthz  # must return {\"ok\":true}"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Cannot resolve Prisma binary or jest config."
+      - "Verification fails twice."
+      - "Operator approval required (e.g. git remote add)."
+    receipt: null
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Prisma schema + first migration + seed. Models: User (locked schema), Session (hashed refresh tokens), ActivityLog (placeholder). Seed creates 3 demo users (admin, project_manager, team_member) with env-driven passwords."
+    allowed_files:
+      - "backend/prisma/schema.prisma"
+      - "backend/prisma/seed.ts"
+      - "backend/prisma/migrations/**"
+      - "backend/.env.example"
+      - "backend/package.json"
+      - ".env.example"
+    verify:
+      - "cd backend && npx prisma format"
+      - "cd backend && npx prisma migrate dev --name foundation_initial"
+      - "cd backend && npx prisma db seed"
+    stop_if:
+      - "DATABASE_URL not set or unreachable - block, request operator action."
+      - "Schema requires changing User columns later (lock violation)."
+    receipt: null
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Raw auth module mirroring solvemeet pattern (auth.constant.ts, auth.validation.ts, auth.service.ts, auth.controller.ts, auth.routes.ts). Endpoints: POST /auth/signup, /auth/login, /auth/logout, /auth/refresh, GET /auth/me, POST /auth/demo-login. Bcrypt hashing, JWT access+refresh, rotation against hashed Session rows. Jest unit + integration tests."
+    allowed_files:
+      - "backend/src/app/modules/auth/**"
+      - "backend/src/app/routes/**"
+      - "backend/src/config/jwt.ts"
+      - "backend/src/utils/password.ts"
+      - "backend/tests/auth/**"
+    verify:
+      - "cd backend && npm run lint"
+      - "cd backend && npm test -- tests/auth"
+      - "cd backend && npm run test:coverage -- tests/auth  # >=80% on auth files"
+      - "curl integration: signup -> 201; login -> 200 + token; me -> 200 + role; refresh -> 200 + rotated; logout -> 204; demo-login -> 200 for each of 3 roles"
+    stop_if:
+      - "Access-token transport decision (T002) not recorded."
+      - "Need to add an auth library."
+      - "Verification fails twice."
+    receipt: null
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Auth + rbac middlewares end-to-end. middlewares/auth.ts verifies access token + hydrates req.user; middlewares/rbac.ts exposes requireRole(...roles). Zod validation middleware generic. Wire to /auth/me and a /probe/admin-only test route."
+    allowed_files:
+      - "backend/src/app/middlewares/**"
+      - "backend/src/app/modules/auth/**"
+      - "backend/src/app/modules/_probe/**"
+      - "backend/src/app/routes/**"
+      - "backend/tests/middlewares/**"
+      - "backend/tests/rbac/**"
+    verify:
+      - "cd backend && npm test -- tests/middlewares tests/rbac"
+      - "cd backend && npm run test:coverage  # >=80% on middlewares + auth"
+      - "curl: no token -> 401 ApiError shape; member token to admin route -> 403 ApiError shape"
+    stop_if:
+      - "ApiError shape diverges from solvemeet pattern without recorded rationale."
+      - "Verification fails twice."
+    receipt: null
+
+  - id: T008
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Init /frontend (Next.js App Router + TS + Tailwind + shadcn + base components + next-themes provider + TanStack Query provider) + lib/api.ts (401 refresh-once) + lib/auth.ts. Blank App Router shell boots."
+    allowed_files:
+      - "frontend/**"
+      - "package.json"
+    verify:
+      - "cd frontend && npm install"
+      - "cd frontend && npm run lint"
+      - "cd frontend && npm run build"
+      - "cd frontend && npm test -- --run"
+      - "cd frontend && timeout 10 npm run dev || true"
+    stop_if:
+      - "shadcn init requires interactive prompts that cannot be answered non-interactively."
+      - "Verification fails twice."
+    receipt: null
+
+  - id: T009
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Frontend auth UI: /login (RHF+Zod form + Demo Login section with 3 buttons), /signup, /dashboard placeholder shell (header email+role+logout), /forbidden. middleware.ts gates protected routes. Vitest smoke per page."
+    allowed_files:
+      - "frontend/src/app/login/**"
+      - "frontend/src/app/signup/**"
+      - "frontend/src/app/dashboard/**"
+      - "frontend/src/app/forbidden/**"
+      - "frontend/src/app/layout.tsx"
+      - "frontend/src/app/page.tsx"
+      - "frontend/src/components/**"
+      - "frontend/src/lib/**"
+      - "frontend/src/hooks/**"
+      - "frontend/src/middleware.ts"
+      - "frontend/tests/**"
+    verify:
+      - "cd frontend && npm test -- --run"
+      - "cd frontend && npm run test:coverage  # >=70% on auth pages + lib/api + lib/auth"
+      - "manual walkthrough: signup -> login -> dashboard -> logout; Demo Login (3 roles); /forbidden gate"
+    stop_if:
+      - "Backend endpoints not yet returning expected shape."
+      - "Verification fails twice."
+    receipt: null
+
+  - id: T010
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "CI + deploy plumbing. .github/workflows/ci.yml (lint+typecheck+test on PR for both apps). backend/Dockerfile (multi-stage prod-ready). vercel.ts stub at root. Railway or Render config (whichever T001/T002 settled). README.md: setup, env vars, demo creds note (env-driven), run instructions."
+    allowed_files:
+      - ".github/workflows/**"
+      - "backend/Dockerfile"
+      - "backend/.dockerignore"
+      - "vercel.ts"
+      - "railway.json"
+      - "render.yaml"
+      - "README.md"
+      - ".env.example"
+    verify:
+      - "docker build -f backend/Dockerfile -t foundation-backend ./backend"
+      - "node -e \"require('typescript').transpileModule(require('fs').readFileSync('vercel.ts','utf8'),{compilerOptions:{module:'commonjs'}})\""
+      - "README contains: Setup, Env vars, Demo creds, Run frontend, Run backend, Deploy"
+    stop_if:
+      - "Operator has not chosen Railway vs Render (block, ask)."
+      - "Docker build fails twice."
+    receipt: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Final audit: map each of the 8 oracle points to a concrete Worker receipt + command output. Reject completion if any point is not receipt-backed or any required Worker still queued/active. Confirm User schema unchanged from T005 lock."
+    inputs:
+      - "All done task receipts"
+      - "Last verification commands + outputs"
+      - "Current dirty diff"
+      - "goal.md Goal Oracle"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if oracle is not satisfied with receipt-backed evidence per point."
+      - "Reject stopping only because operator input is pending; spawn safe local follow-up instead."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Per-oracle-point receipt mapping"
+      - "Missing evidence (if any)"
+      - "Next task if not complete"
+    receipt: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: unknown
+    task: null
+    commands: []

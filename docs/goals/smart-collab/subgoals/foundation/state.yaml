@@ -25,13 +25,13 @@ tasks:
   - id: t2
     desc: "docker-compose.yml at root with postgres service + .env wiring; verify `docker compose up -d postgres` connects via psql"
     files: [docker-compose.yml, .env.example]
-    status: active
-    receipt: null
+    status: done
+    receipt: "compose up: smartcollab_postgres healthy (postgres:16-alpine) | host port 5433 (5432 collided with system postgres, .env DATABASE_URL updated) | pg_isready -h localhost -p 5433: accepting connections | psql SELECT version: 16.13 | commit pending"
 
   - id: t3
     desc: "backend init: package.json, tsconfig (strict), eslint, prettier, jest config + sample passing test"
     files: [backend/package.json, backend/tsconfig.json, backend/.eslintrc.json, backend/.prettierrc.json, backend/jest.config.js, backend/src/__sample.test.ts]
-    status: todo
+    status: active
     receipt: null
 
   - id: t4
@@ -179,7 +179,7 @@ tasks:
 
 blockers: []
 
-next_task: t2
+next_task: t3
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
