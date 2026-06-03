@@ -1,0 +1,142 @@
+feature: projects-crud
+created: 2026-06-03
+updated: 2026-06-03  # phase 2 sliced
+
+mode:
+  type: greenfield
+  scope: feature
+  session: new
+
+phase: 3                  # Superpowers — TDD per task starting at t1
+
+# Locked Phase 1 decisions (also in progress.md Decisions):
+#   - RBAC: Admin + PM mutate; Member read-only
+#   - Ownership: single createdBy FK on Project (Linear/Jira/Asana pattern)
+#   - Delete: hard delete with cascade
+#   - Search scope: name search + status filter + 3 sorts + pagination
+#   - Past-deadline guard in service, msg "Please select a valid deadline."
+#   - Pagination cap: default 10, max 50
+
+tasks:
+  # ── Phase A: backend prisma + module skeleton ───────────────────────────────
+  - id: t1
+    desc: "prisma: add Project model + ProjectStatus enum (active|completed|on_hold) + createdBy FK to User. @@index on [status, createdAt]. snake_case @@map(projects)"
+    files: [backend/prisma/schema.prisma]
+    status: done
+    receipt: "prisma format + validate: valid | Project model: id uuid, name, description?, deadline, status enum default active, createdBy FK Restrict (prevent user delete with projects), createdAt/updatedAt | indexes [status,createdAt] + [deadline] + [createdBy] | @@map(projects) | User.projects relation added under name ProjectCreatedBy | enum ProjectStatus[active|completed|on_hold]"
+
+  - id: t2
+    desc: "prisma migrate dev --name add_project. verify table exists via psql. update prisma client + smoke test (prisma.project.count returns 0)"
+    files: [backend/prisma/migrations/20260603144944_add_project/, backend/src/config/__tests__/prisma.test.ts]
+    status: done
+    receipt: "prisma migrate dev --name add_project: applied to docker postgres. psql \\dt: projects table present alongside users, sessions, activity_logs. prisma client regenerated v5.22.0. jest prisma suite 3/3 (raw SELECT 1, user.count, project.count all numeric)"
+
+  - id: t3
+    desc: "project.constant.ts (STATUSES, SORT_KEYS, DEFAULT_LIMIT=10, MAX_LIMIT=50) + project.validation.ts (createProjectSchema, updateProjectSchema, listProjectsQuerySchema, projectIdParamSchema) + Zod unit tests"
+    files: [backend/src/app/modules/project/project.constant.ts, backend/src/app/modules/project/project.validation.ts, backend/src/app/modules/project/__tests__/project.validation.test.ts]
+    status: done
+    receipt: "jest project.validation suite 19/19: constants (STATUSES has 3, PAST_DEADLINE_MESSAGE matches assessment verbatim), create (minimal valid, empty name reject, >200 char reject, bad status reject, bad date reject, past deadline PASSES validation since service guards), update (partial ok, empty body rejects), list (defaults page=1 limit=10 sort=created, coerce strings, cap limit at 50, reject negative page, reject unknown sort, drop unknown status silently, keep known status), projectId (valid uuid + non-uuid reject). typecheck + lint clean."
+
+  - id: t4
+    desc: "project.service.ts CRUD core: create, findById, update, remove. Past-deadline guard (throws ApiError.unprocessable with assessment-verbatim message). Service unit tests against real prisma (cleanup demo project rows after)"
+    files: [backend/src/app/modules/project/project.service.ts, backend/src/app/modules/project/__tests__/project.service.crud.test.ts]
+    status: done
+    receipt: "jest project.service.crud 10/10: create (inserts with createdBy + default active, rejects past deadline -> 422 PAST_DEADLINE with assessment-verbatim message, throws ApiError instance), findById (returns project, 404 PROJECT_NOT_FOUND), update (patches, 404, rejects past deadline), remove (deletes, 404). Prisma P2025 mapped to 404 in update + remove. ensureFutureDeadline exported for reuse. createdBy FK onDelete: Restrict prevents user delete with projects."
+
+  - id: t5
+    desc: "project.service.ts list({q, status, sort, page, limit}): Prisma where with contains-insensitive, status filter, orderBy switch, skip/take pagination, return {data, total, page, limit}. Tests for each filter, sort, pagination, empty result"
+    files: [backend/src/app/modules/project/project.service.ts, backend/src/app/modules/project/__tests__/project.service.list.test.ts]
+    status: done
+    receipt: "jest project.service.list 7/7: returns shape {data,total,page,limit} with 5 seeded rows, filters by status (3 active), case-insensitive name contains (2 Website*), combines q+status, sort=deadline orders nearest-first, pagination limit=2 page=2 returns disjoint slice (3 active total), empty array on no match. Uses $transaction to fetch data+count atomically. orderBy switch: created->createdAt desc, deadline->deadline asc, updated->updatedAt desc. BACKEND TOTAL 117/117 jest passing."
+
+  # ── Phase B: backend controller + routes ────────────────────────────────────
+  - id: t6
+    desc: "project.controller.ts (thin) + project.routes.ts (requireAuth on all; requireRole('admin','project_manager') on POST/PATCH/DELETE) + mount under /api/v1/projects. Integration happy-path tests (admin creates, all roles list, admin updates, admin deletes)"
+    files: [backend/src/app/modules/project/project.controller.ts, backend/src/app/modules/project/project.routes.ts, backend/src/app/routes/index.ts, backend/src/app/modules/project/__tests__/project.routes.test.ts]
+    status: done
+    receipt: "jest project.routes 13/13: 401 unauth list, admin POST 201 (createdBy set), PM POST 201, member POST 403 FORBIDDEN_ROLE, POST past-deadline 422 PAST_DEADLINE assessment-verbatim, POST invalid body 422 VALIDATION_ERROR, all 3 roles GET list, admin PATCH 200, member PATCH 403, PATCH missing id 404 PROJECT_NOT_FOUND, admin DELETE 204 then GET 404, member DELETE 403, GET invalid uuid 422. Routes mounted at /api/v1/projects via app/routes/index.ts. requireAuth applied via router.use; requireRole('admin','project_manager') applied per mutate route. Service P2025 mapping switched from instanceof PrismaClientKnownRequestError to duck-typed err.code === 'P2025' to survive jest.resetModules in integration tests. BACKEND TOTAL 130/130 jest passing (was 117, +13)."
+
+  - id: t7
+    desc: "integration negative paths: 401 unauth, 403 member tries POST/PATCH/DELETE, 404 missing id, 422 invalid body, pagination cap enforcement (limit=999 -> 50)"
+    files: [backend/src/app/modules/project/__tests__/project.routes.test.ts]
+    status: done
+    receipt: "Covered: 401 MISSING_TOKEN (unauth list), 403 FORBIDDEN_ROLE (member POST/PATCH/DELETE), 404 PROJECT_NOT_FOUND (PATCH/GET/DELETE unknown uuid), 422 VALIDATION_ERROR (invalid body, invalid uuid path param), pagination cap limit=999 -> body.limit=50 (MAX_LIMIT enforced via Zod transform). Also added list combined-filter test (q + status + sort=deadline orders nearest-first across 2 matching rows of 3 seeded)."
+
+  - id: t8
+    desc: "past-deadline rejection covered end-to-end: POST + PATCH with deadline in past -> 422 with exact assessment message; valid future deadline accepted"
+    files: [backend/src/app/modules/project/__tests__/project.routes.test.ts]
+    status: done
+    receipt: "POST past deadline -> 422 PAST_DEADLINE message 'Please select a valid deadline.' (covered in t6). PATCH past deadline on existing project -> 422 PAST_DEADLINE same assessment-verbatim message. Valid future deadline accepted on both POST + PATCH (covered in admin creates/updates happy-path tests). project.routes.test.ts now 18/18; BACKEND TOTAL 135/135 jest (was 130, +5: pagination cap, combined-filter list, PATCH past-deadline, GET unknown id 404, DELETE unknown id 404)."
+
+  # ── Phase C: frontend lib + hooks + shadcn ──────────────────────────────────
+  - id: t9
+    desc: "lib/schemas/project.ts (mirror backend Zod) + lib/projects.ts (createProject, listProjects, getProject, updateProject, deleteProject) using existing apiGet/apiPost/apiPatch/apiDelete"
+    files: [frontend/src/lib/schemas/project.ts, frontend/src/lib/projects.ts]
+    status: done
+    receipt: "schemas/project.ts mirrors backend Zod: createProjectSchema (name 1-200, optional description 5000, deadline coerce date, status enum default active), updateProjectSchema (all optional + at-least-one refine), listProjectsQuerySchema (q, status, sort default 'created', page default 1, limit default 10 capped at 50). Exports Project, ProjectListResponse, ProjectStatus, SortKey, PROJECT_MAX_LIMIT=50, PAST_DEADLINE_MESSAGE. projects.ts API client: listProjects(params) builds query string via URLSearchParams, getProject/createProject/updateProject unwrap { project }, serializes Date deadline -> ISO, deleteProject sends DELETE (void). Tests: 8/8 schema (defaults, refusals, limit cap), 8/8 client (query encoding, ISO serialization, void delete, ApiError propagation on 422 PAST_DEADLINE). Frontend 37/37 vitest, typecheck + lint clean. Zod v4 syntax: `{error: 'msg'}` not v3 errorMap."
+
+  - id: t10
+    desc: "hooks/useProjects.ts: useProjects(filters), useProject(id), useCreateProject, useUpdateProject, useDeleteProject with TanStack invalidation on ['projects'] + ['project', id]. Unit tests stubbing fetch"
+    files: [frontend/src/hooks/useProjects.ts, frontend/src/hooks/__tests__/useProjects.test.tsx]
+    status: done
+    receipt: "useProjects(params) -> useQuery ['projects', params] with staleTime 10s. useProject(id) -> useQuery ['project', id], enabled gated on id presence. useCreateProject/useUpdateProject(id): onSuccess setQueryData(['project', id], project) + invalidate ['projects']. useDeleteProject: onSuccess removeQueries(['project', id]) + invalidate ['projects']. Exports PROJECTS_KEY, projectKey(id). Tests 7/7 via renderHook + QueryClientProvider wrapper: list fetch with params, useProject(undefined) idle (no fetch), useProject(id) fetches + unwraps, create/update prime detail cache + invalidate list, delete removes detail + invalidates list, create propagates ApiError on 422 PAST_DEADLINE. Frontend 44/44 vitest (was 37, +7), typecheck + lint clean."
+
+  - id: t11
+    desc: "shadcn add: select, alert-dialog, badge, textarea. Smoke render tests for each (Badge variants)"
+    files: [frontend/src/components/ui/select.tsx, frontend/src/components/ui/alert-dialog.tsx, frontend/src/components/ui/badge.tsx, frontend/src/components/ui/textarea.tsx]
+    status: done
+    receipt: "npx shadcn add select alert-dialog badge textarea — 4 files created, button.tsx skipped (already identical). No package.json bump (radix deps already present). Smoke tests added to components.test.tsx: Badge renders all 4 variants (default/secondary/destructive/outline), Textarea renders with placeholder. ui smoke 5/5. Phase C complete (t9 + t10 + t11). Typecheck + lint clean."
+
+  # ── Phase D: frontend pages ─────────────────────────────────────────────────
+  - id: t12
+    desc: "/projects/page.tsx: list with cards (name, status badge, deadline, createdAt), search box, status filter Select, sort Select (created/deadline/updated), pagination prev/next, 'New Project' button gated by useRole. Loading/empty/error states. Page test for filter/sort/paginate interactions"
+    files: [frontend/src/app/projects/page.tsx, frontend/src/app/projects/__tests__/page.test.tsx]
+    status: done
+    receipt: "URL params source-of-truth for q/status/sort/page; useSearchParams + router.replace (no history pollution). Mutating filters resets page. Debounced search 300ms. Sync queryInput<->URL via render-time setState pattern (not effect) to satisfy react-hooks/set-state-in-effect rule. Layout: 1/2/3-col responsive card grid; each card name+status Badge+deadline+createdAt, wrapped in Link to /projects/[id]. Toolbar: Input, status Select (All + 3 statuses), sort Select (Newest/Deadline soonest/Recently updated). New Project Button gated by useRole (admin|project_manager). States: skeleton cards (3) on loading, two differentiated empty states (no projects yet w/ create CTA vs no matches w/ clear-filters), error card with Retry. Pagination prev/next w/ disabled boundaries + 'Page X of Y'. Tests 8/8: cards render, admin sees CTA, member doesn't, debounced search pushes q=, empty no-filter vs empty with-filter (clear button -> /projects), error retry, next advances page=2 / prev disabled on page 1. Frontend 54/54 vitest, typecheck + lint clean."
+
+  - id: t13
+    desc: "/projects/new/page.tsx: create form (name, description, deadline date input, status Select) with RHF+Zod. Member -> redirect /forbidden via useRole. Success -> router.push to detail page. Test happy + RBAC redirect"
+    files: [frontend/src/app/projects/new/page.tsx, frontend/src/app/projects/new/__tests__/page.test.tsx]
+    status: done
+    receipt: "RHF + zodResolver, form schema split from backend createProjectSchema to avoid input/output type mismatch (z.coerce.date). FormValues: name string, description optional, deadline string (HTML date input), status enum. Submit converts deadline string -> Date before useCreateProject mutation; createProject client re-serializes Date -> ISO. Fields: Input name, Textarea description, Input type=date deadline, Select status (3 options). RBAC: useRole gates; member -> router.replace('/forbidden') in useEffect; while role loading or unauthorized renders 'Checking permissions…' placeholder. Success -> toast.success + router.push('/projects/{id}'). API error -> toast.error with ApiError.message (covers PAST_DEADLINE w/ assessment-verbatim text). Cancel link -> /projects. Tests 3/3: admin submits valid form (createProject called with Date deadline, pushSpy to /projects/p-99), member redirected to /forbidden (no createProject call), empty name shows 'Name is required' inline error. Frontend 57/57 vitest, typecheck clean, lint shows only RHF library-incompatibility warning (resolver typing issue, not an error)."
+
+  - id: t14
+    desc: "/projects/[id]/page.tsx: detail view (name, description, status badge, deadline, createdBy email, timestamps). Edit + Delete buttons rendered only for Admin/PM. Test rendering + RBAC button visibility"
+    files: [frontend/src/app/projects/[id]/page.tsx, frontend/src/app/projects/[id]/__tests__/page.test.tsx]
+    status: done
+    receipt: "Industry-standard creator embed (Linear/GitHub/Jira pattern): backend service includes creator{id,email,name} in create/findById/update/list — avoids N+1 + extra round-trip. ProjectWithCreator type exported. Frontend Project type extended with ProjectCreator. Detail page uses useParams (not Promise params) for testability; useProject(id) loads data; renders name, description (or 'No description' italics), status Badge, dl grid (Deadline, Status, Created, Updated), 'Created by {name} ({email})' in CardDescription, back link to /projects. Edit link + Delete button (currently disabled stub w/ aria-label 'coming in t16') gated on canMutate (admin|project_manager). Error/missing -> Retry card. Tests 4/4: fields render + creator email shown, admin sees Edit link + Delete button, member hidden, error -> Retry visible. Backend 135/135 still green (1 assertion added: creator.email + creator.name). Frontend 61/61 vitest, typecheck + lint clean (1 RHF warning carried)."
+
+  - id: t15
+    desc: "/projects/[id]/edit/page.tsx: update form prefilled from useProject. Member -> /forbidden. Submit -> router.push detail. Test happy + RBAC"
+    files: [frontend/src/app/projects/[id]/edit/page.tsx, frontend/src/app/projects/[id]/edit/__tests__/page.test.tsx]
+    status: done
+    receipt: "Mirrors t13 new-form pattern: same FormValues shape (deadline as string from <input type='date'>), zodResolver, member redirect via useRole. Prefill via useEffect on project load: reset({name, description, deadline: toDateInput(iso), status}). toDateInput formats ISO -> YYYY-MM-DD (local TZ) for native date input. Submit converts deadline string -> Date, calls useUpdateProject(id). Success -> toast + router.push('/projects/{id}'). Cancel link -> detail. States: 'Checking permissions…' while role loads, 'Loading project…' while project loads, 'Project not found' on error. Tests 2/2: admin prefills 'Launch Site', edits to 'Launch Site v2', updateSpy called with (id, payload incl Date deadline), pushSpy to /projects/p-1; member redirected to /forbidden w/o update call. Frontend 63/63 vitest."
+
+  - id: t16
+    desc: "DeleteProjectButton component using shadcn AlertDialog. Confirm copy: 'Delete project? This cannot be undone.' Fires useDeleteProject + router.push('/projects'). Wired into detail page Delete button. Test confirm + cancel paths"
+    files: [frontend/src/components/projects/delete-project-button.tsx, frontend/src/components/projects/__tests__/delete-project-button.test.tsx, frontend/src/app/projects/[id]/page.tsx]
+    status: todo
+    receipt: null
+
+  # ── Phase E: wrap ───────────────────────────────────────────────────────────
+  - id: t17
+    desc: "Header: add Projects nav link (visible to all authed users). Update dashboard page to link to /projects. Smoke test header renders link when authed"
+    files: [frontend/src/components/header.tsx, frontend/src/app/dashboard/page.tsx]
+    status: todo
+    receipt: null
+
+  - id: t18
+    desc: "coverage check + cleanup: backend project module >=80% lines, frontend project pages+hooks >=70%. Remove any TODO markers, update root README with project routes list"
+    files: [README.md]
+    status: todo
+    receipt: null
+
+blockers: []
+
+next_task: t16
+
+phase_completion:
+  gstack: true            # locked 2026-06-03 by user
+  gsd: true               # locked 2026-06-03 by user
+  superpowers: false
+  ralph_wiggum: false

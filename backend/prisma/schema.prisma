@@ -28,9 +28,34 @@ model User {
 
   sessions   Session[]
   activities ActivityLog[]
+  projects   Project[]     @relation("ProjectCreatedBy")
 
   @@index([role])
   @@map("users")
+}
+
+enum ProjectStatus {
+  active
+  completed
+  on_hold
+}
+
+model Project {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  deadline    DateTime
+  status      ProjectStatus @default(active)
+  createdBy   String        @db.Uuid
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  creator User @relation("ProjectCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([status, createdAt])
+  @@index([deadline])
+  @@index([createdBy])
+  @@map("projects")
 }
 
 model Session {
