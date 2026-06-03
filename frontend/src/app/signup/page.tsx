@@ -18,12 +18,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { signupSchema, type SignupInput } from '@/lib/schemas/auth';
-import { signup } from '@/lib/auth';
+import { useSignup } from '@/hooks/useUser';
 import { ApiError } from '@/lib/api';
 
 export default function SignupPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const signupMutation = useSignup();
 
   const {
     register,
@@ -37,7 +38,7 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupInput) => {
     setSubmitting(true);
     try {
-      await signup(data);
+      await signupMutation.mutateAsync(data);
       router.push('/dashboard');
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Signup failed';

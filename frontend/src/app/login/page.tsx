@@ -18,7 +18,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { loginSchema, type LoginInput, type Role } from '@/lib/schemas/auth';
-import { login, demoLogin } from '@/lib/auth';
+import { useLogin, useDemoLogin } from '@/hooks/useUser';
 import { ApiError } from '@/lib/api';
 
 type DemoRole = { role: Role; label: string };
@@ -33,6 +33,8 @@ export default function LoginPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [demoBusy, setDemoBusy] = useState<Role | null>(null);
+  const loginMutation = useLogin();
+  const demoLoginMutation = useDemoLogin();
 
   const {
     register,
@@ -46,7 +48,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginInput) => {
     setSubmitting(true);
     try {
-      await login(data);
+      await loginMutation.mutateAsync(data);
       router.push('/dashboard');
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Login failed';
@@ -59,7 +61,7 @@ export default function LoginPage() {
   const onDemoLogin = async (role: Role) => {
     setDemoBusy(role);
     try {
-      await demoLogin(role);
+      await demoLoginMutation.mutateAsync(role);
       router.push('/dashboard');
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Demo login failed';
