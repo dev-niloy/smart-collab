@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-03: Phase 1 locked by user. Phase 2 GSD — board sliced into 18 tasks across 5 phases (A: prisma+module skeleton t1-t5, B: controller+routes t6-t8, C: frontend lib+hooks+shadcn t9-t11, D: pages t12-t16, E: wrap t17-t18). Awaiting user OK before Phase 3.
 - 2026-06-03: Phase 1 GStack — branched feature/projects-crud off develop. Drafted goal.md covering backend project module + Prisma Project model + frontend list/detail/create/edit pages + basic search/filter/sort/pagination + RBAC matrix. Awaiting user lock before Phase 2 slicing.
 
 ## Decisions

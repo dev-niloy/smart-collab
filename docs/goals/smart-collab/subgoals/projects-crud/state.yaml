@@ -1,28 +1,142 @@
 feature: projects-crud
 created: 2026-06-03
-updated: 2026-06-03
+updated: 2026-06-03  # phase 2 sliced
 
 mode:
   type: greenfield
   scope: feature
   session: new
 
-phase: 1                  # GStack — goal.md drafted, awaiting lock
+phase: 2                  # GSD — board sliced, awaiting Phase 3
 
 # Locked Phase 1 decisions (also in progress.md Decisions):
 #   - RBAC: Admin + PM mutate; Member read-only
-#   - Ownership: single createdBy FK on Project (Linear/Jira/Asana pattern). Members via team-collab later.
-#   - Delete: hard delete with cascade (tasks cascade in tasks-crud subgoal)
-#   - Search scope: name search + status filter + 3 sorts + pagination. Cross-cutting polish in t7.
+#   - Ownership: single createdBy FK on Project (Linear/Jira/Asana pattern)
+#   - Delete: hard delete with cascade
+#   - Search scope: name search + status filter + 3 sorts + pagination
+#   - Past-deadline guard in service, msg "Please select a valid deadline."
+#   - Pagination cap: default 10, max 50
 
-tasks: []                 # Phase 2 GSD fills this
+tasks:
+  # ── Phase A: backend prisma + module skeleton ───────────────────────────────
+  - id: t1
+    desc: "prisma: add Project model + ProjectStatus enum (active|completed|on_hold) + createdBy FK to User. @@index on [status, createdAt]. snake_case @@map(projects)"
+    files: [backend/prisma/schema.prisma]
+    status: todo
+    receipt: null
+
+  - id: t2
+    desc: "prisma migrate dev --name add_project. verify table exists via psql. update prisma client + smoke test (prisma.project.count returns 0)"
+    files: [backend/prisma/migrations/, backend/src/config/__tests__/prisma.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t3
+    desc: "project.constant.ts (STATUSES, SORT_KEYS, DEFAULT_LIMIT=10, MAX_LIMIT=50) + project.validation.ts (createProjectSchema, updateProjectSchema, listProjectsQuerySchema, projectIdParamSchema) + Zod unit tests"
+    files: [backend/src/app/modules/project/project.constant.ts, backend/src/app/modules/project/project.validation.ts, backend/src/app/modules/project/__tests__/project.validation.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t4
+    desc: "project.service.ts CRUD core: create, findById, update, remove. Past-deadline guard (throws ApiError.unprocessable with assessment-verbatim message). Service unit tests against real prisma (cleanup demo project rows after)"
+    files: [backend/src/app/modules/project/project.service.ts, backend/src/app/modules/project/__tests__/project.service.crud.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t5
+    desc: "project.service.ts list({q, status, sort, page, limit}): Prisma where with contains-insensitive, status filter, orderBy switch, skip/take pagination, return {data, total, page, limit}. Tests for each filter, sort, pagination, empty result"
+    files: [backend/src/app/modules/project/project.service.ts, backend/src/app/modules/project/__tests__/project.service.list.test.ts]
+    status: todo
+    receipt: null
+
+  # ── Phase B: backend controller + routes ────────────────────────────────────
+  - id: t6
+    desc: "project.controller.ts (thin) + project.routes.ts (requireAuth on all; requireRole('admin','project_manager') on POST/PATCH/DELETE) + mount under /api/v1/projects. Integration happy-path tests (admin creates, all roles list, admin updates, admin deletes)"
+    files: [backend/src/app/modules/project/project.controller.ts, backend/src/app/modules/project/project.routes.ts, backend/src/app/routes/index.ts, backend/src/app/modules/project/__tests__/project.routes.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t7
+    desc: "integration negative paths: 401 unauth, 403 member tries POST/PATCH/DELETE, 404 missing id, 422 invalid body, pagination cap enforcement (limit=999 -> 50)"
+    files: [backend/src/app/modules/project/__tests__/project.routes.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t8
+    desc: "past-deadline rejection covered end-to-end: POST + PATCH with deadline in past -> 422 with exact assessment message; valid future deadline accepted"
+    files: [backend/src/app/modules/project/__tests__/project.routes.test.ts]
+    status: todo
+    receipt: null
+
+  # ── Phase C: frontend lib + hooks + shadcn ──────────────────────────────────
+  - id: t9
+    desc: "lib/schemas/project.ts (mirror backend Zod) + lib/projects.ts (createProject, listProjects, getProject, updateProject, deleteProject) using existing apiGet/apiPost/apiPatch/apiDelete"
+    files: [frontend/src/lib/schemas/project.ts, frontend/src/lib/projects.ts]
+    status: todo
+    receipt: null
+
+  - id: t10
+    desc: "hooks/useProjects.ts: useProjects(filters), useProject(id), useCreateProject, useUpdateProject, useDeleteProject with TanStack invalidation on ['projects'] + ['project', id]. Unit tests stubbing fetch"
+    files: [frontend/src/hooks/useProjects.ts, frontend/src/hooks/__tests__/useProjects.test.tsx]
+    status: todo
+    receipt: null
+
+  - id: t11
+    desc: "shadcn add: select, alert-dialog, badge, textarea. Smoke render tests for each (Badge variants)"
+    files: [frontend/src/components/ui/select.tsx, frontend/src/components/ui/alert-dialog.tsx, frontend/src/components/ui/badge.tsx, frontend/src/components/ui/textarea.tsx]
+    status: todo
+    receipt: null
+
+  # ── Phase D: frontend pages ─────────────────────────────────────────────────
+  - id: t12
+    desc: "/projects/page.tsx: list with cards (name, status badge, deadline, createdAt), search box, status filter Select, sort Select (created/deadline/updated), pagination prev/next, 'New Project' button gated by useRole. Loading/empty/error states. Page test for filter/sort/paginate interactions"
+    files: [frontend/src/app/projects/page.tsx, frontend/src/app/projects/__tests__/page.test.tsx]
+    status: todo
+    receipt: null
+
+  - id: t13
+    desc: "/projects/new/page.tsx: create form (name, description, deadline date input, status Select) with RHF+Zod. Member -> redirect /forbidden via useRole. Success -> router.push to detail page. Test happy + RBAC redirect"
+    files: [frontend/src/app/projects/new/page.tsx, frontend/src/app/projects/new/__tests__/page.test.tsx]
+    status: todo
+    receipt: null
+
+  - id: t14
+    desc: "/projects/[id]/page.tsx: detail view (name, description, status badge, deadline, createdBy email, timestamps). Edit + Delete buttons rendered only for Admin/PM. Test rendering + RBAC button visibility"
+    files: [frontend/src/app/projects/[id]/page.tsx, frontend/src/app/projects/[id]/__tests__/page.test.tsx]
+    status: todo
+    receipt: null
+
+  - id: t15
+    desc: "/projects/[id]/edit/page.tsx: update form prefilled from useProject. Member -> /forbidden. Submit -> router.push detail. Test happy + RBAC"
+    files: [frontend/src/app/projects/[id]/edit/page.tsx, frontend/src/app/projects/[id]/edit/__tests__/page.test.tsx]
+    status: todo
+    receipt: null
+
+  - id: t16
+    desc: "DeleteProjectButton component using shadcn AlertDialog. Confirm copy: 'Delete project? This cannot be undone.' Fires useDeleteProject + router.push('/projects'). Wired into detail page Delete button. Test confirm + cancel paths"
+    files: [frontend/src/components/projects/delete-project-button.tsx, frontend/src/components/projects/__tests__/delete-project-button.test.tsx, frontend/src/app/projects/[id]/page.tsx]
+    status: todo
+    receipt: null
+
+  # ── Phase E: wrap ───────────────────────────────────────────────────────────
+  - id: t17
+    desc: "Header: add Projects nav link (visible to all authed users). Update dashboard page to link to /projects. Smoke test header renders link when authed"
+    files: [frontend/src/components/header.tsx, frontend/src/app/dashboard/page.tsx]
+    status: todo
+    receipt: null
+
+  - id: t18
+    desc: "coverage check + cleanup: backend project module >=80% lines, frontend project pages+hooks >=70%. Remove any TODO markers, update root README with project routes list"
+    files: [README.md]
+    status: todo
+    receipt: null
 
 blockers: []
 
-next_task: null
+next_task: t1
 
 phase_completion:
-  gstack: false           # flip true after user confirms goal.md
-  gsd: false
+  gstack: true            # locked 2026-06-03 by user
+  gsd: false              # flips true when user OKs board
   superpowers: false
   ralph_wiggum: false
