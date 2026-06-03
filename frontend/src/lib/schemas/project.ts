@@ -56,6 +56,12 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type ListProjectsQuery = z.infer<typeof listProjectsQuerySchema>;
 
+export type ProjectCreator = {
+  id: string;
+  email: string;
+  name: string;
+};
+
 export type Project = {
   id: string;
   name: string;
@@ -63,6 +69,7 @@ export type Project = {
   deadline: string;
   status: ProjectStatus;
   createdBy: string;
+  creator: ProjectCreator;
   createdAt: string;
   updatedAt: string;
 };
