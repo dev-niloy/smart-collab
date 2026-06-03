@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts. This file holds the story.
 
 ## Session log
+- 2026-06-03: Phase 3 — Phase B complete (t6-t9: express boot + healthz, typed env loader, ApiError + zod handler + error middleware, validate middleware). Backend test count 20/20. Scope correction: skipped AppError (not in solvemeet pattern, just ApiError). Next: Phase C prisma (t10-t12).
 - 2026-06-03: Phase 3 — Phase A complete (t1-t5: monorepo root, docker postgres on 5433, backend toolchain, Next.js frontend, GH Actions CI). Stopping for user checkpoint per per-phase cadence. Next: Phase B backend core (t6-t9).
 - 2026-06-03: Killed orphan GoalBuddy daemon (was regenerating docs/goals/foundation-exec/ from prior session). Added belt-and-suspenders gitignore for *-exec/ + .goalbuddy-board/.
 - 2026-06-03: Phase 3 Superpowers — entering TDD loop at t1. Git initialized at root (main protected). Branches: develop off main, feature/foundation off develop. Removed orphan docs/goals/foundation-exec/ (v2 schema from prior session, conflicted with WORKFLOW.md hybrid).

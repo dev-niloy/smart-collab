@@ -50,26 +50,26 @@ tasks:
   - id: t6
     desc: "backend boot: app.ts (helmet, cors from env, pino logger, json limits) + server.ts + GET /healthz returning {ok:true}; integration test"
     files: [backend/src/app.ts, backend/src/server.ts, backend/src/app/routes/index.ts, backend/src/__tests__/healthz.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "jest healthz suite 3/3: /healthz 200 {ok:true}, helmet x-content-type-options:nosniff, unknown route 404 json | typecheck + lint clean | app.disable('x-powered-by') | pino-http silenced in NODE_ENV=test | cors reads CORS_ORIGINS csv from env, credentials:true | json + urlencoded 1mb limits | cookie-parser wired"
 
   - id: t7
     desc: "config/env.ts: Zod-validated env loader, fail-fast on missing/invalid, exports typed Env; unit test for failure mode"
     files: [backend/src/config/env.ts, backend/src/config/__tests__/env.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "jest env suite 6/6: complete valid env, csv CORS_ORIGINS parse, missing JWT_ACCESS_SECRET throws, short secret throws, non-numeric PORT throws, bad NODE_ENV throws | enums NODE_ENV=[dev|test|prod] | secrets min 32 chars | TTL regex /^\\d+(ms|s|m|h|d)$/ | export loadEnv + memoized env() + resetEnvCache for tests | typecheck + lint clean"
 
   - id: t8
-    desc: "errors layer: ApiError + AppError classes + global error-handler middleware mirroring solvemeet pattern; unit test on shape"
-    files: [backend/src/app/errors/ApiError.ts, backend/src/app/errors/AppError.ts, backend/src/app/middlewares/errorHandler.ts, backend/src/app/middlewares/__tests__/errorHandler.test.ts]
-    status: todo
-    receipt: null
+    desc: "errors layer: ApiError class + handleZodError + global error-handler middleware mirroring solvemeet pattern (no AppError; solvemeet doesn't have one); unit tests on shape"
+    files: [backend/src/app/errors/ApiError.ts, backend/src/app/errors/handleZodError.ts, backend/src/app/middlewares/errorHandler.ts, backend/src/app/middlewares/__tests__/errorHandler.test.ts, backend/src/app.ts]
+    status: done
+    receipt: "jest errorHandler suite 5/5: ApiError 409 with details + code, ZodError -> 422 VALIDATION_ERROR + issues array, generic Error -> 500 INTERNAL, unknown route -> 404 NOT_FOUND, all ApiError statics map to correct status codes | scope-correction: built ApiError only (no AppError) matching solvemeet pattern | statics: badRequest/unauthorized/forbidden/notFound/conflict/unprocessable/internal | app.ts wired to use notFoundHandler + errorHandler | typecheck + lint clean"
 
   - id: t9
-    desc: "validation middleware: generic validate(schema) Zod wrapper returning 422 ApiError on fail; unit test happy+sad"
+    desc: "validation middleware: generic validate({body,query,params}) Zod wrapper returning 422 ApiError on fail; unit test happy+sad"
     files: [backend/src/app/middlewares/validate.ts, backend/src/app/middlewares/__tests__/validate.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "jest validate suite 6/6: valid body parses + replaces req.body, invalid body 422 multi-issue, missing field 422, query coerce + default works, bad uuid param 422, good uuid param 200 | API: validate({body?,query?,params?}) -> RequestHandler, throws ZodError on fail (caught by errorHandler -> 422 VALIDATION_ERROR with paths) | typecheck + lint clean | TOTAL backend tests now 20/20"
 
   # ── Phase C: prisma ────────────────────────────────────────────────────────
   - id: t10
@@ -179,7 +179,7 @@ tasks:
 
 blockers: []
 
-next_task: t6
+next_task: t10
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
