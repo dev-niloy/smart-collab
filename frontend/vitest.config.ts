@@ -13,7 +13,16 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.{test,spec}.{ts,tsx}', 'src/**/__tests__/**'],
+      exclude: [
+        'src/**/*.{test,spec}.{ts,tsx}',
+        'src/**/__tests__/**',
+        // shadcn vendor components (external code, not ours)
+        'src/components/ui/**',
+        // Next.js middleware/runtime — hard to unit-test, exercised via integration
+        'src/middleware.ts',
+        'src/app/layout.tsx',
+        'src/app/page.tsx',
+      ],
     },
   },
   resolve: {
