@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-03: Phase 3 — t12 done. /projects list page: URL-state filters, debounced search (300ms), card grid, RBAC-gated CTA, two empty states, error retry, paginated. 8 page tests; frontend 54/54 vitest. Locked layout decisions: URL params (shareable + back-button), 300ms debounce, card grid, two empty states. Next: t13 /projects/new create form.
 - 2026-06-03: Phase 3 — t11 done. Phase C complete. shadcn primitives added (select, alert-dialog, badge, textarea); no package.json bump. 5/5 ui smoke. Frontend total now 49 tests across 11 files. Next: Phase D — t12 /projects list page.
 - 2026-06-03: Phase 3 — t10 done. hooks/useProjects.ts: useProjects/useProject + useCreate/Update/DeleteProject. Cache invalidation: detail cache primed on mutation success + list cache invalidated. 7 hook tests via renderHook + QueryClientProvider. Frontend 44/44 vitest. Next: t11 shadcn primitives (select, alert-dialog, badge, textarea).
 - 2026-06-03: Phase 3 — t9 done. Frontend lib: schemas/project.ts (Zod v4 mirror of backend contract) + projects.ts (API client w/ apiGet/Post/Patch/Delete, URLSearchParams query, Date->ISO serialization). 16/16 tests added; frontend 37/37 vitest, typecheck + lint clean. Next: t10 TanStack hooks (useProjects, useProject, useCreate/Update/DeleteProject with invalidation).

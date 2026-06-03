@@ -91,8 +91,8 @@ tasks:
   - id: t12
     desc: "/projects/page.tsx: list with cards (name, status badge, deadline, createdAt), search box, status filter Select, sort Select (created/deadline/updated), pagination prev/next, 'New Project' button gated by useRole. Loading/empty/error states. Page test for filter/sort/paginate interactions"
     files: [frontend/src/app/projects/page.tsx, frontend/src/app/projects/__tests__/page.test.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "URL params source-of-truth for q/status/sort/page; useSearchParams + router.replace (no history pollution). Mutating filters resets page. Debounced search 300ms. Sync queryInput<->URL via render-time setState pattern (not effect) to satisfy react-hooks/set-state-in-effect rule. Layout: 1/2/3-col responsive card grid; each card name+status Badge+deadline+createdAt, wrapped in Link to /projects/[id]. Toolbar: Input, status Select (All + 3 statuses), sort Select (Newest/Deadline soonest/Recently updated). New Project Button gated by useRole (admin|project_manager). States: skeleton cards (3) on loading, two differentiated empty states (no projects yet w/ create CTA vs no matches w/ clear-filters), error card with Retry. Pagination prev/next w/ disabled boundaries + 'Page X of Y'. Tests 8/8: cards render, admin sees CTA, member doesn't, debounced search pushes q=, empty no-filter vs empty with-filter (clear button -> /projects), error retry, next advances page=2 / prev disabled on page 1. Frontend 54/54 vitest, typecheck + lint clean."
 
   - id: t13
     desc: "/projects/new/page.tsx: create form (name, description, deadline date input, status Select) with RHF+Zod. Member -> redirect /forbidden via useRole. Success -> router.push to detail page. Test happy + RBAC redirect"
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t12
+next_task: t13
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
