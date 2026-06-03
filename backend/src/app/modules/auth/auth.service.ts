@@ -7,6 +7,7 @@ import type { SignupInput, LoginInput } from './auth.validation';
 import {
   signAccessToken,
   signRefreshToken,
+  verifyRefreshToken,
   hashRefreshToken,
   ttlToMs,
 } from './auth.tokens';
@@ -101,10 +102,65 @@ const demoLogin = async (role: Role, ctx: AuthContext = {}): Promise<AuthResult>
   return issueTokensAndSession(user, ctx);
 };
 
+const refresh = async (refreshToken: string, ctx: AuthContext = {}): Promise<AuthResult> => {
+  let payload;
+  try {
+    payload = verifyRefreshToken(refreshToken);
+  } catch {
+    throw ApiError.unauthorized('Invalid refresh token', 'INVALID_REFRESH');
+  }
+
+  const expectedHash = hashRefreshToken(refreshToken);
+  const session = await prisma.session.findUnique({ where: { id: payload.jti } });
+
+  if (!session) {
+    // Token verifies but jti not in DB -> reuse. Burn all user sessions.
+    await prisma.session.deleteMany({ where: { userId: payload.sub } });
+    throw ApiError.unauthorized('Refresh token reuse detected', 'REFRESH_REUSE');
+  }
+
+  if (session.refreshTokenHash !== expectedHash || session.userId !== payload.sub) {
+    await prisma.session.deleteMany({ where: { userId: payload.sub } });
+    throw ApiError.unauthorized('Refresh token reuse detected', 'REFRESH_REUSE');
+  }
+
+  if (session.expiresAt.getTime() <= Date.now()) {
+    await prisma.session.delete({ where: { id: session.id } });
+    throw ApiError.unauthorized('Refresh token expired', 'REFRESH_EXPIRED');
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  if (!user) {
+    await prisma.session.delete({ where: { id: session.id } });
+    throw ApiError.unauthorized('User not found', 'INVALID_REFRESH');
+  }
+
+  await prisma.session.delete({ where: { id: session.id } });
+  return issueTokensAndSession(user, ctx);
+};
+
+const logout = async (refreshToken: string): Promise<void> => {
+  try {
+    const payload = verifyRefreshToken(refreshToken);
+    await prisma.session.deleteMany({ where: { id: payload.jti } });
+  } catch {
+    // swallow — logout is idempotent and never reveals validity
+  }
+};
+
+const me = async (userId: string): Promise<PublicUser> => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw ApiError.unauthorized('User not found', 'USER_NOT_FOUND');
+  return stripPassword(user);
+};
+
 export const authService = {
   register,
   login,
   demoLogin,
+  refresh,
+  logout,
+  me,
   stripPassword,
   issueTokensAndSession,
 };
