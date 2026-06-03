@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts. This file holds the story.
 
 ## Session log
+- 2026-06-03: Phase 3 Superpowers — entering TDD loop at t1. Git initialized at root (main protected). Branches: develop off main, feature/foundation off develop. Removed orphan docs/goals/foundation-exec/ (v2 schema from prior session, conflicted with WORKFLOW.md hybrid).
 - 2026-06-03: Phase 2 GSD — board sliced into 26 tasks (t1-t26) across 6 phases: monorepo+infra, backend core, prisma, auth module, frontend foundation, deploy plumbing. Each task ~2-5 min, ends with commit. Awaiting user OK before Phase 3.
 - 2026-06-03: Phase 1 GStack locked by user. Moving to Phase 2 GSD.
 - 2026-06-03: Phase 1 GStack — `goal.md` drafted. Scope: monorepo scaffold + raw-auth backend module + RBAC + Prisma schema (User/Session/ActivityLog placeholder) + Next.js+shadcn shell with Login/Signup/Dashboard/Demo Login + CI + deploy plumbing (no public push yet). Awaiting user lock before Phase 2 slicing.

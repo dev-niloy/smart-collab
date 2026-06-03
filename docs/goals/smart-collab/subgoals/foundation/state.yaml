@@ -1,13 +1,13 @@
 feature: foundation
 created: 2026-06-03
-updated: 2026-06-03
+updated: 2026-06-03  # t1 done
 
 mode:
   type: greenfield
   scope: feature
   session: new
 
-phase: 2                  # GSD — board sliced, ready for Phase 3 once user OKs
+phase: 3                  # Superpowers — TDD per task starting at t1
 
 # Locked Phase 2 decisions (also in progress.md Decisions):
 #   - Auth transport: access + refresh BOTH httpOnly cookies (SameSite=Lax dev / None+Secure prod)
@@ -19,13 +19,13 @@ tasks:
   - id: t1
     desc: "monorepo root: package.json (root scripts), README.md skeleton, branches develop+main, .env.example stub"
     files: [package.json, README.md, .env.example]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "pkg parse: smart-collab v0.1.0 with 17 scripts | README: 9 H2 sections (Stack/Repo/Setup/Features/Env/Demo/Deploy/Workflow/Scripts) | .env.example: 13 env keys (DATABASE_URL, JWT_*, ACCESS/REFRESH_TOKEN_TTL, CORS_ORIGINS, COOKIE_DOMAIN, DEMO_*_PW, NEXT_PUBLIC_API_URL) | branches: main/develop/feature/foundation | commit 7027bb3"
 
   - id: t2
     desc: "docker-compose.yml at root with postgres service + .env wiring; verify `docker compose up -d postgres` connects via psql"
     files: [docker-compose.yml, .env.example]
-    status: todo
+    status: active
     receipt: null
 
   - id: t3
@@ -179,10 +179,10 @@ tasks:
 
 blockers: []
 
-next_task: t1
+next_task: t2
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
-  gsd: false              # flips true when user OKs this board
+  gsd: true               # locked 2026-06-03 by user; board has 26 tasks t1-t26
   superpowers: false
   ralph_wiggum: false
