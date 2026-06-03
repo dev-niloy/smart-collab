@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import type { Role, User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
 import { BCRYPT_ROUNDS } from './auth.constant';
@@ -65,13 +66,24 @@ const register = async (input: SignupInput, ctx: AuthContext = {}): Promise<Auth
     throw ApiError.conflict('Email already registered', 'EMAIL_TAKEN');
   }
   const passwordHash = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
-  const user = await prisma.user.create({
-    data: {
-      email: input.email,
-      name: input.name,
-      passwordHash,
-    },
-  });
+  let user: User;
+  try {
+    user = await prisma.user.create({
+      data: {
+        email: input.email,
+        name: input.name,
+        passwordHash,
+      },
+    });
+  } catch (err) {
+    // findUnique + create is non-atomic — a concurrent signup with the same email
+    // can slip past the existence check and hit the unique constraint here.
+    // Re-map to the same 409 the slow path returns.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      throw ApiError.conflict('Email already registered', 'EMAIL_TAKEN');
+    }
+    throw err;
+  }
   return issueTokensAndSession(user, ctx);
 };
 
