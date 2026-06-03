@@ -109,8 +109,8 @@ tasks:
   - id: t15
     desc: "/projects/[id]/edit/page.tsx: update form prefilled from useProject. Member -> /forbidden. Submit -> router.push detail. Test happy + RBAC"
     files: [frontend/src/app/projects/[id]/edit/page.tsx, frontend/src/app/projects/[id]/edit/__tests__/page.test.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "Mirrors t13 new-form pattern: same FormValues shape (deadline as string from <input type='date'>), zodResolver, member redirect via useRole. Prefill via useEffect on project load: reset({name, description, deadline: toDateInput(iso), status}). toDateInput formats ISO -> YYYY-MM-DD (local TZ) for native date input. Submit converts deadline string -> Date, calls useUpdateProject(id). Success -> toast + router.push('/projects/{id}'). Cancel link -> detail. States: 'Checking permissions…' while role loads, 'Loading project…' while project loads, 'Project not found' on error. Tests 2/2: admin prefills 'Launch Site', edits to 'Launch Site v2', updateSpy called with (id, payload incl Date deadline), pushSpy to /projects/p-1; member redirected to /forbidden w/o update call. Frontend 63/63 vitest."
 
   - id: t16
     desc: "DeleteProjectButton component using shadcn AlertDialog. Confirm copy: 'Delete project? This cannot be undone.' Fires useDeleteProject + router.push('/projects'). Wired into detail page Delete button. Test confirm + cancel paths"
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t15
+next_task: t16
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user

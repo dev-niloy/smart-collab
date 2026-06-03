@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-03: Phase 3 — t15 done. /projects/[id]/edit form: prefilled from useProject via reset(), toDateInput formats ISO -> YYYY-MM-DD for native date input, member redirect, push detail on save. 2 page tests; frontend 63/63. Next: t16 DeleteProjectButton w/ AlertDialog.
 - 2026-06-03: Phase 3 — t14 done. Embedded creator{id,email,name} in API (industry standard, single round-trip). /projects/[id] detail page: name, description, status Badge, deadline, "Created by Alice (alice@x.y)", timestamps, RBAC-gated Edit link + Delete button stub. useParams (not Promise params) for testability. Backend 135/135 (+1 creator assertion); frontend 61/61. Next: t15 /projects/[id]/edit form.
 - 2026-06-03: Phase 3 — t13 done. /projects/new create form: RHF+Zod (form schema split from backend coerce-date for type sanity), Textarea + date Input + Select, member redirected to /forbidden via useRole, toast on success/error, push to detail on create. 3 page tests; frontend 57/57. Next: t14 /projects/[id] detail page.
 - 2026-06-03: Phase 3 — t12 done. /projects list page: URL-state filters, debounced search (300ms), card grid, RBAC-gated CTA, two empty states, error retry, paginated. 8 page tests; frontend 54/54 vitest. Locked layout decisions: URL params (shareable + back-button), 300ms debounce, card grid, two empty states. Next: t13 /projects/new create form.
