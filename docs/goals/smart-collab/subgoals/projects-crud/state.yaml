@@ -103,8 +103,8 @@ tasks:
   - id: t14
     desc: "/projects/[id]/page.tsx: detail view (name, description, status badge, deadline, createdBy email, timestamps). Edit + Delete buttons rendered only for Admin/PM. Test rendering + RBAC button visibility"
     files: [frontend/src/app/projects/[id]/page.tsx, frontend/src/app/projects/[id]/__tests__/page.test.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "Industry-standard creator embed (Linear/GitHub/Jira pattern): backend service includes creator{id,email,name} in create/findById/update/list — avoids N+1 + extra round-trip. ProjectWithCreator type exported. Frontend Project type extended with ProjectCreator. Detail page uses useParams (not Promise params) for testability; useProject(id) loads data; renders name, description (or 'No description' italics), status Badge, dl grid (Deadline, Status, Created, Updated), 'Created by {name} ({email})' in CardDescription, back link to /projects. Edit link + Delete button (currently disabled stub w/ aria-label 'coming in t16') gated on canMutate (admin|project_manager). Error/missing -> Retry card. Tests 4/4: fields render + creator email shown, admin sees Edit link + Delete button, member hidden, error -> Retry visible. Backend 135/135 still green (1 assertion added: creator.email + creator.name). Frontend 61/61 vitest, typecheck + lint clean (1 RHF warning carried)."
 
   - id: t15
     desc: "/projects/[id]/edit/page.tsx: update form prefilled from useProject. Member -> /forbidden. Submit -> router.push detail. Test happy + RBAC"
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t14
+next_task: t15
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user

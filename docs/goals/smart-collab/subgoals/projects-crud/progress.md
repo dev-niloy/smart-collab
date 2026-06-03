@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-03: Phase 3 — t14 done. Embedded creator{id,email,name} in API (industry standard, single round-trip). /projects/[id] detail page: name, description, status Badge, deadline, "Created by Alice (alice@x.y)", timestamps, RBAC-gated Edit link + Delete button stub. useParams (not Promise params) for testability. Backend 135/135 (+1 creator assertion); frontend 61/61. Next: t15 /projects/[id]/edit form.
 - 2026-06-03: Phase 3 — t13 done. /projects/new create form: RHF+Zod (form schema split from backend coerce-date for type sanity), Textarea + date Input + Select, member redirected to /forbidden via useRole, toast on success/error, push to detail on create. 3 page tests; frontend 57/57. Next: t14 /projects/[id] detail page.
 - 2026-06-03: Phase 3 — t12 done. /projects list page: URL-state filters, debounced search (300ms), card grid, RBAC-gated CTA, two empty states, error retry, paginated. 8 page tests; frontend 54/54 vitest. Locked layout decisions: URL params (shareable + back-button), 300ms debounce, card grid, two empty states. Next: t13 /projects/new create form.
 - 2026-06-03: Phase 3 — t11 done. Phase C complete. shadcn primitives added (select, alert-dialog, badge, textarea); no package.json bump. 5/5 ui smoke. Frontend total now 49 tests across 11 files. Next: Phase D — t12 /projects list page.
@@ -15,6 +16,7 @@ Thin log. Board (`state.yaml`) holds task status + receipts.
 - 2026-06-03: Phase 1 GStack — branched feature/projects-crud off develop. Drafted goal.md covering backend project module + Prisma Project model + frontend list/detail/create/edit pages + basic search/filter/sort/pagination + RBAC matrix. Awaiting user lock before Phase 2 slicing.
 
 ## Decisions
+- 2026-06-03: **Embed `creator` relation in Project API responses.** Linear/GitHub/Jira pattern. Single round-trip for "Created by Alice" UI. Applied to create/findById/update/list. Frontend Project type extended with ProjectCreator{id,email,name}.
 - 2026-06-03: **RBAC: Admin + PM mutate; Member read-only.** Matches assessment §1 example. Server enforces; frontend hides buttons (UX only).
 - 2026-06-03: **Single `createdBy` FK on Project, not multi-owner join table.** Industry standard (Linear/Jira/Asana). Lowest schema churn. Multi-membership belongs to `team-collab` subgoal via a separate `ProjectMember` join table — added later without altering Project columns.
 - 2026-06-03: **Hard delete with cascade**, no soft delete. Assessment scope. `Task` (added in tasks-crud) will FK with `onDelete: Cascade`. Soft delete adds query complexity not worth here.
