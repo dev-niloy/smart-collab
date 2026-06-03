@@ -25,9 +25,24 @@ export function Header() {
   return (
     <header className="border-b">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/dashboard" className="font-semibold tracking-tight">
-          Smart Collab
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/dashboard" className="font-semibold tracking-tight">
+            Smart Collab
+          </Link>
+          {!isLoading && user ? (
+            <nav className="flex items-center gap-4 text-sm">
+              <Link
+                href="/dashboard"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Dashboard
+              </Link>
+              <Link href="/projects" className="text-muted-foreground hover:text-foreground">
+                Projects
+              </Link>
+            </nav>
+          ) : null}
+        </div>
         <div className="flex items-center gap-3">
           {!isLoading && user && (
             <span className="hidden text-sm text-muted-foreground sm:inline">
