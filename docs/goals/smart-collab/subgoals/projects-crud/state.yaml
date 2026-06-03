@@ -121,22 +121,22 @@ tasks:
   # ── Phase E: wrap ───────────────────────────────────────────────────────────
   - id: t17
     desc: "Header: add Projects nav link (visible to all authed users). Update dashboard page to link to /projects. Smoke test header renders link when authed"
-    files: [frontend/src/components/header.tsx, frontend/src/app/dashboard/page.tsx]
-    status: todo
-    receipt: null
+    files: [frontend/src/components/header.tsx, frontend/src/app/dashboard/page.tsx, frontend/src/components/__tests__/header.test.tsx]
+    status: done
+    receipt: "Header now shows Dashboard + Projects nav links when authed (gated on !isLoading && user). Dashboard Projects KPI card converted to <Link href='/projects'> 'Open →' (still satisfies existing dashboard test 'Projects' text assertion). Header tests 2/2: authed renders both nav links + Logout; unauthed shows brand only (no Projects link, no Logout)."
 
   - id: t18
     desc: "coverage check + cleanup: backend project module >=80% lines, frontend project pages+hooks >=70%. Remove any TODO markers, update root README with project routes list"
     files: [README.md]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "Backend project module coverage 95.19% lines (target >=80%, +15pp margin) — service 100%, controller 100%, routes 100%, validation 100%. Frontend project files coverage all >=83% (list 86.95%, detail 83.33%, edit 90.24%, new 88.88%, delete-button 88.23%, hooks/useProjects 100%, lib/projects 100%, schemas 100%) — all over 70% target. Zero TODO/FIXME markers in src. README extended with API routes table (auth + projects with method/path/roles/description) + frontend pages list. FINAL: backend 135/135 jest, frontend 68/68 vitest, typecheck + lint clean. Subgoal projects-crud COMPLETE — all 18 tasks done across 5 phases (A prisma+module, B controller+routes, C lib+hooks+ui, D pages, E nav+docs)."
 
 blockers: []
 
-next_task: t17
+next_task: null  # all 18 tasks done
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
   gsd: true               # locked 2026-06-03 by user
-  superpowers: false
+  superpowers: true       # all 18 tasks done 2026-06-03
   ralph_wiggum: false

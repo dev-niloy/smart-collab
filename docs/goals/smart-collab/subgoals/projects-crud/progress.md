@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-03: Phase 3 COMPLETE. Phase E shipped: t17 header Projects nav link + dashboard KPI as clickable Card, header tests 2/2. t18 coverage check (backend project 95.19% lines, frontend project files all >=83%, no TODOs) + README API routes table + frontend pages. Final: backend 135/135, frontend 68/68. Ready for Phase 4 Ralph Wiggum review on PR #7.
 - 2026-06-03: Phase 3 — t16 done. Phase D complete. DeleteProjectButton w/ AlertDialog (controlled open, base-ui), confirm copy verbatim, wired into detail page replacing stub. 3 tests; frontend 66/66. Pushed feature/projects-crud to origin; PR #7 open vs develop. Next: Phase E — t17 (router gating / app navigation) + t18 (coverage check, README, cleanup).
 - 2026-06-03: Phase 3 — t15 done. /projects/[id]/edit form: prefilled from useProject via reset(), toDateInput formats ISO -> YYYY-MM-DD for native date input, member redirect, push detail on save. 2 page tests; frontend 63/63. Next: t16 DeleteProjectButton w/ AlertDialog.
 - 2026-06-03: Phase 3 — t14 done. Embedded creator{id,email,name} in API (industry standard, single round-trip). /projects/[id] detail page: name, description, status Badge, deadline, "Created by Alice (alice@x.y)", timestamps, RBAC-gated Edit link + Delete button stub. useParams (not Promise params) for testability. Backend 135/135 (+1 creator assertion); frontend 61/61. Next: t15 /projects/[id]/edit form.
