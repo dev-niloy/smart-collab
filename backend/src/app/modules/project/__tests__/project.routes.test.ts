@@ -191,4 +191,67 @@ maybe('project routes /api/v1/projects', () => {
     expect(res.status).toBe(422);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
   });
+
+  it('list pagination cap: limit=999 coerced to MAX_LIMIT=50', async () => {
+    const agent = await loginAs('admin');
+    for (let i = 0; i < 3; i++) {
+      await agent
+        .post('/api/v1/projects')
+        .send({ name: `P${i}`, deadline: future(7 + i) })
+        .expect(201);
+    }
+    const res = await agent.get('/api/v1/projects?limit=999');
+    expect(res.status).toBe(200);
+    expect(res.body.limit).toBe(50);
+    expect(res.body.total).toBe(3);
+  });
+
+  it('list with q + status + sort=deadline filters/sorts correctly', async () => {
+    const agent = await loginAs('admin');
+    await agent
+      .post('/api/v1/projects')
+      .send({ name: 'Alpha Site', deadline: future(30), status: 'active' })
+      .expect(201);
+    await agent
+      .post('/api/v1/projects')
+      .send({ name: 'Alpha Brand', deadline: future(5), status: 'active' })
+      .expect(201);
+    await agent
+      .post('/api/v1/projects')
+      .send({ name: 'Beta Onboarding', deadline: future(2), status: 'completed' })
+      .expect(201);
+    const res = await agent.get('/api/v1/projects?q=alpha&status=active&sort=deadline');
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBe(2);
+    expect(res.body.data[0].name).toBe('Alpha Brand');
+    expect(res.body.data[1].name).toBe('Alpha Site');
+  });
+
+  it('PATCH past deadline → 422 PAST_DEADLINE with assessment-verbatim message', async () => {
+    const agent = await loginAs('admin');
+    const created = await agent
+      .post('/api/v1/projects')
+      .send({ name: 'Future then past', deadline: future() })
+      .expect(201);
+    const res = await agent
+      .patch(`/api/v1/projects/${created.body.project.id}`)
+      .send({ deadline: past() });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('PAST_DEADLINE');
+    expect(res.body.error.message).toBe('Please select a valid deadline.');
+  });
+
+  it('GET unknown id → 404 PROJECT_NOT_FOUND', async () => {
+    const agent = await loginAs('admin');
+    const res = await agent.get('/api/v1/projects/00000000-0000-0000-0000-000000000000');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('PROJECT_NOT_FOUND');
+  });
+
+  it('DELETE unknown id → 404 PROJECT_NOT_FOUND', async () => {
+    const agent = await loginAs('admin');
+    const res = await agent.delete('/api/v1/projects/00000000-0000-0000-0000-000000000000');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('PROJECT_NOT_FOUND');
+  });
 });
