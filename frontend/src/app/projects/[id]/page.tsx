@@ -44,7 +44,9 @@ export default function ProjectDetailPage() {
         ) : isError || !project ? (
           <Card className="mt-4">
             <CardContent className="flex flex-col items-start gap-3 py-8">
-              <p className="text-sm text-muted-foreground">Project not found or failed to load.</p>
+              <p className="text-sm text-destructive" role="alert">
+                Project not found or failed to load.
+              </p>
               <Button variant="outline" onClick={() => refetch()}>
                 Retry
               </Button>

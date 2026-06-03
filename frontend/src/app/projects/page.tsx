@@ -174,7 +174,9 @@ export default function ProjectsPage() {
           ) : isError ? (
             <Card>
               <CardContent className="flex flex-col items-start gap-3 py-8">
-                <p className="text-sm text-muted-foreground">Failed to load projects.</p>
+                <p className="text-sm text-destructive" role="alert">
+                  Failed to load projects.
+                </p>
                 <Button variant="outline" onClick={() => refetch()}>
                   Retry
                 </Button>
