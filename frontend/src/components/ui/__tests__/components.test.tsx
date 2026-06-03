@@ -4,6 +4,8 @@ import { Button } from '../button';
 import { Input } from '../input';
 import { Label } from '../label';
 import { Card, CardHeader, CardTitle, CardContent } from '../card';
+import { Badge } from '../badge';
+import { Textarea } from '../textarea';
 
 describe('shadcn ui smoke', () => {
   it('renders a Button', () => {
@@ -35,5 +37,26 @@ describe('shadcn ui smoke', () => {
     );
     expect(screen.getByText('Hello')).toBeInTheDocument();
     expect(screen.getByText('World')).toBeInTheDocument();
+  });
+
+  it('renders Badge variants', () => {
+    const variants = ['default', 'secondary', 'destructive', 'outline'] as const;
+    render(
+      <div>
+        {variants.map((v) => (
+          <Badge key={v} variant={v}>
+            {v}
+          </Badge>
+        ))}
+      </div>,
+    );
+    for (const v of variants) {
+      expect(screen.getByText(v)).toBeInTheDocument();
+    }
+  });
+
+  it('renders Textarea', () => {
+    render(<Textarea placeholder="notes" />);
+    expect(screen.getByPlaceholderText(/notes/i)).toBeInTheDocument();
   });
 });
