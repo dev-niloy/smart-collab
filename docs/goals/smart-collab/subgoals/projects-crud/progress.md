@@ -28,4 +28,4 @@ Thin log. Board (`state.yaml`) holds task status + receipts.
 - 2026-06-03: **Basic search/filter/sort lands here, advanced cross-cutting deferred to t7 search-filter-sort.** Ship a usable list now; harmonize patterns across projects/tasks/members later.
 
 ## Blockers (human notes)
-None.
+- 2026-06-03 (Ralph iter 1): CONFLICT — Architect (helper extract) + Designer (error contrast) both edited same files (projects list + detail pages). Per skill, loop stopped. Two value-add commits landed: [Developer] typed list query, [Architect] lib/project-format helpers. Designer change reverted. Awaiting user decision before iter 2.
