@@ -61,12 +61,19 @@ for i in {1..30}; do
 done
 
 # 2. backend + frontend in parallel
-log "starting backend (port 4000)"
-npm --prefix backend run dev &
+# Heap caps keep total RAM in check on dev laptops with limited free memory.
+# Override via SC_BACKEND_HEAP_MB / SC_FRONTEND_HEAP_MB env if you want more.
+BACKEND_HEAP_MB="${SC_BACKEND_HEAP_MB:-768}"
+FRONTEND_HEAP_MB="${SC_FRONTEND_HEAP_MB:-1536}"
+
+log "starting backend (port 4000, heap ${BACKEND_HEAP_MB}MB)"
+NODE_OPTIONS="--max-old-space-size=${BACKEND_HEAP_MB}" \
+  npm --prefix backend run dev &
 BACKEND_PID=$!
 
-log "starting frontend (port 3000)"
-npm --prefix frontend run dev &
+log "starting frontend (port 3000, heap ${FRONTEND_HEAP_MB}MB, webpack)"
+NODE_OPTIONS="--max-old-space-size=${FRONTEND_HEAP_MB}" \
+  npm --prefix frontend run dev &
 FRONTEND_PID=$!
 
 log "stack up. ctrl+c to stop everything."

@@ -141,9 +141,9 @@ Branches:
 
 | Script                 | What it does                                      |
 |------------------------|---------------------------------------------------|
-| `npm run dev`          | Start full stack (postgres + backend + frontend); Ctrl+C stops all |
+| `npm run dev`          | Start full stack (postgres + backend + frontend); Ctrl+C stops all. Heap-capped (backend 768MB, frontend 1.5GB). Override with `SC_BACKEND_HEAP_MB` / `SC_FRONTEND_HEAP_MB`. Uses webpack (lower RAM than Turbopack). |
 | `npm run dev:backend`  | Start backend in watch mode                       |
-| `npm run dev:frontend` | Start Next.js dev server                          |
+| `npm run dev:frontend` | Start Next.js dev server (webpack)                |
 | `npm test`             | Run backend + frontend test suites                |
 | `npm run lint`         | Lint both apps                                    |
 | `npm run typecheck`    | Type-check both apps                              |
