@@ -27,11 +27,20 @@ export class ApiError extends Error implements ApiErrorShape {
   }
 }
 
+const DEFAULT_DEV_API = 'http://localhost:4000';
+
+let warned = false;
 const apiBase = (): string => {
   const raw = process.env.NEXT_PUBLIC_API_URL;
   if (!raw) {
-    if (typeof window === 'undefined') return 'http://localhost:4000';
-    return '';
+    if (typeof window !== 'undefined' && !warned) {
+      console.warn(
+        `[api] NEXT_PUBLIC_API_URL not set — falling back to ${DEFAULT_DEV_API}. ` +
+          `Set it in frontend/.env.local for prod.`,
+      );
+      warned = true;
+    }
+    return DEFAULT_DEV_API;
   }
   return raw.replace(/\/$/, '');
 };
