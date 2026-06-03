@@ -1,0 +1,28 @@
+feature: projects-crud
+created: 2026-06-03
+updated: 2026-06-03
+
+mode:
+  type: greenfield
+  scope: feature
+  session: new
+
+phase: 1                  # GStack — goal.md drafted, awaiting lock
+
+# Locked Phase 1 decisions (also in progress.md Decisions):
+#   - RBAC: Admin + PM mutate; Member read-only
+#   - Ownership: single createdBy FK on Project (Linear/Jira/Asana pattern). Members via team-collab later.
+#   - Delete: hard delete with cascade (tasks cascade in tasks-crud subgoal)
+#   - Search scope: name search + status filter + 3 sorts + pagination. Cross-cutting polish in t7.
+
+tasks: []                 # Phase 2 GSD fills this
+
+blockers: []
+
+next_task: null
+
+phase_completion:
+  gstack: false           # flip true after user confirms goal.md
+  gsd: false
+  superpowers: false
+  ralph_wiggum: false
