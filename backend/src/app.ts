@@ -1,10 +1,11 @@
-import express, { type Express, type NextFunction, type Request, type Response } from 'express';
+import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import pinoHttp from 'pino-http';
 
 import rootRouter from './app/routes';
+import { errorHandler, notFoundHandler } from './app/middlewares/errorHandler';
 
 const parseOrigins = (raw: string | undefined): string[] => {
   if (!raw) return [];
@@ -46,14 +47,8 @@ const buildApp = (): Express => {
 
   app.use(rootRouter);
 
-  app.use((_req: Request, res: Response) => {
-    res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    res.status(500).json({ error: { code: 'INTERNAL', message: err.message || 'Internal server error' } });
-  });
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
   return app;
 };
