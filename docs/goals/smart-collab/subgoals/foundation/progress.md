@@ -3,6 +3,8 @@
 Thin log. Board (`state.yaml`) holds task status + receipts. This file holds the story.
 
 ## Session log
+- 2026-06-03: Phase 3 SUPERPOWERS DONE. All 26 tasks across Phases A-F closed with non-null receipts. Backend 77/77 jest, frontend 21/21 vitest, both typecheck + lint clean. Next: Phase 4 Ralph Wiggum multi-persona review on feature/foundation -> develop PR.
+- 2026-06-03: Phase 3 — Phase F complete (t26: backend Dockerfile + vercel.ts). docker build --check clean; full build blocked locally by user's docker daemon network (npm crashes inside container — environmental, not Dockerfile).
 - 2026-06-03: Phase 3 — Phase E complete (t20-t25: shadcn ui, theme+query providers, api wrapper with refresh-once, login + demo buttons, signup, forbidden, dashboard shell + middleware guard). Frontend 23/23 vitest. next build green. shadcn v4 quirks: form CLI broken (built manually), @base-ui replaced radix (render-prop not asChild). Next: Phase F wrap (t26 Dockerfile + vercel.ts + README polish).
 - 2026-06-03: Phase 3 — Phase D complete (t13-t19: auth module fully wired). Backend 77/77 tests, coverage 92% on auth+middleware. Order swap: built t18 (requireAuth) before t17 (routes) since /me uses requireAuth. RBAC integration with 3-role matrix proven. Refresh-token reuse detection proven. Next: Phase E frontend foundation (t20-t25).
 - 2026-06-03: Phase 3 — Phase C complete (t10-t12: prisma schema + init migration + idempotent demo seed). DB has 4 tables, prisma client wrapper with global singleton, 26/26 backend tests. Next: Phase D auth module (t13-t19, biggest phase).
