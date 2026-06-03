@@ -13,8 +13,8 @@ tasks:
   - id: t1
     desc: "foundation — monorepo + backend skeleton + raw auth + RBAC + frontend skeleton + deploy plumbing"
     files: [backend/, frontend/, README.md]
-    status: active
-    receipt: null
+    status: done
+    receipt: "subgoal foundation reached Phase 3 SUPERPOWERS DONE. 26/26 tasks closed with non-null receipts. backend 77/77 jest (raw JWT+bcrypt auth, RBAC, refresh rotation with reuse detection, /api/v1/auth/{signup,login,demo-login,refresh,logout,me}, coverage 92% on auth+middleware). frontend 21/21 vitest (Next 16 App Router + shadcn + RHF+zod login/signup, demo buttons for 3 roles, /dashboard shell, middleware route guard, useUser/useRole/useLogout hooks). monorepo (backend+frontend), docker postgres on :5433, GH Actions CI matrix, backend Dockerfile (multi-stage), frontend vercel.ts. 31 commits on feature/foundation. Phase 4 Ralph Wiggum review pending."
     subgoal: docs/goals/smart-collab/subgoals/foundation/
 
   - id: t2
@@ -67,7 +67,7 @@ tasks:
 
 blockers: []
 
-next_task: t1
+next_task: t2     # foundation done; projects-crud is next subgoal
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user

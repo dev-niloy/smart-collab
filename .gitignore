@@ -33,6 +33,11 @@ coverage/
 # local experiment tracking — never push
 docs/EXPERIMENT-goalbuddy-tracker.md
 
+# goalbuddy daemon scratch dirs — never push (we use WORKFLOW.md hybrid, not v2 boards)
+docs/goals/foundation-exec/
+docs/goals/*-exec/
+**/.goalbuddy-board/
+
 # assessment brief — local only
 EAP 4.0 Assessment Task .md
 
