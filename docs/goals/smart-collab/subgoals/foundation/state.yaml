@@ -30,14 +30,14 @@ tasks:
 
   - id: t3
     desc: "backend init: package.json, tsconfig (strict), eslint, prettier, jest config + sample passing test"
-    files: [backend/package.json, backend/tsconfig.json, backend/.eslintrc.json, backend/.prettierrc.json, backend/jest.config.js, backend/src/__sample.test.ts]
-    status: active
-    receipt: null
+    files: [backend/package.json, backend/tsconfig.json, backend/tsconfig.build.json, backend/.eslintrc.json, backend/.prettierrc.json, backend/jest.config.js, backend/src/__sample.test.ts, backend/src/index.ts, backend/.gitignore]
+    status: done
+    receipt: "npm install: 583 packages added | typecheck (tsc --noEmit): clean | lint (eslint --ext .ts): clean | jest: 1 suite 2 tests passed (3.1s) | strict mode TS5.7 + ESLint 8 + ts-jest 29 | split tsconfig (eslint includes tests, build excludes). deps: express helmet cors cookie-parser pino zod bcrypt jsonwebtoken @prisma/client + dev typings/eslint/jest/tsx"
 
   - id: t4
     desc: "frontend init: create-next-app (TS, Tailwind, App Router, ESLint), commit baseline, vitest+RTL configured, sample passing test"
     files: [frontend/package.json, frontend/tsconfig.json, frontend/next.config.ts, frontend/vitest.config.ts, frontend/src/app/page.tsx]
-    status: todo
+    status: active
     receipt: null
 
   - id: t5
@@ -179,7 +179,7 @@ tasks:
 
 blockers: []
 
-next_task: t3
+next_task: t4
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
