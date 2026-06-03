@@ -136,39 +136,39 @@ tasks:
   # ── Phase E: frontend foundation ───────────────────────────────────────────
   - id: t20
     desc: "shadcn init + add: button, input, label, form, card, dropdown-menu, sonner (toast); tailwind tokens; smoke render test"
-    files: [frontend/components.json, frontend/src/components/ui/**, frontend/tailwind.config.ts]
-    status: todo
-    receipt: null
+    files: [frontend/components.json, frontend/src/components/ui/button.tsx, frontend/src/components/ui/input.tsx, frontend/src/components/ui/label.tsx, frontend/src/components/ui/card.tsx, frontend/src/components/ui/dropdown-menu.tsx, frontend/src/components/ui/sonner.tsx, frontend/src/lib/utils.ts]
+    status: done
+    receipt: "shadcn init --defaults: scaffold using @base-ui/react primitives (shadcn v4.x — radix replaced) + lucide-react + tw-animate-css | added 6 components | shadcn registry `form` would not write (CLI quirk); built form manually in t23 with RHF + Input/Label (no shadcn form wrapper needed) | vitest smoke 3/3: Button, Input+Label, Card+Title+Content all render"
 
   - id: t21
     desc: "providers: ThemeProvider (next-themes, class strategy) + QueryClientProvider (TanStack) in root layout; theme toggle component (used later)"
-    files: [frontend/src/app/layout.tsx, frontend/src/components/providers.tsx, frontend/src/components/theme-toggle.tsx]
-    status: todo
-    receipt: null
+    files: [frontend/src/app/layout.tsx, frontend/src/components/providers.tsx, frontend/src/components/theme-toggle.tsx, frontend/vitest.setup.ts]
+    status: done
+    receipt: "Providers wraps ThemeProvider(attr=class, defaultTheme=system, suppressHydrationWarning) + QueryClientProvider(retry:1, staleTime:30s) + Toaster | ThemeToggle uses @base-ui Menu render-prop (not asChild — radix dropped) | layout.tsx wires Providers + Smart Collab metadata | vitest setup polyfills window.matchMedia for next-themes in jsdom | vitest 2/2: children render, ThemeToggle button present"
 
   - id: t22
     desc: "lib/api.ts — fetch wrapper: credentials:include, JSON body, error normalization to ApiError shape, 401 -> refresh-once -> retry; unit tests with msw"
     files: [frontend/src/lib/api.ts, frontend/src/lib/__tests__/api.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "vitest 7/7: apiGet parses 200 JSON, apiPost sends JSON body + content-type, 4xx -> ApiError with status/code/message, 204 -> undefined, 401 -> refresh -> retry sequence (3 fetch calls), failed refresh -> throws no loop (2 calls), auth endpoints skip refresh path | uses vi.stubGlobal('fetch') not msw — simpler + same coverage | inFlightRefresh promise cache prevents thundering on parallel 401s"
 
   - id: t23
     desc: "/login page: RHF + Zod login schema, error toast, Demo Login section with 3 role buttons calling /auth/demo-login; smoke + form-submit test"
     files: [frontend/src/app/login/page.tsx, frontend/src/lib/auth.ts, frontend/src/lib/schemas/auth.ts, frontend/src/app/login/__tests__/page.test.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "vitest 5/5: form + 3 demo buttons render, blank submit -> alert + login not called, valid creds -> login() + router.push('/dashboard'), demo admin -> demoLogin('admin') + push, login error -> toast.error + no push | shared zod schemas in lib/schemas/auth.ts mirror backend signup/login/demoLogin | lib/auth.ts thin API client | vi.hoisted for nav/auth/sonner mocks"
 
   - id: t24
     desc: "/signup page + /forbidden page; smoke tests; both styled with shadcn card"
-    files: [frontend/src/app/signup/page.tsx, frontend/src/app/forbidden/page.tsx]
-    status: todo
-    receipt: null
+    files: [frontend/src/app/signup/page.tsx, frontend/src/app/forbidden/page.tsx, frontend/src/app/signup/__tests__/page.test.tsx, frontend/src/app/forbidden/__tests__/page.test.tsx]
+    status: done
+    receipt: "vitest signup 2/2: renders name+email+password+submit, valid payload -> signup() + push('/dashboard') | vitest forbidden 1/1: 403 message + back-to-dashboard link with href /dashboard"
 
   - id: t25
     desc: "/dashboard placeholder shell (header: user email+role+logout+theme toggle) + middleware.ts route guard (cookie present? -> through; else -> /login). RBAC UI helper hook useRole()"
-    files: [frontend/src/app/dashboard/page.tsx, frontend/src/middleware.ts, frontend/src/hooks/useRole.ts, frontend/src/components/header.tsx]
-    status: todo
-    receipt: null
+    files: [frontend/src/app/dashboard/page.tsx, frontend/src/middleware.ts, frontend/src/hooks/useUser.ts, frontend/src/components/header.tsx, frontend/src/app/page.tsx, frontend/src/app/dashboard/__tests__/page.test.tsx]
+    status: done
+    receipt: "middleware.ts: gates /dashboard /projects /tasks /team behind sc_at|sc_rt cookie (redirect to /login?next=...); guests bounce away from /login /signup if cookie present | useUser() + useRole() + useLogout() hooks wrap TanStack Query around me/logout APIs | Header: brand + email+role + ThemeToggle + Logout (admin/pm/member labels) | /dashboard shell: 3 KPI placeholder cards + foundation note | / redirects to /login | vitest dashboard 1/1 renders all 3 KPI cards | next build PASSES: 6 routes (/ /dashboard /forbidden /login /signup /_not-found) + middleware proxy | FRONTEND TOTAL: 23/23 vitest tests | typecheck + lint clean"
 
   # ── Phase F: wrap ──────────────────────────────────────────────────────────
   - id: t26
@@ -179,7 +179,7 @@ tasks:
 
 blockers: []
 
-next_task: t20
+next_task: t26
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
