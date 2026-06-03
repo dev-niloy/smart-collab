@@ -97,8 +97,8 @@ tasks:
   - id: t13
     desc: "/projects/new/page.tsx: create form (name, description, deadline date input, status Select) with RHF+Zod. Member -> redirect /forbidden via useRole. Success -> router.push to detail page. Test happy + RBAC redirect"
     files: [frontend/src/app/projects/new/page.tsx, frontend/src/app/projects/new/__tests__/page.test.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "RHF + zodResolver, form schema split from backend createProjectSchema to avoid input/output type mismatch (z.coerce.date). FormValues: name string, description optional, deadline string (HTML date input), status enum. Submit converts deadline string -> Date before useCreateProject mutation; createProject client re-serializes Date -> ISO. Fields: Input name, Textarea description, Input type=date deadline, Select status (3 options). RBAC: useRole gates; member -> router.replace('/forbidden') in useEffect; while role loading or unauthorized renders 'Checking permissions…' placeholder. Success -> toast.success + router.push('/projects/{id}'). API error -> toast.error with ApiError.message (covers PAST_DEADLINE w/ assessment-verbatim text). Cancel link -> /projects. Tests 3/3: admin submits valid form (createProject called with Date deadline, pushSpy to /projects/p-99), member redirected to /forbidden (no createProject call), empty name shows 'Name is required' inline error. Frontend 57/57 vitest, typecheck clean, lint shows only RHF library-incompatibility warning (resolver typing issue, not an error)."
 
   - id: t14
     desc: "/projects/[id]/page.tsx: detail view (name, description, status badge, deadline, createdBy email, timestamps). Edit + Delete buttons rendered only for Admin/PM. Test rendering + RBAC button visibility"
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t13
+next_task: t14
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
