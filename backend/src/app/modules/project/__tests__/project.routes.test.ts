@@ -127,6 +127,7 @@ maybe('project routes /api/v1/projects', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(1);
       expect(res.body.total).toBe(1);
+      expect(res.body.data[0].creator).toMatchObject({ email: 'admin@demo.local' });
     }
   });
 
