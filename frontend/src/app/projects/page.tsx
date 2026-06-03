@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { useProjects } from '@/hooks/useProjects';
 import { useRole } from '@/hooks/useUser';
+import { STATUS_LABEL, STATUS_VARIANT, fmtDate } from '@/lib/project-format';
 import {
   PROJECT_STATUSES,
   SORT_KEYS,
@@ -25,18 +26,6 @@ import {
   type SortKey,
   type Project,
 } from '@/lib/schemas/project';
-
-const STATUS_LABEL: Record<ProjectStatus, string> = {
-  active: 'Active',
-  completed: 'Completed',
-  on_hold: 'On hold',
-};
-
-const STATUS_VARIANT: Record<ProjectStatus, 'default' | 'secondary' | 'outline'> = {
-  active: 'default',
-  completed: 'secondary',
-  on_hold: 'outline',
-};
 
 const SORT_LABEL: Record<SortKey, string> = {
   created: 'Newest',
@@ -55,18 +44,6 @@ const parseSort = (v: string | null): SortKey =>
 const parsePage = (v: string | null): number => {
   const n = v ? parseInt(v, 10) : 1;
   return Number.isFinite(n) && n > 0 ? n : 1;
-};
-
-const fmtDate = (iso: string): string => {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return iso;
-  }
 };
 
 export default function ProjectsPage() {

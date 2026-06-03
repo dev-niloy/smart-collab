@@ -15,39 +15,7 @@ import {
 import { useProject } from '@/hooks/useProjects';
 import { useRole } from '@/hooks/useUser';
 import { DeleteProjectButton } from '@/components/projects/delete-project-button';
-import type { ProjectStatus } from '@/lib/schemas/project';
-
-const STATUS_LABEL: Record<ProjectStatus, string> = {
-  active: 'Active',
-  completed: 'Completed',
-  on_hold: 'On hold',
-};
-
-const STATUS_VARIANT: Record<ProjectStatus, 'default' | 'secondary' | 'outline'> = {
-  active: 'default',
-  completed: 'secondary',
-  on_hold: 'outline',
-};
-
-const fmtDate = (iso: string): string => {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return iso;
-  }
-};
-
-const fmtDateTime = (iso: string): string => {
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
-};
+import { STATUS_LABEL, STATUS_VARIANT, fmtDate, fmtDateTime } from '@/lib/project-format';
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
