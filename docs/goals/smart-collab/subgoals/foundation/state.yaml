@@ -43,8 +43,8 @@ tasks:
   - id: t5
     desc: "GH Actions ci.yml: matrix runs lint+typecheck+test for backend + frontend on PR to develop"
     files: [.github/workflows/ci.yml]
-    status: active
-    receipt: null
+    status: done
+    receipt: "ci.yml parsed valid YAML | name: ci | triggers: pull_request + push on [develop, main] | 2 jobs: backend, frontend | each with matrix task=[lint, typecheck, test] (6 parallel jobs total) | actions/checkout@v4 + actions/setup-node@v4 (node 20, npm cache) | backend job runs prisma generate conditionally if schema exists | first real run lands when feature/foundation PR opens"
 
   # ── Phase B: backend core ──────────────────────────────────────────────────
   - id: t6
@@ -179,7 +179,7 @@ tasks:
 
 blockers: []
 
-next_task: t5
+next_task: t6
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user

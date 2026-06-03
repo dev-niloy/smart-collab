@@ -3,6 +3,8 @@
 Thin log. Board (`state.yaml`) holds task status + receipts. This file holds the story.
 
 ## Session log
+- 2026-06-03: Phase 3 — Phase A complete (t1-t5: monorepo root, docker postgres on 5433, backend toolchain, Next.js frontend, GH Actions CI). Stopping for user checkpoint per per-phase cadence. Next: Phase B backend core (t6-t9).
+- 2026-06-03: Killed orphan GoalBuddy daemon (was regenerating docs/goals/foundation-exec/ from prior session). Added belt-and-suspenders gitignore for *-exec/ + .goalbuddy-board/.
 - 2026-06-03: Phase 3 Superpowers — entering TDD loop at t1. Git initialized at root (main protected). Branches: develop off main, feature/foundation off develop. Removed orphan docs/goals/foundation-exec/ (v2 schema from prior session, conflicted with WORKFLOW.md hybrid).
 - 2026-06-03: Phase 2 GSD — board sliced into 26 tasks (t1-t26) across 6 phases: monorepo+infra, backend core, prisma, auth module, frontend foundation, deploy plumbing. Each task ~2-5 min, ends with commit. Awaiting user OK before Phase 3.
 - 2026-06-03: Phase 1 GStack locked by user. Moving to Phase 2 GSD.
