@@ -1,22 +1,152 @@
 feature: tasks-crud
 created: 2026-06-03
-updated: 2026-06-03  # phase 1 charter draft
+updated: 2026-06-03  # phase 2 sliced
 
 mode:
   type: brownfield
   scope: feature
   session: new
 
-phase: 1                  # GStack — clarify + draft charter
+phase: 3                  # Superpowers — TDD per task starting at t1
 
-tasks: []                 # phase 2 will slice the board
+tasks:
+  # ── Phase A: backend prisma + task module skeleton ───────────────────────────
+  - id: t1
+    desc: "prisma: add Task model + TaskStatus (todo|in_progress|completed) + TaskPriority (low|medium|high) enums + FKs (projectId Cascade, createdBy Restrict, assignedTo SetNull). Indexes on [projectId, status], [assignedTo], [dueDate]. snake_case @@map(tasks)"
+    files: [backend/prisma/schema.prisma]
+    status: todo
+    receipt: null
+
+  - id: t2
+    desc: "create + apply migration add_task; smoke test row count via prisma client"
+    files: [backend/prisma/migrations/<ts>_add_task/migration.sql, backend/src/config/__tests__/prisma.task.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t3
+    desc: "task.constant.ts: STATUSES, PRIORITIES, SORT_KEYS, DEFAULT_LIMIT=10, MAX_LIMIT=50, PAST_DEADLINE_MESSAGE (reuse text 'Please select a valid deadline.'), DUPLICATE_TASK_TITLE_MESSAGE 'Task title already exists in this project.', REASSIGN_COMPLETED_MESSAGE 'Cannot reassign a completed task.'"
+    files: [backend/src/app/modules/task/task.constant.ts]
+    status: todo
+    receipt: null
+
+  - id: t4
+    desc: "task.validation.ts: Zod schemas createTaskSchema, updateTaskSchema (refine: at least one field), listTasksQuerySchema (q, status, priority, assignedTo accepts uuid or 'unassigned', sort, page, limit capped at 50), taskIdParamSchema. Validation unit tests"
+    files: [backend/src/app/modules/task/task.validation.ts, backend/src/app/modules/task/__tests__/task.validation.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t5
+    desc: "task.service.ts CRUD core: create (check project exists + dup title in project, sets createdBy from actor), findById (include creator+assignee), update (guards: future deadline, no dup title, no reassign-while-completed), remove. P2025 -> 404 (duck-typed). Service unit tests against real prisma"
+    files: [backend/src/app/modules/task/task.service.ts, backend/src/app/modules/task/__tests__/task.service.crud.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t6
+    desc: "task.service.ts list({projectId, q, status, priority, assignedTo, sort, page, limit}): Prisma where with project filter, contains-insensitive title, status/priority equality, assignedTo eq or null when 'unassigned'. orderBy switch (created/dueDate/priority/updated). $transaction(findMany,count). Tests for each filter, sort, pagination, unassigned filter"
+    files: [backend/src/app/modules/task/task.service.ts, backend/src/app/modules/task/__tests__/task.service.list.test.ts]
+    status: todo
+    receipt: null
+
+  # ── Phase B: backend controller + routes + users endpoint ────────────────────
+  - id: t7
+    desc: "task.controller.ts (thin) + task.routes.ts: requireAuth global; create open to all authed; ownership middleware for PATCH (admin/PM bypass; otherwise actor must be createdBy OR assignedTo); requireRole admin/PM on DELETE. Mount /api/v1/tasks. Integration happy-path tests (admin creates, member creates, member edits own, admin deletes)"
+    files: [backend/src/app/modules/task/task.controller.ts, backend/src/app/modules/task/task.routes.ts, backend/src/app/routes/index.ts, backend/src/app/modules/task/__tests__/task.routes.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t8
+    desc: "integration negative paths: 401 unauth, 403 member edits non-own task, 403 member tries DELETE, 404 missing id, 422 invalid body, pagination cap (limit=999 -> 50)"
+    files: [backend/src/app/modules/task/__tests__/task.routes.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t9
+    desc: "validation rules end-to-end: POST + PATCH past deadline -> 422 PAST_DEADLINE assessment-verbatim; POST duplicate title in same project -> 422 DUPLICATE_TASK_TITLE; PATCH assignedTo while status=completed -> 422 REASSIGN_COMPLETED. Same title in DIFFERENT project allowed"
+    files: [backend/src/app/modules/task/__tests__/task.routes.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t10
+    desc: "user.controller.ts list + user.routes.ts: GET /api/v1/users -> [{id,email,name,role}] all authed; mount under /api/v1/users; integration tests for shape + auth gate (401 unauth)"
+    files: [backend/src/app/modules/user/user.controller.ts, backend/src/app/modules/user/user.routes.ts, backend/src/app/routes/index.ts, backend/src/app/modules/user/__tests__/user.routes.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t11
+    desc: "GET /api/v1/projects/:id/tasks convenience route: delegates to taskService.list with projectId from params. Integration test confirms it equals /api/v1/tasks?projectId="
+    files: [backend/src/app/modules/project/project.routes.ts, backend/src/app/modules/project/project.controller.ts, backend/src/app/modules/project/__tests__/project.routes.test.ts]
+    status: todo
+    receipt: null
+
+  # ── Phase C: frontend lib + hooks + format helpers ───────────────────────────
+  - id: t12
+    desc: "lib/schemas/task.ts (mirror backend Zod) + lib/tasks.ts (createTask, listTasks, getTask, updateTask, deleteTask) + lib/users.ts (listUsers). Zod v4 syntax. Unit tests for schema + client"
+    files: [frontend/src/lib/schemas/task.ts, frontend/src/lib/tasks.ts, frontend/src/lib/users.ts, frontend/src/lib/__tests__/tasks.test.ts, frontend/src/lib/schemas/__tests__/task.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t13
+    desc: "lib/task-format.ts (STATUS_LABEL, STATUS_VARIANT, PRIORITY_LABEL, PRIORITY_VARIANT, mirrors lib/project-format). Unit tests"
+    files: [frontend/src/lib/task-format.ts, frontend/src/lib/__tests__/task-format.test.ts]
+    status: todo
+    receipt: null
+
+  - id: t14
+    desc: "hooks/useTasks.ts (useTasks(projectId, filters), useTask(id), useCreateTask, useUpdateTask, useDeleteTask with TanStack invalidation on ['tasks', projectId] + ['task', id]) + hooks/useUsers.ts. Unit tests stubbing fetch"
+    files: [frontend/src/hooks/useTasks.ts, frontend/src/hooks/useUsers.ts, frontend/src/hooks/__tests__/useTasks.test.tsx, frontend/src/hooks/__tests__/useUsers.test.tsx]
+    status: todo
+    receipt: null
+
+  # ── Phase D: frontend pages ─────────────────────────────────────────────────
+  - id: t15
+    desc: "/projects/[id]/tasks/page.tsx: list with cards/rows (title, status badge, priority badge, assignee chip, due date), inline status Select that fires PATCH, toolbar (search, status filter, priority filter, assignee filter, sort), pagination prev/next, 'New Task' button for all authed (members can create), loading/empty/error states. Page interaction tests"
+    files: [frontend/src/app/projects/[id]/tasks/page.tsx, frontend/src/app/projects/[id]/tasks/__tests__/page.test.tsx]
+    status: todo
+    receipt: null
+
+  - id: t16
+    desc: "/projects/[id]/tasks/new/page.tsx: create form (title, description, priority Select, status Select default Todo, assignedTo Select loaded from useUsers, dueDate). RHF+Zod. All authed can create. Success -> push to task detail. Test happy + validation"
+    files: [frontend/src/app/projects/[id]/tasks/new/page.tsx, frontend/src/app/projects/[id]/tasks/new/__tests__/page.test.tsx]
+    status: todo
+    receipt: null
+
+  - id: t17
+    desc: "/projects/[id]/tasks/[taskId]/page.tsx: detail view (title, description, status, priority, assignee email, creator email, due date, timestamps). Edit + Delete buttons RBAC-gated. Member can Edit own (assignedTo===self || createdBy===self); never sees Delete. Test rendering + RBAC visibility for 3 roles x own/other"
+    files: [frontend/src/app/projects/[id]/tasks/[taskId]/page.tsx, frontend/src/app/projects/[id]/tasks/[taskId]/__tests__/page.test.tsx]
+    status: todo
+    receipt: null
+
+  - id: t18
+    desc: "/projects/[id]/tasks/[taskId]/edit/page.tsx: prefilled update form. Server enforces ownership for members (403 surfaces as toast). Success -> push detail. Tests happy + 403 toast on bad attempt"
+    files: [frontend/src/app/projects/[id]/tasks/[taskId]/edit/page.tsx, frontend/src/app/projects/[id]/tasks/[taskId]/edit/__tests__/page.test.tsx]
+    status: todo
+    receipt: null
+
+  - id: t19
+    desc: "DeleteTaskButton component (shadcn AlertDialog confirm 'Delete task? This cannot be undone.'). Fires useDeleteTask + router.push('/projects/[id]/tasks'). Wired into detail page Delete button (admin/PM only). Test confirm + cancel"
+    files: [frontend/src/components/tasks/delete-task-button.tsx, frontend/src/components/tasks/__tests__/delete-task-button.test.tsx, frontend/src/app/projects/[id]/tasks/[taskId]/page.tsx]
+    status: todo
+    receipt: null
+
+  # ── Phase E: wrap ───────────────────────────────────────────────────────────
+  - id: t20
+    desc: "Project detail page: add a 'Tasks' section/card linking to /projects/[id]/tasks (visible to all authed). Smoke test detail page renders Tasks link"
+    files: [frontend/src/app/projects/[id]/page.tsx, frontend/src/app/projects/[id]/__tests__/page.test.tsx]
+    status: todo
+    receipt: null
+
+  - id: t21
+    desc: "coverage check: backend task module >=80% lines; frontend task pages+hooks >=70%. README API routes table updated with /api/v1/tasks + /api/v1/users + /api/v1/projects/:id/tasks; frontend pages list updated with task routes"
+    files: [README.md]
+    status: todo
+    receipt: null
 
 blockers: []
 
-next_task: null           # board not sliced yet
+next_task: t1
 
 phase_completion:
-  gstack: false           # charter drafted, awaiting user lock
-  gsd: false
+  gstack: true            # locked 2026-06-03 by user
+  gsd: true               # locked 2026-06-03 by user (auto via plan-and-proceed)
   superpowers: false
   ralph_wiggum: false

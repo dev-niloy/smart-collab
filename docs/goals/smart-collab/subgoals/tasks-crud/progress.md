@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-03: Phase 1 locked + Phase 2 GSD sliced — board has 21 tasks across 5 phases (A backend prisma+module t1-t6, B controller+routes+users+nested route t7-t11, C frontend lib+hooks+format helpers t12-t14, D pages+delete component t15-t19, E project-detail wire-up+coverage+readme t20-t21). Awaiting Phase 3 TDD execution starting at t1.
 - 2026-06-03: Phase 1 GStack — branched feature/tasks-crud off develop. Drafted goal.md covering task module + Task model + 3 verbatim assessment validation rules (past deadline, dup title per project, no reassign of completed) + RBAC matrix (Admin+PM full CRUD; Member create + edit own + status change own, no delete) + frontend nested pages under /projects/[id]/tasks. Awaiting user lock before Phase 2 slicing.
 
 ## Decisions
