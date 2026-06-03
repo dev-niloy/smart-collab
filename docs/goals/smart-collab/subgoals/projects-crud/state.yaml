@@ -84,8 +84,8 @@ tasks:
   - id: t11
     desc: "shadcn add: select, alert-dialog, badge, textarea. Smoke render tests for each (Badge variants)"
     files: [frontend/src/components/ui/select.tsx, frontend/src/components/ui/alert-dialog.tsx, frontend/src/components/ui/badge.tsx, frontend/src/components/ui/textarea.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "npx shadcn add select alert-dialog badge textarea — 4 files created, button.tsx skipped (already identical). No package.json bump (radix deps already present). Smoke tests added to components.test.tsx: Badge renders all 4 variants (default/secondary/destructive/outline), Textarea renders with placeholder. ui smoke 5/5. Phase C complete (t9 + t10 + t11). Typecheck + lint clean."
 
   # ── Phase D: frontend pages ─────────────────────────────────────────────────
   - id: t12
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t11
+next_task: t12
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
