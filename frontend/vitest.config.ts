@@ -18,8 +18,8 @@ export default defineConfig({
         'src/**/__tests__/**',
         // shadcn vendor components (external code, not ours)
         'src/components/ui/**',
-        // Next.js middleware/runtime — hard to unit-test, exercised via integration
-        'src/middleware.ts',
+        // Next.js proxy (formerly middleware) — hard to unit-test, exercised via integration
+        'src/proxy.ts',
         'src/app/layout.tsx',
         'src/app/page.tsx',
       ],
