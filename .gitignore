@@ -1,0 +1,50 @@
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# deps / build
+node_modules/
+dist/
+build/
+.next/
+__pycache__/
+.venv/
+venv/
+
+# logs
+*.log
+logs/
+
+# IDE / OS
+.vscode/
+.idea/
+*.suo
+*.user
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# misc
+.cache/
+coverage/
+*.pyc
+
+# local experiment tracking — never push
+docs/EXPERIMENT-goalbuddy-tracker.md
+
+# assessment brief — local only
+EAP 4.0 Assessment Task .md
+
+# local backend sandbox — never push
+solvemeet_backend_api/
+
+# claude / AI assistant files — never push
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.mcp.json
+GEMINI.md
+AGENTS.md
+.cursor/
+.cursorrules

@@ -1,0 +1,76 @@
+feature: smart-collab
+created: 2026-06-03
+updated: 2026-06-03
+
+mode:
+  type: greenfield
+  scope: full-project
+  session: new
+
+phase: 1
+
+tasks:
+  - id: t1
+    desc: "foundation — monorepo + backend skeleton + raw auth + RBAC + frontend skeleton + deploy plumbing"
+    files: [backend/, frontend/, README.md]
+    status: active
+    receipt: null
+    subgoal: docs/goals/smart-collab/subgoals/foundation/
+
+  - id: t2
+    desc: "projects-crud — assessment §2 project CRUD + list/filter/search"
+    files: [backend/src/app/modules/project/, frontend/src/app/projects/]
+    status: todo
+    receipt: null
+
+  - id: t3
+    desc: "tasks-crud — §3 task CRUD + §4 validation rules (dup title, completed reassign, past deadline)"
+    files: [backend/src/app/modules/task/, frontend/src/app/projects/]
+    status: todo
+    receipt: null
+
+  - id: t4
+    desc: "team-collab — §5 add members, assign tasks, workload summary"
+    files: [backend/src/app/modules/projectMember/, frontend/src/app/projects/]
+    status: todo
+    receipt: null
+
+  - id: t5
+    desc: "dashboard-analytics — §6 + §8 KPIs, charts, upcoming deadlines, high-priority"
+    files: [backend/src/app/modules/dashboard/, frontend/src/app/dashboard/]
+    status: todo
+    receipt: null
+
+  - id: t6
+    desc: "activity-log — §7 actor+timestamp+action, latest 5-10"
+    files: [backend/src/app/modules/activity/, frontend/src/components/activity/]
+    status: todo
+    receipt: null
+
+  - id: t7
+    desc: "search-filter-sort — §9 search, filter, sort, pagination across projects/tasks/members"
+    files: [backend/src/app/modules/, frontend/src/components/filters/]
+    status: todo
+    receipt: null
+
+  - id: t8
+    desc: "extras-polish — §10 dark mode, attachments, comments, notifications"
+    files: [backend/src/app/modules/comment/, backend/src/app/modules/notification/, frontend/src/components/]
+    status: todo
+    receipt: null
+
+  - id: t9
+    desc: "deploy-and-readme — §12 live URLs (Vercel + Railway/Render), README, demo creds documented"
+    files: [README.md, .github/workflows/, vercel.ts, backend/Dockerfile]
+    status: todo
+    receipt: null
+
+blockers: []
+
+next_task: t1
+
+phase_completion:
+  gstack: true            # locked 2026-06-03 by user
+  gsd: false
+  superpowers: false
+  ralph_wiggum: false

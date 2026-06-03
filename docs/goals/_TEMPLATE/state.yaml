@@ -1,0 +1,27 @@
+feature: <kebab-name>
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+
+mode:
+  type: greenfield        # greenfield | brownfield
+  scope: feature          # full-project | feature
+  session: new            # new | resume
+
+phase: 1                  # 1 | 2 | 3 | 4 | DONE
+
+tasks:
+  - id: t1
+    desc: <first task — brownfield: verify existing tests pass>
+    files: []
+    status: todo          # todo | active | done | blocked
+    receipt: null         # PROOF when done, not a claim
+
+blockers: []              # list of {ref, desc}
+
+next_task: t1
+
+phase_completion:
+  gstack: false           # Phase 1 — SPEC / goal.md complete
+  gsd: false              # Phase 2 — board fully sliced
+  superpowers: false      # Phase 3 — all tasks done, suite green
+  ralph_wiggum: false     # Phase 4 — [DONE]
