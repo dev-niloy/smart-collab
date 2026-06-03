@@ -4,6 +4,7 @@
   "private": true,
   "description": "Smart Project & Task Collaboration System — EAP 4.0 Assessment",
   "scripts": {
+    "dev": "bash scripts/dev.sh",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "build:backend": "npm --prefix backend run build",
