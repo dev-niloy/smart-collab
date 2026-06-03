@@ -23,4 +23,9 @@ maybe('prisma client smoke', () => {
     const count = await prisma.project.count();
     expect(typeof count).toBe('number');
   });
+
+  it('can count tasks table (add_task migration applied)', async () => {
+    const count = await prisma.task.count();
+    expect(typeof count).toBe('number');
+  });
 });
