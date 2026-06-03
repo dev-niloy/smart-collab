@@ -59,14 +59,14 @@ tasks:
   - id: t7
     desc: "integration negative paths: 401 unauth, 403 member tries POST/PATCH/DELETE, 404 missing id, 422 invalid body, pagination cap enforcement (limit=999 -> 50)"
     files: [backend/src/app/modules/project/__tests__/project.routes.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "Covered: 401 MISSING_TOKEN (unauth list), 403 FORBIDDEN_ROLE (member POST/PATCH/DELETE), 404 PROJECT_NOT_FOUND (PATCH/GET/DELETE unknown uuid), 422 VALIDATION_ERROR (invalid body, invalid uuid path param), pagination cap limit=999 -> body.limit=50 (MAX_LIMIT enforced via Zod transform). Also added list combined-filter test (q + status + sort=deadline orders nearest-first across 2 matching rows of 3 seeded)."
 
   - id: t8
     desc: "past-deadline rejection covered end-to-end: POST + PATCH with deadline in past -> 422 with exact assessment message; valid future deadline accepted"
     files: [backend/src/app/modules/project/__tests__/project.routes.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "POST past deadline -> 422 PAST_DEADLINE message 'Please select a valid deadline.' (covered in t6). PATCH past deadline on existing project -> 422 PAST_DEADLINE same assessment-verbatim message. Valid future deadline accepted on both POST + PATCH (covered in admin creates/updates happy-path tests). project.routes.test.ts now 18/18; BACKEND TOTAL 135/135 jest (was 130, +5: pagination cap, combined-filter list, PATCH past-deadline, GET unknown id 404, DELETE unknown id 404)."
 
   # ── Phase C: frontend lib + hooks + shadcn ──────────────────────────────────
   - id: t9
@@ -133,7 +133,7 @@ tasks:
 
 blockers: []
 
-next_task: t7
+next_task: t9
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
