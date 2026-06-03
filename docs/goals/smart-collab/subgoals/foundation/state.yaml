@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 4                  # Ralph Wiggum — multi-persona review ready to run on feature/foundation
+phase: DONE               # all 4 phases complete — foundation subgoal ready to merge develop
 
 # Locked Phase 2 decisions (also in progress.md Decisions):
 #   - Auth transport: access + refresh BOTH httpOnly cookies (SameSite=Lax dev / None+Secure prod)
@@ -185,4 +185,4 @@ phase_completion:
   gstack: true            # locked 2026-06-03 by user
   gsd: true               # locked 2026-06-03 by user; board has 26 tasks t1-t26
   superpowers: true       # all 26 tasks done with non-null receipts, suites green
-  ralph_wiggum: false     # awaiting Phase 4 multi-persona review
+  ralph_wiggum: true      # iteration 1 complete: 6 personas, 7 fixes (Developer, Architect, Designer, QA, PM, BA + Ralph close-out), all green
