@@ -1,0 +1,22 @@
+feature: tasks-crud
+created: 2026-06-03
+updated: 2026-06-03  # phase 1 charter draft
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 1                  # GStack — clarify + draft charter
+
+tasks: []                 # phase 2 will slice the board
+
+blockers: []
+
+next_task: null           # board not sliced yet
+
+phase_completion:
+  gstack: false           # charter drafted, awaiting user lock
+  gsd: false
+  superpowers: false
+  ralph_wiggum: false
