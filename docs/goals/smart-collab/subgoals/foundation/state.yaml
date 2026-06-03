@@ -75,20 +75,20 @@ tasks:
   - id: t10
     desc: "prisma init + schema.prisma: User (id uuid, email unique, name, passwordHash, role enum, timestamps), Role enum (admin|project_manager|team_member), Session (id, userId, refreshTokenHash, userAgent, expiresAt), ActivityLog placeholder (id, actorId, action, meta json, createdAt)"
     files: [backend/prisma/schema.prisma]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "prisma validate: ok | schema: enum Role[admin|project_manager|team_member], User(uuid, email unique, name, passwordHash, role default team_member, ts), Session(uuid, userId fk cascade, refreshTokenHash unique, userAgent?, ip?, expiresAt) with @@index[userId,expiresAt], ActivityLog(uuid, actorId? fk setnull, action, meta Json?, createdAt) with @@index[createdAt,actorId] | @@map snake_case (users, sessions, activity_logs)"
 
   - id: t11
     desc: "first migration: `prisma migrate dev --name init` runs clean against docker postgres, client generated, db connection smoke test from app boot"
-    files: [backend/prisma/migrations/**, backend/src/config/prisma.ts]
-    status: todo
-    receipt: null
+    files: [backend/prisma/migrations/20260603034157_init/, backend/src/config/prisma.ts, backend/src/config/__tests__/prisma.test.ts]
+    status: done
+    receipt: "prisma migrate dev --name init: applied to docker postgres (host :5433) | client v5.22.0 generated | psql \\dt: 4 tables (_prisma_migrations, activity_logs, sessions, users) | jest prisma suite 2/2: $queryRaw SELECT 1, user.count returns number | global singleton pattern for hot reload"
 
   - id: t12
     desc: "prisma/seed.ts: creates 3 demo users (admin/pm/member) with passwords from env (DEMO_ADMIN_PW etc); idempotent (upsert by email); unit test on idempotency"
-    files: [backend/prisma/seed.ts, backend/prisma/__tests__/seed.test.ts]
-    status: todo
-    receipt: null
+    files: [backend/prisma/seed.ts, backend/prisma/__tests__/seed.test.ts, backend/package.json, backend/jest.config.js, backend/tsconfig.json]
+    status: done
+    receipt: "jest seed suite 4/4: 3 users inserted first run, idempotent on 2nd run (count still 3), bcrypt hash stored (matches /^\\$2[aby]\\$/, NOT plaintext), missing DEMO_ADMIN_PW throws | upsert by email key | prisma.seed config added to package.json (npx prisma db seed) | jest roots extended to include prisma/ | tsconfig rootDir dropped (prisma/ + src/ both compile under common base) | backend total tests now 26/26"
 
   # ── Phase D: auth module (mirrors solvemeet pattern) ───────────────────────
   - id: t13
@@ -179,7 +179,7 @@ tasks:
 
 blockers: []
 
-next_task: t10
+next_task: t13
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
