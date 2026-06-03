@@ -80,6 +80,38 @@ Tracking the assessment scope. Each section ships as its own subgoal (`docs/goal
 
 ---
 
+## API routes (live)
+
+### Auth — `/api/v1/auth`
+| Method | Path           | Auth | Description                                  |
+|--------|----------------|------|----------------------------------------------|
+| POST   | `/signup`      | —    | Email + password signup (defaults to team_member) |
+| POST   | `/login`       | —    | Email + password login                       |
+| POST   | `/demo-login`  | —    | One-click demo login by role                 |
+| POST   | `/refresh`     | —    | Rotate access + refresh cookies              |
+| POST   | `/logout`      | —    | Clear cookies + revoke refresh session       |
+| GET    | `/me`          | ✓    | Current user                                 |
+
+### Projects — `/api/v1/projects`
+| Method | Path     | Roles            | Description                                                                   |
+|--------|----------|------------------|-------------------------------------------------------------------------------|
+| GET    | `/`      | all authed       | List with `q`, `status`, `sort` (`created`/`deadline`/`updated`), `page`, `limit` (max 50) |
+| GET    | `/:id`   | all authed       | Single project (includes creator)                                             |
+| POST   | `/`      | admin, project_manager | Create (rejects past deadlines with 422 PAST_DEADLINE)                  |
+| PATCH  | `/:id`   | admin, project_manager | Partial update (same past-deadline guard)                               |
+| DELETE | `/:id`   | admin, project_manager | Hard delete                                                             |
+
+### Frontend pages
+- `/login`, `/signup` — auth
+- `/dashboard` — landing
+- `/projects` — list (URL-state filters, debounced search, pagination)
+- `/projects/new` — create form (admin / PM)
+- `/projects/[id]` — detail with creator, RBAC edit + delete
+- `/projects/[id]/edit` — update form (admin / PM)
+- `/forbidden` — 403 fallback
+
+---
+
 ## Environment variables
 
 See `.env.example` for the full list. Required keys:
