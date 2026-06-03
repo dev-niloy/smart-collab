@@ -14,7 +14,15 @@ const isRecordNotFound = (err: unknown): boolean => {
   return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'P2025';
 };
 
-const create = async (input: CreateProjectInput, actorId: string): Promise<Project> => {
+const creatorInclude = {
+  creator: { select: { id: true, email: true, name: true } },
+} as const;
+
+export type ProjectWithCreator = Project & {
+  creator: { id: string; email: string; name: string };
+};
+
+const create = async (input: CreateProjectInput, actorId: string): Promise<ProjectWithCreator> => {
   ensureFutureDeadline(input.deadline);
   return prisma.project.create({
     data: {
@@ -24,16 +32,17 @@ const create = async (input: CreateProjectInput, actorId: string): Promise<Proje
       status: input.status,
       createdBy: actorId,
     },
+    include: creatorInclude,
   });
 };
 
-const findById = async (id: string): Promise<Project> => {
-  const p = await prisma.project.findUnique({ where: { id } });
+const findById = async (id: string): Promise<ProjectWithCreator> => {
+  const p = await prisma.project.findUnique({ where: { id }, include: creatorInclude });
   if (!p) throw ApiError.notFound('Project not found', 'PROJECT_NOT_FOUND');
   return p;
 };
 
-const update = async (id: string, input: UpdateProjectInput): Promise<Project> => {
+const update = async (id: string, input: UpdateProjectInput): Promise<ProjectWithCreator> => {
   if (input.deadline) ensureFutureDeadline(input.deadline);
   try {
     return await prisma.project.update({
@@ -44,6 +53,7 @@ const update = async (id: string, input: UpdateProjectInput): Promise<Project> =
         ...(input.deadline !== undefined ? { deadline: input.deadline } : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
       },
+      include: creatorInclude,
     });
   } catch (err) {
     if (isRecordNotFound(err)) {
@@ -73,7 +83,7 @@ type ListArgs = {
 };
 
 type ListResult = {
-  data: Project[];
+  data: ProjectWithCreator[];
   total: number;
   page: number;
   limit: number;
@@ -104,6 +114,7 @@ const list = async (args: ListArgs): Promise<ListResult> => {
       orderBy: sortToOrderBy(args.sort),
       skip: (page - 1) * limit,
       take: limit,
+      include: creatorInclude,
     }),
     prisma.project.count({ where }),
   ]);

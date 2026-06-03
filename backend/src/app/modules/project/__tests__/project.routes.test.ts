@@ -76,6 +76,8 @@ maybe('project routes /api/v1/projects', () => {
     expect(res.body.project.name).toBe('Launch Site');
     expect(res.body.project.createdBy).toBeTruthy();
     expect(res.body.project.status).toBe('active');
+    expect(res.body.project.creator).toMatchObject({ email: 'admin@demo.local' });
+    expect(res.body.project.creator.name).toBe('Demo Admin');
   });
 
   it('PM creates → 201', async () => {
