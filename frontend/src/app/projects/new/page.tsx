@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { z } from 'zod';
 import { PROJECT_STATUSES, type ProjectStatus } from '@/lib/schemas/project';
+import { STATUS_LABEL } from '@/lib/project-format';
 import { useCreateProject } from '@/hooks/useProjects';
 import { useRole } from '@/hooks/useUser';
 import { ApiError } from '@/lib/api';
@@ -40,12 +41,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-const STATUS_LABEL: Record<ProjectStatus, string> = {
-  active: 'Active',
-  completed: 'Completed',
-  on_hold: 'On hold',
-};
 
 export default function NewProjectPage() {
   const router = useRouter();

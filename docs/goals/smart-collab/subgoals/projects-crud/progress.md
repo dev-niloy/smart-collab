@@ -3,6 +3,9 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-03: Phase 4 Ralph Wiggum COMPLETE — [DONE]. 2 iterations, 6 persona findings landed: [Developer] typed list query (drop `as never`); [Architect] extract lib/project-format helpers; [Designer] error-state contrast text-destructive + role=alert; [QA] project-format unit tests (+6); [PM] assert creator embedded in list response; [BA] edit form sends '' so user can clear description. Iter 1 hit [CONFLICT] (Architect vs Designer same files), resolved by user via iter 2 retry. Final: backend 135/135, frontend 74/74 (+6), backend project coverage 95.19% lines, frontend project files all >=83%, typecheck + lint clean. Subgoal projects-crud PHASES 1-4 COMPLETE — ready for merge.
+- 2026-06-03: Phase 3 COMPLETE. Phase E shipped: t17 header Projects nav link + dashboard KPI as clickable Card, header tests 2/2. t18 coverage check (backend project 95.19% lines, frontend project files all >=83%, no TODOs) + README API routes table + frontend pages. Final: backend 135/135, frontend 68/68. Ready for Phase 4 Ralph Wiggum review on PR #7.
+- 2026-06-03: Phase 3 — t16 done. Phase D complete. DeleteProjectButton w/ AlertDialog (controlled open, base-ui), confirm copy verbatim, wired into detail page replacing stub. 3 tests; frontend 66/66. Pushed feature/projects-crud to origin; PR #7 open vs develop. Next: Phase E — t17 (router gating / app navigation) + t18 (coverage check, README, cleanup).
 - 2026-06-03: Phase 3 — t15 done. /projects/[id]/edit form: prefilled from useProject via reset(), toDateInput formats ISO -> YYYY-MM-DD for native date input, member redirect, push detail on save. 2 page tests; frontend 63/63. Next: t16 DeleteProjectButton w/ AlertDialog.
 - 2026-06-03: Phase 3 — t14 done. Embedded creator{id,email,name} in API (industry standard, single round-trip). /projects/[id] detail page: name, description, status Badge, deadline, "Created by Alice (alice@x.y)", timestamps, RBAC-gated Edit link + Delete button stub. useParams (not Promise params) for testability. Backend 135/135 (+1 creator assertion); frontend 61/61. Next: t15 /projects/[id]/edit form.
 - 2026-06-03: Phase 3 — t13 done. /projects/new create form: RHF+Zod (form schema split from backend coerce-date for type sanity), Textarea + date Input + Select, member redirected to /forbidden via useRole, toast on success/error, push to detail on create. 3 page tests; frontend 57/57. Next: t14 /projects/[id] detail page.
@@ -26,4 +29,4 @@ Thin log. Board (`state.yaml`) holds task status + receipts.
 - 2026-06-03: **Basic search/filter/sort lands here, advanced cross-cutting deferred to t7 search-filter-sort.** Ship a usable list now; harmonize patterns across projects/tasks/members later.
 
 ## Blockers (human notes)
-None.
+- 2026-06-03 (Ralph iter 1): CONFLICT — Architect (helper extract) + Designer (error contrast) both edited same files (projects list + detail pages). Per skill, loop stopped. Two value-add commits landed: [Developer] typed list query, [Architect] lib/project-format helpers. Designer change reverted. Awaiting user decision before iter 2.

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/hooks/useUser';
@@ -17,18 +18,15 @@ export default function DashboardPage() {
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Projects</CardTitle>
-              <CardDescription>Total active projects.</CardDescription>
-            </CardHeader>
-            <CardContent
-              className="text-3xl font-semibold"
-              aria-label="No data yet"
-            >
-              <span aria-hidden="true">—</span>
-            </CardContent>
-          </Card>
+          <Link href="/projects" className="block">
+            <Card className="h-full transition-colors hover:bg-accent/40">
+              <CardHeader>
+                <CardTitle>Projects</CardTitle>
+                <CardDescription>Browse, create, and manage projects.</CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">Open →</CardContent>
+            </Card>
+          </Link>
           <Card>
             <CardHeader>
               <CardTitle>Tasks</CardTitle>

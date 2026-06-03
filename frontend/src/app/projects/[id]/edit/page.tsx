@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PROJECT_STATUSES, type ProjectStatus } from '@/lib/schemas/project';
+import { STATUS_LABEL } from '@/lib/project-format';
 import { useProject, useUpdateProject } from '@/hooks/useProjects';
 import { useRole } from '@/hooks/useUser';
 import { ApiError } from '@/lib/api';
@@ -40,12 +41,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-const STATUS_LABEL: Record<ProjectStatus, string> = {
-  active: 'Active',
-  completed: 'Completed',
-  on_hold: 'On hold',
-};
 
 const toDateInput = (iso: string): string => {
   try {
@@ -105,7 +100,7 @@ export default function EditProjectPage() {
     try {
       await updateMutation.mutateAsync({
         name: data.name,
-        description: data.description ? data.description : undefined,
+        description: data.description ?? '',
         deadline: new Date(data.deadline),
         status: data.status,
       });

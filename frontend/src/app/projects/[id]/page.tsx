@@ -14,39 +14,8 @@ import {
 } from '@/components/ui/card';
 import { useProject } from '@/hooks/useProjects';
 import { useRole } from '@/hooks/useUser';
-import type { ProjectStatus } from '@/lib/schemas/project';
-
-const STATUS_LABEL: Record<ProjectStatus, string> = {
-  active: 'Active',
-  completed: 'Completed',
-  on_hold: 'On hold',
-};
-
-const STATUS_VARIANT: Record<ProjectStatus, 'default' | 'secondary' | 'outline'> = {
-  active: 'default',
-  completed: 'secondary',
-  on_hold: 'outline',
-};
-
-const fmtDate = (iso: string): string => {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return iso;
-  }
-};
-
-const fmtDateTime = (iso: string): string => {
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
-};
+import { DeleteProjectButton } from '@/components/projects/delete-project-button';
+import { STATUS_LABEL, STATUS_VARIANT, fmtDate, fmtDateTime } from '@/lib/project-format';
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
@@ -75,7 +44,9 @@ export default function ProjectDetailPage() {
         ) : isError || !project ? (
           <Card className="mt-4">
             <CardContent className="flex flex-col items-start gap-3 py-8">
-              <p className="text-sm text-muted-foreground">Project not found or failed to load.</p>
+              <p className="text-sm text-destructive" role="alert">
+                Project not found or failed to load.
+              </p>
               <Button variant="outline" onClick={() => refetch()}>
                 Retry
               </Button>
@@ -125,9 +96,7 @@ export default function ProjectDetailPage() {
                   <Link href={`/projects/${project.id}/edit`}>
                     <Button variant="outline">Edit</Button>
                   </Link>
-                  <Button variant="destructive" disabled aria-label="Delete (coming in t16)">
-                    Delete
-                  </Button>
+                  <DeleteProjectButton projectId={project.id} projectName={project.name} />
                 </div>
               ) : null}
             </CardContent>

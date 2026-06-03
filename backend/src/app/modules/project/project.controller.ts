@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../../errors/ApiError';
 import { projectService } from './project.service';
+import type { ListProjectsQuery } from './project.validation';
 
 export const projectController = {
   create: async (req: Request, res: Response, next: NextFunction) => {
@@ -16,7 +17,8 @@ export const projectController = {
 
   list: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await projectService.list(req.query as never);
+      const query = req.query as unknown as ListProjectsQuery;
+      const result = await projectService.list(query);
       res.status(200).json(result);
     } catch (err) {
       next(err);
