@@ -12,6 +12,14 @@ export interface HighPriorityListProps {
   error?: boolean;
 }
 
+const isOverdue = (iso: string): boolean => {
+  try {
+    return new Date(iso).getTime() < Date.now();
+  } catch {
+    return false;
+  }
+};
+
 export function HighPriorityList({ data, loading, error }: HighPriorityListProps) {
   return (
     <Card data-testid="high-priority-list">
@@ -33,30 +41,45 @@ export function HighPriorityList({ data, loading, error }: HighPriorityListProps
           <p className="text-sm text-muted-foreground">No open high-priority tasks.</p>
         ) : (
           <ul className="divide-y text-sm">
-            {data.map((t) => (
-              <li
-                key={t.id}
-                className="flex items-center justify-between gap-2 py-2"
-              >
-                <Link
-                  href={`/projects/${t.projectId}/tasks/${t.id}`}
-                  className="truncate hover:underline"
+            {data.map((t) => {
+              const overdue = isOverdue(t.dueDate);
+              return (
+                <li
+                  key={t.id}
+                  className="flex items-center justify-between gap-2 py-2"
                 >
-                  {t.title}
-                </Link>
-                <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Badge variant="destructive" className="text-[10px]">
-                    high
-                  </Badge>
-                  {t.assignee ? (
-                    <span className="max-w-24 truncate">{t.assignee.name}</span>
-                  ) : (
-                    <span className="italic">Unassigned</span>
-                  )}
-                  <span>{fmtDate(t.dueDate)}</span>
-                </span>
-              </li>
-            ))}
+                  <Link
+                    href={`/projects/${t.projectId}/tasks/${t.id}`}
+                    className="truncate hover:underline"
+                  >
+                    {t.title}
+                  </Link>
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {overdue ? (
+                      <Badge
+                        variant="destructive"
+                        className="text-[10px]"
+                        aria-label={`Overdue, was due ${fmtDate(t.dueDate)}`}
+                      >
+                        overdue
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive" className="text-[10px]">
+                        high
+                      </Badge>
+                    )}
+                    {t.assignee ? (
+                      <span className="max-w-24 truncate">{t.assignee.name}</span>
+                    ) : (
+                      <span className="italic">Unassigned</span>
+                    )}
+                    <span className={overdue ? 'text-destructive font-medium' : ''}>
+                      {fmtDate(t.dueDate)}
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </CardContent>

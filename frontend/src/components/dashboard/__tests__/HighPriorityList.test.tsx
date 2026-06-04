@@ -38,4 +38,23 @@ describe('HighPriorityList', () => {
     render(<HighPriorityList data={[]} />);
     expect(screen.getByText(/no open high-priority tasks/i)).toBeTruthy();
   });
+
+  it('shows overdue badge instead of high when dueDate has passed', () => {
+    render(
+      <HighPriorityList
+        data={[
+          {
+            id: 't-1',
+            title: 'Past due',
+            projectId: 'p-1',
+            dueDate: '2020-01-01T00:00:00.000Z',
+            status: 'todo',
+            assignee: null,
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText(/overdue/i)).toBeTruthy();
+    expect(screen.queryByText(/^high$/i)).toBeNull();
+  });
 });
