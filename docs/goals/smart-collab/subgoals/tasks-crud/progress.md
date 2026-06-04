@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-04: Phase 3 — t13 done. lib/task-format.ts (status + priority label/variant maps, fmtDate + fmtDateTime). 8 tests. Extracted from start (Ralph lesson). Next: t14 TanStack hooks useTasks + useUsers.
 - 2026-06-04: Phase 3 — t12 done. Frontend lib: schemas/task.ts (Zod v4 mirror), tasks.ts (CRUD + nested listTasksForProject, URLSearchParams query, Date->ISO), users.ts (listUsers minimal). 22 tests added; frontend 96/96 vitest. Zod v4 UUID strict — test fixtures use real v4 uuid. Next: t13 lib/task-format.ts (status + priority label/variant maps + tests).
 - 2026-06-04: Phase 3 — t11 done. Phase B complete. Nested GET /api/v1/projects/:id/tasks delegates to taskService.list, validates project existence first (404 PROJECT_NOT_FOUND), honors task query filters. 4 tests added. Backend 218/218. Next: Phase C frontend — t12 lib/schemas/task + lib/tasks + lib/users.
 - 2026-06-04: Phase 3 — t10 done. GET /api/v1/users minimal shape (id, email, name, role) ordered by name. requireAuth global. 5/5 tests verify 401 unauth + shape + RBAC (all 3 roles can list). Backend 214/214. Next: t11 nested GET /api/v1/projects/:id/tasks convenience route.
