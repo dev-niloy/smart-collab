@@ -87,23 +87,25 @@ export function NotificationBell() {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-          className="relative"
-        >
-          <Bell className="h-5 w-5" aria-hidden />
-          {unreadCount > 0 && (
-            <span
-              data-testid="unread-badge"
-              className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground"
-            >
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </Button>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+            className="relative"
+          />
+        }
+      >
+        <Bell className="h-5 w-5" aria-hidden />
+        {unreadCount > 0 && (
+          <span
+            data-testid="unread-badge"
+            className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground"
+          >
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <div className="flex items-center justify-between px-2 py-1 text-xs font-medium text-muted-foreground">
