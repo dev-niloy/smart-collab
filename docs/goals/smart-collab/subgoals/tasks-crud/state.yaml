@@ -94,8 +94,8 @@ tasks:
   - id: t14
     desc: "hooks/useTasks.ts (useTasks(projectId, filters), useTask(id), useCreateTask, useUpdateTask, useDeleteTask with TanStack invalidation on ['tasks', projectId] + ['task', id]) + hooks/useUsers.ts. Unit tests stubbing fetch"
     files: [frontend/src/hooks/useTasks.ts, frontend/src/hooks/useUsers.ts, frontend/src/hooks/__tests__/useTasks.test.tsx, frontend/src/hooks/__tests__/useUsers.test.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "useTasks(params) -> ['tasks', params]. useProjectTasks(projectId, params) -> ['tasks','project',projectId, params] enabled gated on projectId, hits nested route via listTasksForProject. useTask(id) enabled gated. useCreateTask/useUpdateTask(id): onSuccess setQueryData(['task',id], task) + invalidate ['tasks'] (parent key invalidates all task lists). useDeleteTask: removeQueries + invalidate. useUsers -> ['users'] staleTime 60s. Tests 11/11 (9 useTasks + 2 useUsers): list fetch w/ params, useProjectTasks idle/active, useTask disabled/active, create/update prime detail + invalidate, delete removes + invalidates, create propagates ApiError on 422 DUPLICATE_TASK_TITLE, useUsers fetch + 401 error state. Frontend 115/115 vitest (+19 for t14), typecheck + lint clean."
 
   # ── Phase D: frontend pages ─────────────────────────────────────────────────
   - id: t15
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t14
+next_task: t15
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
