@@ -21,7 +21,7 @@ Steps:
 - 2. GREEN: schema change above; `prisma generate`
 - 3. REFACTOR: nothing
 - 4. Commit `[A1] prisma: add ProjectMember + ProjectRole enum w/ relations and indexes`
-Status: [ ]
+Status: [x] — schema + migration `20260604051802_add_project_member` applied. Removed unrelated rename-index drift from generated SQL. prisma smoke test extended: 5/5 pass. Full backend 220/220.
 
 ### Task 2: migration add_project_member + backfill creators as PM
 Files: `backend/prisma/migrations/<ts>_add_project_member/migration.sql`

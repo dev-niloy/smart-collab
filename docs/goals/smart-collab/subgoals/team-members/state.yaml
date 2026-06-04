@@ -12,8 +12,9 @@ phase: 2 # GSD — plan sliced; ready for Phase 3 Superpowers
 tasks:
   - id: t1
     desc: "ProjectMember model + ProjectRole enum + relations + indexes"
-    files: [backend/prisma/schema.prisma]
-    status: todo
+    files: [backend/prisma/schema.prisma, backend/prisma/migrations/20260604051802_add_project_member/]
+    status: done
+    receipt: "ProjectMember model + ProjectRole enum added. 3 FKs (project Cascade, user Cascade, addedBy SetNull). Unique(projectId,userId) + 2 indexes. User+Project back-relations. Migration 20260604051802_add_project_member applied to docker postgres (rogue tasks-index rename stripped from generated SQL). prisma smoke 5/5. Backend full 220/220."
   - id: t2
     desc: "migration add_project_member + backfill creators as pm"
     files: [backend/prisma/migrations/]
@@ -101,7 +102,7 @@ tasks:
 
 blockers: []
 
-next_task: t1
+next_task: t2
 
 phase_completion:
   gstack: true # locked 2026-06-04 by user (4 clarifications answered)
