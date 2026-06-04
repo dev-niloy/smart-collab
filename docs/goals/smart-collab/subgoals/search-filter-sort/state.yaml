@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 3 # Superpowers — all 16 tasks complete; ready for Phase 4 Ralph
+phase: 4 # Ralph Wiggum — 1 iter, 6 persona wins; DONE
 
 tasks:
   - id: t1
@@ -83,7 +83,7 @@ phase_completion:
   gstack: true
   gsd: true
   superpowers: true # all 16 done 2026-06-04; backend 458/458 jest, frontend 317/317 vitest
-  ralph_wiggum: false
+  ralph_wiggum: true # 1 iter; 6 persona wins (Dev rank desc-only; Architect arrayOrEq dedupe; Designer chip focus ring; QA desc-match coverage; PM plan sync; BA client fail-fast); backend 459/459, frontend 319/319
 
 baseline:
   backend_tests: 403
@@ -91,5 +91,7 @@ baseline:
   branched_off: develop@9ebf81e
 
 results:
-  backend_tests_final: 458 # +55 (10 task validation + 8 task service list + 4 task routes + 9 project validation + 6 project service list + 5 search validation + 9 search service + 6 search routes; net of replaced tests)
-  frontend_tests_final: 317 # +33 (5 search lib + 6 queryString + 4 useGlobalSearch + 7 GlobalSearchBar + 5 projects page + 6 tasks page)
+  backend_tests_final: 459 # phase3 458 + ralph QA (+1)
+  frontend_tests_final: 319 # phase3 317 + ralph BA (+2)
+  ralph_iterations: 1
+  ralph_status: DONE
