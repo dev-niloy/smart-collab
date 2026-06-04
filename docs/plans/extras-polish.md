@@ -193,7 +193,7 @@ Steps:
 - 2. GREEN: composable panel using useComments
 - 3. REFACTOR: extract CommentRow subcomponent
 - 4. Commit `[E14] frontend: TaskCommentsPanel + 6/6`
-Status: [ ]
+Status: [x]
 
 ### Task 15: TaskAttachmentsPanel component
 Files:
