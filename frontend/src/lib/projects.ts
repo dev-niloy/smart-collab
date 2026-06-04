@@ -9,7 +9,12 @@ import type {
 
 type ProjectResponse = { project: Project };
 
-export type ListProjectsParams = Partial<Omit<ListProjectsQuery, 'sort' | 'page' | 'limit'>> & {
+export type ListProjectsParams = {
+  q?: string;
+  status?: string; // single value or comma-separated csv
+  createdBy?: string; // uuid or literal "me"
+  deadlineFrom?: string;
+  deadlineTo?: string;
   sort?: ListProjectsQuery['sort'];
   page?: number;
   limit?: number;
@@ -19,6 +24,9 @@ const buildQuery = (params: ListProjectsParams = {}): string => {
   const usp = new URLSearchParams();
   if (params.q) usp.set('q', params.q);
   if (params.status) usp.set('status', params.status);
+  if (params.createdBy) usp.set('createdBy', params.createdBy);
+  if (params.deadlineFrom) usp.set('deadlineFrom', params.deadlineFrom);
+  if (params.deadlineTo) usp.set('deadlineTo', params.deadlineTo);
   if (params.sort) usp.set('sort', params.sort);
   if (params.page !== undefined) usp.set('page', String(params.page));
   if (params.limit !== undefined) usp.set('limit', String(params.limit));

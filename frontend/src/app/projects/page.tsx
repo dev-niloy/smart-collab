@@ -26,6 +26,7 @@ import {
   type SortKey,
   type Project,
 } from '@/lib/schemas/project';
+import { parseCsv, toCsv, parseDateParam } from '@/lib/queryString';
 
 const SORT_LABEL: Record<SortKey, string> = {
   created: 'Newest',
@@ -33,10 +34,10 @@ const SORT_LABEL: Record<SortKey, string> = {
   updated: 'Recently updated',
 };
 
-const ALL = '__all__';
-
-const parseStatus = (v: string | null): ProjectStatus | undefined =>
-  v && (PROJECT_STATUSES as readonly string[]).includes(v) ? (v as ProjectStatus) : undefined;
+const parseStatusList = (v: string | null): ProjectStatus[] => {
+  const allowed = new Set<string>(PROJECT_STATUSES);
+  return parseCsv(v).filter((s): s is ProjectStatus => allowed.has(s));
+};
 
 const parseSort = (v: string | null): SortKey =>
   v && (SORT_KEYS as readonly string[]).includes(v) ? (v as SortKey) : 'created';
@@ -53,9 +54,12 @@ export default function ProjectsPage() {
   const canCreate = role === 'admin' || role === 'project_manager';
 
   const q = params.get('q') ?? '';
-  const status = parseStatus(params.get('status'));
+  const statusList = parseStatusList(params.get('status'));
   const sort = parseSort(params.get('sort'));
   const page = parsePage(params.get('page'));
+  const deadlineFrom = parseDateParam(params.get('deadlineFrom'));
+  const deadlineTo = parseDateParam(params.get('deadlineTo'));
+  const createdByMe = params.get('createdBy') === 'me';
 
   const [queryInput, setQueryInput] = useState(q);
   const [lastSyncedQ, setLastSyncedQ] = useState(q);
@@ -70,7 +74,14 @@ export default function ProjectsPage() {
       if (v === null || v === '') next.delete(k);
       else next.set(k, v);
     }
-    if ('q' in patch || 'status' in patch || 'sort' in patch) {
+    if (
+      'q' in patch ||
+      'status' in patch ||
+      'sort' in patch ||
+      'deadlineFrom' in patch ||
+      'deadlineTo' in patch ||
+      'createdBy' in patch
+    ) {
       next.delete('page');
     }
     const qs = next.toString();
@@ -86,9 +97,19 @@ export default function ProjectsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput]);
 
+  const statusCsv = useMemo(() => toCsv(statusList), [statusList]);
   const queryParams = useMemo(
-    () => ({ q: q || undefined, status, sort, page, limit: PROJECT_DEFAULT_LIMIT }),
-    [q, status, sort, page],
+    () => ({
+      q: q || undefined,
+      status: statusCsv || undefined,
+      deadlineFrom,
+      deadlineTo,
+      createdBy: createdByMe ? 'me' : undefined,
+      sort,
+      page,
+      limit: PROJECT_DEFAULT_LIMIT,
+    }),
+    [q, statusCsv, deadlineFrom, deadlineTo, createdByMe, sort, page],
   );
 
   const { data, isLoading, isError, refetch } = useProjects(queryParams);
@@ -98,7 +119,19 @@ export default function ProjectsPage() {
   const totalPages = total === 0 ? 1 : Math.ceil(total / limit);
   const items: Project[] = data?.data ?? [];
 
-  const hasFilters = !!q || !!status;
+  const hasFilters =
+    !!q ||
+    statusList.length > 0 ||
+    !!deadlineFrom ||
+    !!deadlineTo ||
+    createdByMe;
+
+  const toggleStatus = (s: ProjectStatus) => {
+    const next = statusList.includes(s)
+      ? statusList.filter((x) => x !== s)
+      : [...statusList, s];
+    setParam({ status: next.length === 0 ? null : toCsv(next) });
+  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -116,42 +149,95 @@ export default function ProjectsPage() {
           ) : null}
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Input
-            value={queryInput}
-            onChange={(e) => setQueryInput(e.target.value)}
-            placeholder="Search by name"
-            aria-label="Search projects"
-            className="sm:max-w-sm"
-          />
-          <Select
-            value={status ?? ALL}
-            onValueChange={(v) => setParam({ status: v === ALL ? null : v })}
+        <div className="mt-6 flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input
+              value={queryInput}
+              onChange={(e) => setQueryInput(e.target.value)}
+              placeholder="Search by name"
+              aria-label="Search projects"
+              className="sm:max-w-sm"
+            />
+            <Select value={sort} onValueChange={(v) => setParam({ sort: v })}>
+              <SelectTrigger className="sm:w-56" aria-label="Sort">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_KEYS.map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {SORT_LABEL[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div
+            className="flex flex-wrap items-center gap-2"
+            role="group"
+            aria-label="Filter by status"
           >
-            <SelectTrigger className="sm:w-44" aria-label="Filter by status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All statuses</SelectItem>
-              {PROJECT_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
+            <span className="text-xs text-muted-foreground">Status:</span>
+            {PROJECT_STATUSES.map((s) => {
+              const active = statusList.includes(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => toggleStatus(s)}
+                  aria-pressed={active}
+                  className={
+                    'rounded-full border px-3 py-0.5 text-xs transition-colors ' +
+                    (active
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input bg-background hover:bg-muted')
+                  }
+                >
                   {STATUS_LABEL[s]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={sort} onValueChange={(v) => setParam({ sort: v })}>
-            <SelectTrigger className="sm:w-56" aria-label="Sort">
-              <SelectValue placeholder="Sort" />
-            </SelectTrigger>
-            <SelectContent>
-              {SORT_KEYS.map((k) => (
-                <SelectItem key={k} value={k}>
-                  {SORT_LABEL[k]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Deadline from
+              <input
+                type="date"
+                aria-label="Deadline from"
+                value={deadlineFrom ?? ''}
+                onChange={(e) =>
+                  setParam({ deadlineFrom: e.target.value || null })
+                }
+                className="h-8 rounded-md border bg-background px-2 text-xs"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Deadline to
+              <input
+                type="date"
+                aria-label="Deadline to"
+                value={deadlineTo ?? ''}
+                onChange={(e) =>
+                  setParam({ deadlineTo: e.target.value || null })
+                }
+                className="h-8 rounded-md border bg-background px-2 text-xs"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setParam({ createdBy: createdByMe ? null : 'me' })}
+              aria-pressed={createdByMe}
+              className={
+                'rounded-full border px-3 py-0.5 text-xs transition-colors ' +
+                (createdByMe
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background hover:bg-muted')
+              }
+            >
+              Created by me
+            </button>
+          </div>
         </div>
 
         <div className="mt-6">
@@ -192,7 +278,13 @@ export default function ProjectsPage() {
                       variant="outline"
                       onClick={() => {
                         setQueryInput('');
-                        setParam({ q: null, status: null });
+                        setParam({
+                          q: null,
+                          status: null,
+                          deadlineFrom: null,
+                          deadlineTo: null,
+                          createdBy: null,
+                        });
                       }}
                     >
                       Clear filters
