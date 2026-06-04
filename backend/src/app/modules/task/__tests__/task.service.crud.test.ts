@@ -49,10 +49,19 @@ maybe('taskService CRUD', () => {
       data: { name: 'T5 Other Project', deadline: future(30), status: 'active', createdBy: actorId },
     });
     otherProjectId = p2.id;
+    // C13: tasks now require assignee to be a project member (admin bypass).
+    // actor is admin → bypass works for actor. assignee is team_member → add to both projects.
+    await prisma.projectMember.createMany({
+      data: [
+        { projectId, userId: assigneeId, role: 'member' },
+        { projectId: otherProjectId, userId: assigneeId, role: 'member' },
+      ],
+    });
   });
 
   afterAll(async () => {
     await prisma.task.deleteMany({ where: { projectId: { in: [projectId, otherProjectId] } } });
+    await prisma.projectMember.deleteMany({ where: { projectId: { in: [projectId, otherProjectId] } } });
     await prisma.project.deleteMany({ where: { id: { in: [projectId, otherProjectId] } } });
     await prisma.user.deleteMany({ where: { id: { in: [actorId, assigneeId] } } });
     await disconnectPrisma();
@@ -330,6 +339,60 @@ maybe('taskService CRUD', () => {
       await prisma.project.delete({ where: { id: tempProj.id } });
       const after = await prisma.task.count({ where: { projectId: tempProj.id } });
       expect(after).toBe(0);
+    });
+  });
+
+  describe('C13 assignee-must-be-project-member guard', () => {
+    let nonMemberId: string;
+    beforeAll(async () => {
+      const u = await prisma.user.create({
+        data: {
+          email: `nonmember-${TEST_EMAIL}`,
+          name: 'Non Member',
+          passwordHash: await bcrypt.hash('x', 4),
+          role: 'team_member',
+        },
+      });
+      nonMemberId = u.id;
+    });
+
+    afterAll(async () => {
+      await prisma.user.deleteMany({ where: { id: nonMemberId } });
+    });
+
+    it('blocks create when assignedTo is not a project member', async () => {
+      await expect(
+        taskService.create(
+          { projectId, title: 'C13-create', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assignedTo: nonMemberId },
+          actorId,
+        ),
+      ).rejects.toMatchObject({ statusCode: 422, code: 'ASSIGNEE_NOT_PROJECT_MEMBER' });
+    });
+
+    it('blocks update when reassigning to non-member', async () => {
+      const t = await taskService.create(
+        { projectId, title: 'C13-update', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assignedTo: assigneeId },
+        actorId,
+      );
+      await expect(
+        taskService.update(t.id, { assignedTo: nonMemberId }),
+      ).rejects.toMatchObject({ statusCode: 422, code: 'ASSIGNEE_NOT_PROJECT_MEMBER' });
+    });
+
+    it('allows assigning system admin even when not a ProjectMember (admin bypass)', async () => {
+      const t = await taskService.create(
+        { projectId, title: 'C13-admin-bypass', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assignedTo: actorId },
+        actorId,
+      );
+      expect(t.assignedTo).toBe(actorId);
+    });
+
+    it('allows null assignedTo (unassigned) regardless of membership', async () => {
+      const t = await taskService.create(
+        { projectId, title: 'C13-null', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assignedTo: null },
+        actorId,
+      );
+      expect(t.assignedTo).toBeNull();
     });
   });
 });

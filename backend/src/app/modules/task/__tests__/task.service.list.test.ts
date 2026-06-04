@@ -47,6 +47,13 @@ maybe('taskService list', () => {
     projectB = pB.id;
 
     await prisma.task.deleteMany({ where: { projectId: { in: [projectA, projectB] } } });
+    // C13 guard: assignee must be a project member (admin bypass for actor).
+    await prisma.projectMember.createMany({
+      data: [
+        { projectId: projectA, userId: assigneeId, role: 'member' },
+        { projectId: projectB, userId: assigneeId, role: 'member' },
+      ],
+    });
 
     // Seed 6 tasks in A (varied), 2 in B
     await taskService.create(
@@ -77,6 +84,7 @@ maybe('taskService list', () => {
 
   afterAll(async () => {
     await prisma.task.deleteMany({ where: { projectId: { in: [projectA, projectB] } } });
+    await prisma.projectMember.deleteMany({ where: { projectId: { in: [projectA, projectB] } } });
     await prisma.project.deleteMany({ where: { id: { in: [projectA, projectB] } } });
     await prisma.user.deleteMany({ where: { id: { in: [actorId, assigneeId] } } });
     await disconnectPrisma();

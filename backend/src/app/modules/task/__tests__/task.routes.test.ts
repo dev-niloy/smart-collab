@@ -64,10 +64,19 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
       data: { name: 'T7 Routes Project', deadline: new Date(future(60)), status: 'active', createdBy: adminId },
     });
     projectId = p.id;
+    // C13: tasks now require assignee to be a project member (admin bypasses).
+    // Add pm + member as project members so they can be assigned tasks.
+    await prisma.projectMember.createMany({
+      data: [
+        { projectId, userId: pmId, role: 'pm' },
+        { projectId, userId: memberId, role: 'member' },
+      ],
+    });
   });
 
   afterAll(async () => {
     await prisma.task.deleteMany({});
+    await prisma.projectMember.deleteMany({});
     await prisma.project.deleteMany({});
     await prisma.user.deleteMany({ where: { email: { in: DEMO_EMAILS } } });
     await disconnectPrisma();
