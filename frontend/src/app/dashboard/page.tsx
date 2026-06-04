@@ -1,61 +1,95 @@
 'use client';
 
-import Link from 'next/link';
 import { Header } from '@/components/header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser } from '@/hooks/useUser';
+import { KpiCard } from '@/components/dashboard/KpiCard';
+import { StatusDonut } from '@/components/dashboard/StatusDonut';
+import { PriorityBar } from '@/components/dashboard/PriorityBar';
+import { ProductivityLine } from '@/components/dashboard/ProductivityLine';
+import { UpcomingList } from '@/components/dashboard/UpcomingList';
+import { HighPriorityList } from '@/components/dashboard/HighPriorityList';
+import {
+  useKpis,
+  useStatusCounts,
+  usePriorityCounts,
+  useProductivity,
+  useUpcoming,
+  useHighPriority,
+} from '@/hooks/useDashboard';
 
 export default function DashboardPage() {
-  const { user, isLoading } = useUser();
+  return <DashboardGrid />;
+}
+
+export function DashboardGrid({ projectId }: { projectId?: string }) {
+  const kpis = useKpis(projectId);
+  const status = useStatusCounts(projectId);
+  const priority = usePriorityCounts(projectId);
+  const productivity = useProductivity(projectId, 30);
+  const upcoming = useUpcoming(projectId, 7);
+  const highPriority = useHighPriority(projectId);
 
   return (
     <div className="flex flex-1 flex-col">
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {isLoading ? 'Loading…' : user ? `Signed in as ${user.email}` : 'Not signed in'}
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {projectId ? 'Project dashboard' : 'Dashboard'}
+        </h1>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Link href="/projects" className="block">
-            <Card className="h-full transition-colors hover:bg-accent/40">
-              <CardHeader>
-                <CardTitle>Projects</CardTitle>
-                <CardDescription>Browse, create, and manage projects.</CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">Open →</CardContent>
-            </Card>
-          </Link>
-          <Card>
-            <CardHeader>
-              <CardTitle>Tasks</CardTitle>
-              <CardDescription>Open tasks across all projects.</CardDescription>
-            </CardHeader>
-            <CardContent
-              className="text-3xl font-semibold"
-              aria-label="No data yet"
-            >
-              <span aria-hidden="true">—</span>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Team</CardTitle>
-              <CardDescription>Members across projects.</CardDescription>
-            </CardHeader>
-            <CardContent
-              className="text-3xl font-semibold"
-              aria-label="No data yet"
-            >
-              <span aria-hidden="true">—</span>
-            </CardContent>
-          </Card>
-        </div>
+        <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiCard
+            title="Projects"
+            value={kpis.data?.totalProjects}
+            loading={kpis.isLoading}
+            error={kpis.isError}
+          />
+          <KpiCard
+            title="Tasks"
+            value={kpis.data?.totalTasks}
+            sub={kpis.data ? `${kpis.data.completionPct}% completed` : undefined}
+            loading={kpis.isLoading}
+            error={kpis.isError}
+          />
+          <KpiCard
+            title="Completed"
+            value={kpis.data?.completedTasks}
+            loading={kpis.isLoading}
+            error={kpis.isError}
+          />
+          <KpiCard
+            title="My open tasks"
+            value={kpis.data?.myOpenTasks}
+            loading={kpis.isLoading}
+            error={kpis.isError}
+          />
+        </section>
 
-        <p className="mt-8 text-xs text-muted-foreground">
-          Foundation shell. Real KPIs and charts land in the dashboard-analytics subgoal.
-        </p>
+        <section className="mt-6 grid gap-3 lg:grid-cols-2">
+          <StatusDonut data={status.data} loading={status.isLoading} error={status.isError} />
+          <PriorityBar data={priority.data} loading={priority.isLoading} error={priority.isError} />
+        </section>
+
+        <section className="mt-6">
+          <ProductivityLine
+            data={productivity.data}
+            loading={productivity.isLoading}
+            error={productivity.isError}
+          />
+        </section>
+
+        <section className="mt-6 grid gap-3 lg:grid-cols-2">
+          <UpcomingList
+            data={upcoming.data}
+            days={7}
+            loading={upcoming.isLoading}
+            error={upcoming.isError}
+          />
+          <HighPriorityList
+            data={highPriority.data}
+            loading={highPriority.isLoading}
+            error={highPriority.isError}
+          />
+        </section>
       </main>
     </div>
   );
