@@ -67,6 +67,7 @@ function InlineStatusSelect({ task }: { task: Task }) {
     <Select
       value={task.status}
       onValueChange={async (v) => {
+        if (mutation.isPending || v === task.status) return;
         try {
           await mutation.mutateAsync({ status: v as TaskStatus });
         } catch (err) {
@@ -78,7 +79,7 @@ function InlineStatusSelect({ task }: { task: Task }) {
       <SelectTrigger
         className="h-7 w-32 text-xs"
         aria-label={`Status for ${task.title}`}
-        onClick={(e) => e.stopPropagation()}
+        disabled={mutation.isPending}
       >
         <SelectValue />
       </SelectTrigger>
