@@ -10,8 +10,11 @@ import {
   projectIdParamSchema,
 } from './project.validation';
 import { listTasksQuerySchema } from '../task/task.validation';
+import projectMemberRouter from '../projectMember/projectMember.routes';
 
 const router = Router();
+
+router.use('/:id/members', projectMemberRouter);
 
 router.use(requireAuth);
 
