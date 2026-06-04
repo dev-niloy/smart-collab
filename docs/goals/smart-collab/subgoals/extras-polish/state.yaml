@@ -73,7 +73,7 @@ tasks:
   - id: t16
     desc: "frontend: NotificationBell + Header mount + 6 tests"
     files: [frontend/src/components/notifications/, frontend/src/components/header.tsx]
-    status: pending
+    status: done
   - id: t17
     desc: "task detail integrates Comments + Attachments panels + 3 tests"
     files: ["frontend/src/app/projects/[id]/tasks/[taskId]/"]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t16
+next_task: t17
 
 phase_completion:
   gstack: true

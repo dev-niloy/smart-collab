@@ -216,7 +216,7 @@ Steps:
 - 2. GREEN: bell + dropdown using useNotifications + useUnreadCount
 - 3. REFACTOR: extract NotificationRow subcomponent
 - 4. Commit `[E16] frontend: NotificationBell + Header mount + 6/6`
-Status: [ ]
+Status: [x]
 
 ### Task 17: task detail page integrates Comments + Attachments panels
 Files:
