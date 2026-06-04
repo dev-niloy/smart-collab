@@ -25,7 +25,7 @@ tasks:
   - id: t4
     desc: "comment.service — CRUD + activity emit + 8 tests"
     files: [backend/src/app/modules/comment/]
-    status: pending
+    status: done
   - id: t5
     desc: "comment.controller + routes mounted under task + 8 tests"
     files: [backend/src/app/modules/comment/, backend/src/app/modules/task/task.routes.ts]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t4
+next_task: t5
 
 phase_completion:
   gstack: true

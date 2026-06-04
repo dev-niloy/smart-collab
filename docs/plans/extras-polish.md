@@ -52,7 +52,7 @@ Steps:
 - 2. GREEN: prisma + recordActivity wrappers; permission helper `canMutateComment(actor, comment, projectRole)`
 - 3. REFACTOR: extract `toDTO` + cursor encode/decode helper
 - 4. Commit `[B4] comment.service: CRUD + activity emit + 8/8`
-Status: [ ]
+Status: [x]
 
 ### Task 5: comment.controller + routes mounted under task
 Files:
