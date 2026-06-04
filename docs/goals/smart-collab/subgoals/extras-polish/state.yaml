@@ -33,7 +33,7 @@ tasks:
   - id: t6
     desc: "attachment: deps + constants + filename sanitiser + 4 tests"
     files: [backend/src/app/modules/attachment/, backend/package.json]
-    status: pending
+    status: done
   - id: t7
     desc: "attachment.service — upload/list/delete + activity + 6 tests"
     files: [backend/src/app/modules/attachment/]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t6
+next_task: t7
 
 phase_completion:
   gstack: true

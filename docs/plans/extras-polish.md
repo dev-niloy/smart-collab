@@ -81,7 +81,7 @@ Steps:
 - 2. GREEN: `npm i multer @types/multer`; constants `MAX_SIZE=10MB`, `ALLOWED_MIME = [pdf, png, jpg, gif, webp, txt, csv, zip, doc/x, xls/x]`; `safeFilename(name)`; uploads dir bootstrap
 - 3. REFACTOR: none
 - 4. Commit `[C6] attachment: deps + constants + filename sanitiser + 4/4`
-Status: [ ]
+Status: [x]
 
 ### Task 7: attachment.service — upload/list/delete + activity emit
 Files:
