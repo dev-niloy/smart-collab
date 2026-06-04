@@ -122,4 +122,56 @@ maybe('projectService.list', () => {
     const mine = await onlyMine(r.data);
     expect(mine).toEqual([]);
   });
+
+  describe('extended filters (multi-select + range + me)', () => {
+    it('filters by status[] (in)', async () => {
+      const r = await myList({ status: [ProjectStatus.active, ProjectStatus.on_hold] });
+      const mine = await onlyMine(r.data);
+      expect(mine.length).toBe(4);
+      expect(mine.every((p) => ['active', 'on_hold'].includes(p.status))).toBe(true);
+    });
+
+    it('filters by deadlineFrom + deadlineTo range', async () => {
+      const from = dayFromNow(3);
+      const to = dayFromNow(11);
+      const r = await myList({ deadlineFrom: from, deadlineTo: to });
+      const mine = await onlyMine(r.data);
+      for (const p of mine) {
+        expect(p.deadline.getTime()).toBeGreaterThanOrEqual(from.getTime());
+        expect(p.deadline.getTime()).toBeLessThanOrEqual(to.getTime());
+      }
+    });
+
+    it('createdBy=me resolves to actorId', async () => {
+      const r = await myList({ createdBy: 'me', actorId });
+      const mine = await onlyMine(r.data);
+      expect(mine.length).toBe(5);
+      expect(mine.every((p) => p.createdBy === actorId)).toBe(true);
+    });
+
+    it('combines status[] + range + createdBy=me narrows correctly', async () => {
+      const r = await myList({
+        status: [ProjectStatus.active],
+        deadlineFrom: dayFromNow(0),
+        deadlineTo: dayFromNow(25),
+        createdBy: 'me',
+        actorId,
+      });
+      const mine = await onlyMine(r.data);
+      expect(mine.every((p) => p.status === 'active')).toBe(true);
+      expect(mine.every((p) => p.createdBy === actorId)).toBe(true);
+    });
+
+    it('single-value as 1-element array still works (back-compat)', async () => {
+      const r = await myList({ status: [ProjectStatus.completed] });
+      const mine = await onlyMine(r.data);
+      expect(mine.every((p) => p.status === 'completed')).toBe(true);
+    });
+
+    it('range with only deadlineFrom (no upper bound)', async () => {
+      const r = await myList({ deadlineFrom: dayFromNow(15) });
+      const mine = await onlyMine(r.data);
+      expect(mine.every((p) => p.deadline.getTime() >= dayFromNow(15).getTime())).toBe(true);
+    });
+  });
 });
