@@ -5,6 +5,16 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   useComments,
   useCreateComment,
   useUpdateComment,
@@ -51,6 +61,7 @@ type RowProps = {
 function CommentRow({ comment, taskId, canEditRow, canDeleteRow }: RowProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(comment.body);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const update = useUpdateComment(taskId);
   const del = useDeleteComment(taskId);
 
@@ -63,11 +74,11 @@ function CommentRow({ comment, taskId, canEditRow, canDeleteRow }: RowProps) {
       toast.error(err instanceof ApiError ? err.message : 'Update failed');
     }
   };
-  const onDelete = async () => {
-    if (!confirm('Delete this comment?')) return;
+  const onConfirmDelete = async () => {
     try {
       await del.mutateAsync(comment.id);
       toast.success('Comment deleted');
+      setConfirmOpen(false);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Delete failed');
     }
@@ -109,11 +120,27 @@ function CommentRow({ comment, taskId, canEditRow, canDeleteRow }: RowProps) {
             </Button>
           )}
           {canDeleteRow && (
-            <Button size="sm" variant="ghost" onClick={onDelete}>
+            <Button size="sm" variant="ghost" onClick={() => setConfirmOpen(true)}>
               Delete
             </Button>
           )}
         </div>
+      )}
+      {canDeleteRow && (
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this comment?</AlertDialogTitle>
+              <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={del.isPending}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onConfirmDelete} disabled={del.isPending}>
+                {del.isPending ? 'Deleting…' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </li>
   );
