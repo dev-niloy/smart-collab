@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../../errors/ApiError';
 import { dashboardService } from './dashboard.service';
+import type { ProductivityQuery, UpcomingQuery } from './dashboard.validation';
 
 const scopeFromReq = (req: Request) => {
   const actorId = req.user?.id;
@@ -36,7 +37,8 @@ export const dashboardController = {
   },
   productivity: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const days = (req.query.days as unknown as number) ?? 30;
+      // validate middleware has already parsed + defaulted via productivityQuerySchema.
+      const { days } = req.query as unknown as ProductivityQuery;
       const data = await dashboardService.getProductivity(scopeFromReq(req), days);
       res.status(200).json({ data });
     } catch (err) {
@@ -45,7 +47,7 @@ export const dashboardController = {
   },
   upcoming: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const days = (req.query.days as unknown as number) ?? 7;
+      const { days } = req.query as unknown as UpcomingQuery;
       const data = await dashboardService.getUpcoming(scopeFromReq(req), days);
       res.status(200).json(data);
     } catch (err) {
