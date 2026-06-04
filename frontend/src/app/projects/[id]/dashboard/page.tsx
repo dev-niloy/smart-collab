@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { DashboardGrid } from '@/app/dashboard/page';
+import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 
 export default function ScopedDashboardPage() {
   const params = useParams<{ id: string }>();
