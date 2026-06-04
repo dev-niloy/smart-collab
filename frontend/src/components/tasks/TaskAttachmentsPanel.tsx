@@ -4,6 +4,16 @@ import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   useAttachments,
   useUploadAttachment,
   useDeleteAttachment,
@@ -48,11 +58,12 @@ type RowProps = {
 
 function AttachmentRow({ attachment, taskId, canDeleteRow }: RowProps) {
   const del = useDeleteAttachment(taskId);
-  const onDelete = async () => {
-    if (!confirm('Delete this file?')) return;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const onConfirmDelete = async () => {
     try {
       await del.mutateAsync(attachment.id);
       toast.success('Attachment deleted');
+      setConfirmOpen(false);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Delete failed');
     }
@@ -73,9 +84,27 @@ function AttachmentRow({ attachment, taskId, canDeleteRow }: RowProps) {
         </span>
       </div>
       {canDeleteRow && (
-        <Button size="sm" variant="ghost" onClick={onDelete}>
-          Delete
-        </Button>
+        <>
+          <Button size="sm" variant="ghost" onClick={() => setConfirmOpen(true)}>
+            Delete
+          </Button>
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this file?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {attachment.filename} will be removed. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={del.isPending}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onConfirmDelete} disabled={del.isPending}>
+                  {del.isPending ? 'Deleting…' : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
       )}
     </li>
   );
