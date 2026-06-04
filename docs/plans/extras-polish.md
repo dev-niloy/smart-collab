@@ -121,7 +121,7 @@ Steps:
 - 2. GREEN: pure DB helper; `NOTIFICATION_TYPES = ['task.assigned','comment.created']`
 - 3. REFACTOR: none
 - 4. Commit `[D9] notification: enqueue helper + 5/5`
-Status: [ ]
+Status: [x]
 
 ### Task 10: wire notifications into task.assigned + comment.created
 Files:

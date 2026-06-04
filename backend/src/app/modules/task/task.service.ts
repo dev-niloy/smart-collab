@@ -13,6 +13,7 @@ import {
 } from './task.constant';
 import type { CreateTaskInput, UpdateTaskInput } from './task.validation';
 import { recordActivity } from '../activityLog/activityLog.service';
+import { enqueue as enqueueNotification } from '../notification/notification.service';
 import { arrayOrEq } from '../../lib/queryFields';
 
 const ensureFutureDeadline = (dueDate: Date) => {
@@ -110,6 +111,17 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
         projectId: task.projectId,
         meta: { title: task.title, status: task.status, priority: task.priority },
       });
+      if (task.assignedTo) {
+        await enqueueNotification(tx, {
+          recipientId: task.assignedTo,
+          actorId,
+          type: 'task.assigned',
+          entityType: 'task',
+          entityId: task.id,
+          projectId: task.projectId,
+          payload: { taskTitle: task.title, taskId: task.id, projectId: task.projectId },
+        });
+      }
       return task;
     });
   } catch (err) {
@@ -211,6 +223,17 @@ const update = async (
           projectId: task.projectId,
           meta: { from: current.assignedTo ?? undefined, to: task.assignedTo ?? undefined },
         });
+        if (task.assignedTo) {
+          await enqueueNotification(tx, {
+            recipientId: task.assignedTo,
+            actorId,
+            type: 'task.assigned',
+            entityType: 'task',
+            entityId: task.id,
+            projectId: task.projectId,
+            payload: { taskTitle: task.title, taskId: task.id, projectId: task.projectId },
+          });
+        }
       }
 
       return task;

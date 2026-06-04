@@ -3,6 +3,7 @@ import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
 import { recordActivity } from '../activityLog/activityLog.service';
 import { decodeCursor, encodeCursor } from '../activityLog/activityLog.validation';
+import { enqueueMany as enqueueNotifications } from '../notification/notification.service';
 
 export type CommentDTO = {
   id: string;
@@ -32,8 +33,13 @@ const toDTO = (row: CommentWithAuthor): CommentDTO => ({
   updatedAt: row.updatedAt,
 });
 
-const ensureTaskExists = async (taskId: string): Promise<{ projectId: string }> => {
-  const t = await prisma.task.findUnique({ where: { id: taskId }, select: { projectId: true } });
+const ensureTaskExists = async (
+  taskId: string,
+): Promise<{ projectId: string; createdBy: string; assignedTo: string | null; title: string }> => {
+  const t = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: { projectId: true, createdBy: true, assignedTo: true, title: true },
+  });
   if (!t) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
   return t;
 };
@@ -83,7 +89,7 @@ const create = async (
   authorId: string,
   body: string,
 ): Promise<CommentDTO> => {
-  const { projectId } = await ensureTaskExists(taskId);
+  const task = await ensureTaskExists(taskId);
   return prisma.$transaction(async (tx) => {
     const row = await tx.comment.create({
       data: { taskId, authorId, body },
@@ -94,9 +100,31 @@ const create = async (
       action: 'comment.created',
       entityType: 'comment',
       entityId: row.id,
-      projectId,
+      projectId: task.projectId,
       meta: { title: body.slice(0, 80) },
     });
+    // Notify task assignee + task creator (deduped, never the actor)
+    const excerpt = body.slice(0, 140);
+    const recipients: string[] = [];
+    if (task.assignedTo) recipients.push(task.assignedTo);
+    if (task.createdBy) recipients.push(task.createdBy);
+    await enqueueNotifications(
+      tx,
+      recipients.map((recipientId) => ({
+        recipientId,
+        actorId: authorId,
+        type: 'comment.created' as const,
+        entityType: 'comment',
+        entityId: row.id,
+        projectId: task.projectId,
+        payload: {
+          taskTitle: task.title,
+          taskId,
+          commentId: row.id,
+          commentExcerpt: excerpt,
+        },
+      })),
+    );
     return toDTO(row);
   });
 };
