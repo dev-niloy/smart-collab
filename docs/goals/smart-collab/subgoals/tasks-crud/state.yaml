@@ -50,9 +50,9 @@ tasks:
   # ── Phase B: backend controller + routes + users endpoint ────────────────────
   - id: t7
     desc: "task.controller.ts (thin) + task.routes.ts: requireAuth global; create open to all authed; ownership middleware for PATCH (admin/PM bypass; otherwise actor must be createdBy OR assignedTo); requireRole admin/PM on DELETE. Mount /api/v1/tasks. Integration happy-path tests (admin creates, member creates, member edits own, admin deletes)"
-    files: [backend/src/app/modules/task/task.controller.ts, backend/src/app/modules/task/task.routes.ts, backend/src/app/routes/index.ts, backend/src/app/modules/task/__tests__/task.routes.test.ts]
-    status: todo
-    receipt: null
+    files: [backend/src/app/modules/task/task.controller.ts, backend/src/app/modules/task/task.ownership.ts, backend/src/app/modules/task/task.routes.ts, backend/src/app/routes/index.ts, backend/src/app/modules/task/__tests__/task.routes.test.ts]
+    status: done
+    receipt: "Controller (5 thin handlers, typed ListTasksQuery cast). Ownership middleware requireTaskOwnerOrPrivileged: admin/PM bypass; member must be createdBy OR assignedTo, else 403 FORBIDDEN_OWNERSHIP (404 if task missing). Routes: requireAuth global, create open to all authed (members can create), PATCH order = validate(params) -> ownership middleware -> validate(body) -> handler, DELETE gated by requireRole('admin','project_manager'). Mounted at /api/v1/tasks. Tests 8/8: admin creates w/ creator+assignee embed, member creates (members can create), all 3 roles list w/ embedded relations, member edits own (createdBy=self), member edits assigned (assignedTo=self), admin deletes -> 204 then GET 404, PM deletes -> 204, list filters via query string (status+priority+assignedTo). BACKEND TOTAL 189/189 jest (+8)."
 
   - id: t8
     desc: "integration negative paths: 401 unauth, 403 member edits non-own task, 403 member tries DELETE, 404 missing id, 422 invalid body, pagination cap (limit=999 -> 50)"
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t7
+next_task: t8
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
