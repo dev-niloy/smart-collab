@@ -191,4 +191,124 @@ maybe('projectMember routes /api/v1/projects/:id/members', () => {
     const g = await memAgent.get(`/api/v1/projects/${projectId}/members`);
     expect(g.status).toBe(403);
   });
+
+  // ── negative paths ──────────────────────────────────────────────────────
+  describe('negative paths', () => {
+    it('401 MISSING_TOKEN when not authenticated (GET)', async () => {
+      const r = await request(app).get(`/api/v1/projects/${projectId}/members`);
+      expect(r.status).toBe(401);
+      expect(r.body.error.code).toBe('MISSING_TOKEN');
+    });
+
+    it('401 MISSING_TOKEN when not authenticated (POST)', async () => {
+      const r = await request(app)
+        .post(`/api/v1/projects/${projectId}/members`)
+        .send({ email: extraUserEmail, role: 'member' });
+      expect(r.status).toBe(401);
+    });
+
+    it('401 on PATCH unauth', async () => {
+      const r = await request(app)
+        .patch(`/api/v1/projects/${projectId}/members/00000000-0000-4000-8000-000000000000`)
+        .send({ role: 'pm' });
+      expect(r.status).toBe(401);
+    });
+
+    it('401 on DELETE unauth', async () => {
+      const r = await request(app).delete(
+        `/api/v1/projects/${projectId}/members/00000000-0000-4000-8000-000000000000`,
+      );
+      expect(r.status).toBe(401);
+    });
+
+    it('403 FORBIDDEN_PROJECT_ROLE on POST as non-pm member', async () => {
+      const pmAgent = await loginAs('project_manager');
+      await pmAgent
+        .post(`/api/v1/projects/${projectId}/members`)
+        .send({ email: 'member@demo.local', role: 'member' });
+      const memAgent = await loginAs('team_member');
+      const r = await memAgent
+        .post(`/api/v1/projects/${projectId}/members`)
+        .send({ email: extraUserEmail, role: 'member' });
+      expect(r.status).toBe(403);
+      expect(r.body.error.code).toBe('FORBIDDEN_PROJECT_ROLE');
+    });
+
+    it('403 on PATCH as non-pm member', async () => {
+      const pmAgent = await loginAs('project_manager');
+      const addR = await pmAgent
+        .post(`/api/v1/projects/${projectId}/members`)
+        .send({ email: 'member@demo.local', role: 'member' });
+      const memberRowId = addR.body.member.id;
+      const memAgent = await loginAs('team_member');
+      const r = await memAgent
+        .patch(`/api/v1/projects/${projectId}/members/${memberRowId}`)
+        .send({ role: 'pm' });
+      expect(r.status).toBe(403);
+    });
+
+    it('403 on DELETE as non-pm member', async () => {
+      const pmAgent = await loginAs('project_manager');
+      const addR = await pmAgent
+        .post(`/api/v1/projects/${projectId}/members`)
+        .send({ email: 'member@demo.local', role: 'member' });
+      const memberRowId = addR.body.member.id;
+      const memAgent = await loginAs('team_member');
+      const r = await memAgent.delete(`/api/v1/projects/${projectId}/members/${memberRowId}`);
+      expect(r.status).toBe(403);
+    });
+
+    it('404 USER_NOT_FOUND on add unknown email', async () => {
+      const agent = await loginAs('admin');
+      const r = await agent
+        .post(`/api/v1/projects/${projectId}/members`)
+        .send({ email: 'nope@nowhere.test', role: 'member' });
+      expect(r.status).toBe(404);
+      expect(r.body.error.code).toBe('USER_NOT_FOUND');
+    });
+
+    it('422 ALREADY_MEMBER on duplicate add', async () => {
+      const agent = await loginAs('admin');
+      await agent
+        .post(`/api/v1/projects/${projectId}/members`)
+        .send({ email: extraUserEmail, role: 'member' });
+      const dup = await agent
+        .post(`/api/v1/projects/${projectId}/members`)
+        .send({ email: extraUserEmail, role: 'member' });
+      expect(dup.status).toBe(422);
+      expect(dup.body.error.code).toBe('ALREADY_MEMBER');
+    });
+
+    it('404 MEMBER_NOT_FOUND on PATCH unknown member id', async () => {
+      const agent = await loginAs('admin');
+      const r = await agent
+        .patch(`/api/v1/projects/${projectId}/members/00000000-0000-4000-8000-000000000000`)
+        .send({ role: 'pm' });
+      expect(r.status).toBe(404);
+      expect(r.body.error.code).toBe('MEMBER_NOT_FOUND');
+    });
+
+    it('404 MEMBER_NOT_FOUND on DELETE unknown member id', async () => {
+      const agent = await loginAs('admin');
+      const r = await agent.delete(
+        `/api/v1/projects/${projectId}/members/00000000-0000-4000-8000-000000000000`,
+      );
+      expect(r.status).toBe(404);
+      expect(r.body.error.code).toBe('MEMBER_NOT_FOUND');
+    });
+
+    it('422 CANNOT_REMOVE_LAST_PM when removing lone pm w/ tasks', async () => {
+      const agent = await loginAs('admin');
+      // pm row already exists (seeded in beforeEach). Add a task.
+      await prisma.task.create({
+        data: { projectId, title: 'guarded', dueDate: future(20), createdBy: pmId },
+      });
+      const pmRow = await prisma.projectMember.findFirstOrThrow({
+        where: { projectId, userId: pmId },
+      });
+      const r = await agent.delete(`/api/v1/projects/${projectId}/members/${pmRow.id}`);
+      expect(r.status).toBe(422);
+      expect(r.body.error.code).toBe('CANNOT_REMOVE_LAST_PM');
+    });
+  });
 });
