@@ -85,6 +85,11 @@ const dateKey = (d: Date): string => {
   return `${y}-${m}-${day}`;
 };
 
+// Productivity metric proxies "completion date" via Task.updatedAt while
+// status='completed'. This is accurate when tasks aren't edited after
+// completion. For full historical accuracy (esp. if a completed task is
+// later edited), a dedicated Task.completedAt column or status-transition
+// ActivityLog query is required — both deferred to a later subgoal.
 const getProductivity = async (
   scope: Scope,
   days: number,
