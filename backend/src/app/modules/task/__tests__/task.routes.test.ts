@@ -202,4 +202,117 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     expect(res.body.total).toBe(1);
     expect(res.body.data[0].priority).toBe('high');
   });
+
+  // ── t8: negative paths ─────────────────────────────────────────────────────
+
+  it('unauth -> 401 on list', async () => {
+    const res = await request(app).get('/api/v1/tasks');
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('MISSING_TOKEN');
+  });
+
+  it('unauth -> 401 on POST', async () => {
+    const res = await request(app)
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'X', dueDate: future() });
+    expect(res.status).toBe(401);
+  });
+
+  it('member edits task NOT assigned to them and NOT created by them -> 403 FORBIDDEN_OWNERSHIP', async () => {
+    const adminAgent = await loginAs('admin');
+    const created = await adminAgent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Admin-owned', dueDate: future(), assignedTo: pmId });
+    const memberAgent = await loginAs('team_member');
+    const res = await memberAgent
+      .patch(`/api/v1/tasks/${created.body.task.id}`)
+      .send({ status: 'in_progress' });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('FORBIDDEN_OWNERSHIP');
+  });
+
+  it('member tries DELETE -> 403 FORBIDDEN_ROLE', async () => {
+    const adminAgent = await loginAs('admin');
+    const created = await adminAgent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Member cant delete', dueDate: future(), assignedTo: memberId });
+    const memberAgent = await loginAs('team_member');
+    const res = await memberAgent.delete(`/api/v1/tasks/${created.body.task.id}`);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('FORBIDDEN_ROLE');
+  });
+
+  it('GET unknown id -> 404 TASK_NOT_FOUND', async () => {
+    const agent = await loginAs('admin');
+    const res = await agent.get('/api/v1/tasks/00000000-0000-0000-0000-000000000000');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('TASK_NOT_FOUND');
+  });
+
+  it('PATCH unknown id (admin) -> 404 TASK_NOT_FOUND', async () => {
+    const agent = await loginAs('admin');
+    const res = await agent
+      .patch('/api/v1/tasks/00000000-0000-0000-0000-000000000000')
+      .send({ title: 'X' });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('TASK_NOT_FOUND');
+  });
+
+  it('PATCH unknown id (member) -> 404 TASK_NOT_FOUND from ownership middleware', async () => {
+    const agent = await loginAs('team_member');
+    const res = await agent
+      .patch('/api/v1/tasks/00000000-0000-0000-0000-000000000000')
+      .send({ title: 'X' });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('TASK_NOT_FOUND');
+  });
+
+  it('DELETE unknown id (admin) -> 404 TASK_NOT_FOUND', async () => {
+    const agent = await loginAs('admin');
+    const res = await agent.delete('/api/v1/tasks/00000000-0000-0000-0000-000000000000');
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('TASK_NOT_FOUND');
+  });
+
+  it('POST invalid body -> 422 VALIDATION_ERROR', async () => {
+    const agent = await loginAs('admin');
+    const res = await agent
+      .post('/api/v1/tasks')
+      .send({ projectId: 'not-uuid', title: '', dueDate: 'bogus' });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('GET invalid uuid in path -> 422 VALIDATION_ERROR', async () => {
+    const agent = await loginAs('admin');
+    const res = await agent.get('/api/v1/tasks/not-a-uuid');
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('PATCH empty body -> 422 (at-least-one-field refine)', async () => {
+    const adminAgent = await loginAs('admin');
+    const created = await adminAgent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Empty-body target', dueDate: future() });
+    const res = await adminAgent.patch(`/api/v1/tasks/${created.body.task.id}`).send({});
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('list pagination cap: limit=999 coerced to MAX_LIMIT=50', async () => {
+    const agent = await loginAs('admin');
+    await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Pag1', dueDate: future(3) })
+      .expect(201);
+    await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Pag2', dueDate: future(4) })
+      .expect(201);
+    const res = await agent.get(`/api/v1/tasks?projectId=${projectId}&limit=999`);
+    expect(res.status).toBe(200);
+    expect(res.body.limit).toBe(50);
+    expect(res.body.total).toBe(2);
+  });
 });
