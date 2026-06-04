@@ -30,6 +30,14 @@ export const isoDateField = z
     return d;
   });
 
+// Build a Prisma equality-or-IN clause from a value that may be a single
+// item, an array, or undefined. Empty arrays collapse to undefined (no filter).
+export const arrayOrEq = <T>(v: T | T[] | undefined): T | { in: T[] } | undefined => {
+  if (v === undefined) return undefined;
+  if (Array.isArray(v)) return v.length === 0 ? undefined : { in: v };
+  return v;
+};
+
 // Accepts either the literal 'me' (resolved server-side to the authed actor)
 // or a UUID. Anything else silently drops.
 export const meOrUuid = z

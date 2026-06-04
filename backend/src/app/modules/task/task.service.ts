@@ -13,6 +13,7 @@ import {
 } from './task.constant';
 import type { CreateTaskInput, UpdateTaskInput } from './task.validation';
 import { recordActivity } from '../activityLog/activityLog.service';
+import { arrayOrEq } from '../../lib/queryFields';
 
 const ensureFutureDeadline = (dueDate: Date) => {
   if (dueDate.getTime() < Date.now()) {
@@ -306,12 +307,6 @@ const buildCreatedByWhere = (
   if (!v) return {};
   if (v === 'me') return actorId ? { createdBy: actorId } : {};
   return { createdBy: v };
-};
-
-const arrayOrEq = <T>(v: T | T[] | undefined): T | { in: T[] } | undefined => {
-  if (v === undefined) return undefined;
-  if (Array.isArray(v)) return v.length === 0 ? undefined : { in: v };
-  return v;
 };
 
 const list = async (args: ListArgs): Promise<ListResult> => {

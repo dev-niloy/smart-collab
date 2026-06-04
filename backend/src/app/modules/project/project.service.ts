@@ -4,6 +4,7 @@ import { ApiError } from '../../errors/ApiError';
 import { PAST_DEADLINE_MESSAGE, DEFAULT_LIMIT, DEFAULT_PAGE, type SortKey } from './project.constant';
 import type { CreateProjectInput, UpdateProjectInput } from './project.validation';
 import { recordActivity } from '../activityLog/activityLog.service';
+import { arrayOrEq } from '../../lib/queryFields';
 
 const ensureFutureDeadline = (deadline: Date) => {
   if (deadline.getTime() < Date.now()) {
@@ -150,12 +151,6 @@ const sortToOrderBy = (sort: SortKey): Prisma.ProjectOrderByWithRelationInput =>
     default:
       return { createdAt: 'desc' };
   }
-};
-
-const arrayOrEq = <T>(v: T | T[] | undefined): T | { in: T[] } | undefined => {
-  if (v === undefined) return undefined;
-  if (Array.isArray(v)) return v.length === 0 ? undefined : { in: v };
-  return v;
 };
 
 const list = async (args: ListArgs): Promise<ListResult> => {
