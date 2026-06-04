@@ -17,7 +17,7 @@ tasks:
   - id: t2
     desc: "prisma schema — Comment + Attachment + Notification + migration + 4 tests"
     files: [backend/prisma/]
-    status: pending
+    status: done
   - id: t3
     desc: "comment.constant + validation + 5 tests"
     files: [backend/src/app/modules/comment/]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t2
+next_task: t3
 
 phase_completion:
   gstack: true

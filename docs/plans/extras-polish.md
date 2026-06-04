@@ -27,7 +27,7 @@ Steps:
 - 2. GREEN: 3 models + relations on Task/User; `npx prisma migrate dev --name extras_schema`
 - 3. REFACTOR: ensure `onDelete: Cascade` on attachments/comments via task; `Restrict` on author/uploader
 - 4. Commit `[A2] schema: Comment + Attachment + Notification models + migration + 4/4`
-Status: [ ]
+Status: [x]
 
 ## Phase B — Comments backend
 

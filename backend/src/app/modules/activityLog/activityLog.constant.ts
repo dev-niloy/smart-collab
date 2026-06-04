@@ -9,11 +9,15 @@ export const ACTIONS = [
   'project.deleted',
   'member.added',
   'member.removed',
+  'comment.created',
+  'comment.deleted',
+  'attachment.added',
+  'attachment.removed',
 ] as const;
 
 export type ActivityAction = (typeof ACTIONS)[number];
 
-export const ENTITY_TYPES = ['task', 'project', 'member', 'user'] as const;
+export const ENTITY_TYPES = ['task', 'project', 'member', 'user', 'comment', 'attachment'] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
 // Whitelist of meta fields allowed to persist. Anything outside is stripped
