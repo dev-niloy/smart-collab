@@ -99,7 +99,7 @@ describe('ProjectsPage', () => {
     const user = userEvent.setup();
     renderPage();
     await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
-    const input = screen.getByLabelText(/search projects/i);
+    const input = screen.getByLabelText('Search projects');
     await user.type(input, 'hello');
     await waitFor(
       () => {

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { GlobalSearchBar } from '@/components/search/GlobalSearchBar';
 import { useUser, useLogout } from '@/hooks/useUser';
 
 const ROLE_LABEL: Record<string, string> = {
@@ -44,6 +45,7 @@ export function Header() {
           ) : null}
         </div>
         <div className="flex items-center gap-3">
+          {!isLoading && user ? <GlobalSearchBar /> : null}
           {!isLoading && user && (
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {user.email} · {ROLE_LABEL[user.role] ?? user.role}
