@@ -1,0 +1,91 @@
+feature: search-filter-sort
+created: 2026-06-04
+updated: 2026-06-04
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 2 # GSD — 16 tasks sliced; ready for Phase 3 Superpowers
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit"
+    files: []
+    status: pending
+  - id: t2
+    desc: "task.validation — multi-select + dueFrom/To + me + 10 tests"
+    files: [backend/src/app/modules/task/]
+    status: pending
+  - id: t3
+    desc: "task.service.list — wire new filters + 8 tests"
+    files: [backend/src/app/modules/task/]
+    status: pending
+  - id: t4
+    desc: "task.controller — me resolution + routes test + 4 tests"
+    files: [backend/src/app/modules/task/]
+    status: pending
+  - id: t5
+    desc: "project.validation — multi-select + range + me + shared helpers + 6 tests"
+    files: [backend/src/app/modules/project/, backend/src/app/lib/queryFields.ts]
+    status: pending
+  - id: t6
+    desc: "project.service+controller — filters wired + 6 tests"
+    files: [backend/src/app/modules/project/]
+    status: pending
+  - id: t7
+    desc: "search.validation + constant + 5 tests"
+    files: [backend/src/app/modules/search/]
+    status: pending
+  - id: t8
+    desc: "search.service — findProjects + findTasks w/ ranking + 8 tests"
+    files: [backend/src/app/modules/search/]
+    status: pending
+  - id: t9
+    desc: "search.controller + routes + 6 tests"
+    files: [backend/src/app/modules/search/, backend/src/app/routes/index.ts]
+    status: pending
+  - id: t10
+    desc: "lib/schemas/search + lib/search client + 5 tests"
+    files: [frontend/src/lib/]
+    status: pending
+  - id: t11
+    desc: "lib/queryString multi-value helpers + 6 tests"
+    files: [frontend/src/lib/]
+    status: pending
+  - id: t12
+    desc: "hooks/useGlobalSearch + 4 tests"
+    files: [frontend/src/hooks/]
+    status: pending
+  - id: t13
+    desc: "GlobalSearchBar + Header mount + 7 tests"
+    files: [frontend/src/components/search/, frontend/src/components/header.tsx]
+    status: pending
+  - id: t14
+    desc: "/projects page multi-select + range + me + 5 tests"
+    files: [frontend/src/app/projects/]
+    status: pending
+  - id: t15
+    desc: "/projects/[id]/tasks page multi-select + range + me + 6 tests"
+    files: ["frontend/src/app/projects/[id]/tasks/"]
+    status: pending
+  - id: t16
+    desc: "coverage + README — subgoal complete"
+    files: [README.md]
+    status: pending
+
+blockers: []
+
+next_task: t1
+
+phase_completion:
+  gstack: true
+  gsd: true # locked 2026-06-04 — plan sliced into 16 tasks across 6 phases
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 403
+  frontend_tests: 284
+  branched_off: develop@9ebf81e
