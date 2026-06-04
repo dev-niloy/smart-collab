@@ -32,7 +32,7 @@ Steps:
 - 2. GREEN: migration applies cleanly to docker postgres
 - 3. REFACTOR: trim extra whitespace in migration
 - 4. Commit `[A2] migration: add_project_member + backfill creators as pm`
-Status: [ ]
+Status: [x] — separate migration `20260604052411_backfill_project_member_pm` w/ idempotent INSERT…SELECT…WHERE NOT EXISTS. 2 verification tests cover (a) backfill inserts pm row matching createdBy, (b) idempotent re-run produces no duplicates. Backend 222/222.
 
 ### Task 3: prisma smoke + backfill verification test
 Files: `backend/src/config/__tests__/prisma.test.ts`
@@ -41,7 +41,7 @@ Steps:
 - 2. GREEN: passing already from t2; lock with explicit assertion
 - 3. REFACTOR: extract test helper if duplicated
 - 4. Commit `[A3] test: prisma backfill verified — every project has pm member row`
-Status: [ ]
+Status: [x] — covered by A2 verification suite (2 tests in projectMember.backfill.test.ts). Plan slice merged into A2 commit since migration + verification are inseparable in a single GREEN cycle.
 
 ---
 
