@@ -106,6 +106,9 @@ export default function ProjectDetailPage() {
                 <Link href={`/projects/${project.id}/dashboard`}>
                   <Button variant="secondary">Dashboard →</Button>
                 </Link>
+                <Link href={`/projects/${project.id}/activity`}>
+                  <Button variant="secondary">Activity →</Button>
+                </Link>
               </div>
 
               {canMutate ? (
