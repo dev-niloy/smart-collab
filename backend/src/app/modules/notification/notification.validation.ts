@@ -15,3 +15,5 @@ export const listNotificationsQuerySchema = z.object({
 });
 
 export type ListNotificationsQuery = z.infer<typeof listNotificationsQuerySchema>;
+
+export const notificationIdParamSchema = z.object({ id: z.string().uuid() });

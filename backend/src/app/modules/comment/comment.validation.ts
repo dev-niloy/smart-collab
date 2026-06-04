@@ -27,3 +27,10 @@ export const listCommentsQuerySchema = z.object({
 export type CreateCommentBody = z.infer<typeof createCommentBodySchema>;
 export type UpdateCommentBody = z.infer<typeof updateCommentBodySchema>;
 export type ListCommentsQuery = z.infer<typeof listCommentsQuerySchema>;
+
+// Reject malformed UUIDs at the route boundary so Prisma never sees them.
+// Without this, garbage in :taskId/:id leaks past Express into Prisma and
+// surfaces as a generic 500 instead of a clean 4xx.
+const uuidString = z.string().uuid();
+export const taskScopedParamsSchema = z.object({ taskId: uuidString });
+export const commentIdParamSchema = z.object({ taskId: uuidString, id: uuidString });
