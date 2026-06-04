@@ -52,7 +52,8 @@ export const projectMemberController = {
     try {
       const projectId = req.params.id;
       const memberId = req.params.memberId;
-      const out = await projectMemberService.removeMember(projectId, memberId);
+      const actorId = req.user?.id ?? null;
+      const out = await projectMemberService.removeMember(projectId, memberId, actorId);
       res.status(200).json(out);
     } catch (err) {
       next(err);
