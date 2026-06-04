@@ -40,8 +40,46 @@ const getKpis = async (scope: Scope): Promise<Kpis> => {
   };
 };
 
+export type StatusCounts = { todo: number; in_progress: number; completed: number };
+export type PriorityCounts = { low: number; medium: number; high: number };
+
+const STATUS_KEYS: (keyof StatusCounts)[] = ['todo', 'in_progress', 'completed'];
+const PRIORITY_KEYS: (keyof PriorityCounts)[] = ['low', 'medium', 'high'];
+
+const zeroFill = <K extends string>(
+  keys: readonly K[],
+  rows: { key: K; count: number }[],
+): Record<K, number> => {
+  const out = {} as Record<K, number>;
+  for (const k of keys) out[k] = 0;
+  for (const r of rows) {
+    if ((keys as readonly string[]).includes(r.key)) out[r.key] = r.count;
+  }
+  return out;
+};
+
+const getStatusCounts = async (scope: Scope): Promise<StatusCounts> => {
+  const rows = await prisma.task.groupBy({
+    by: ['status'],
+    where: taskWhere(scope),
+    _count: { _all: true },
+  });
+  return zeroFill(STATUS_KEYS, rows.map((r) => ({ key: r.status as keyof StatusCounts, count: r._count?._all ?? 0 })));
+};
+
+const getPriorityCounts = async (scope: Scope): Promise<PriorityCounts> => {
+  const rows = await prisma.task.groupBy({
+    by: ['priority'],
+    where: taskWhere(scope),
+    _count: { _all: true },
+  });
+  return zeroFill(PRIORITY_KEYS, rows.map((r) => ({ key: r.priority as keyof PriorityCounts, count: r._count?._all ?? 0 })));
+};
+
 export const dashboardService = {
   getKpis,
+  getStatusCounts,
+  getPriorityCounts,
   _taskWhere: taskWhere,
   _projectWhere: projectWhere,
 };
