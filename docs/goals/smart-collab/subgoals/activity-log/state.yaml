@@ -1,0 +1,103 @@
+feature: activity-log
+created: 2026-06-04
+updated: 2026-06-04
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 2 # GSD — 19 tasks sliced; ready for Phase 3 Superpowers execution
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit"
+    files: []
+    status: pending
+  - id: t2
+    desc: "prisma schema — extend ActivityLog + migration + 3 tests"
+    files: [backend/prisma/]
+    status: pending
+  - id: t3
+    desc: "activityLog.constant.ts — action verb registry + meta sanitizer + 4 tests"
+    files: [backend/src/app/modules/activityLog/]
+    status: pending
+  - id: t4
+    desc: "activityLog.service — recordActivity helper + 5 tests"
+    files: [backend/src/app/modules/activityLog/]
+    status: pending
+  - id: t5
+    desc: "task.service — emit on CRUD + 6 tests"
+    files: [backend/src/app/modules/task/]
+    status: pending
+  - id: t6
+    desc: "task.service — emit on status/assignee changes + 5 tests"
+    files: [backend/src/app/modules/task/]
+    status: pending
+  - id: t7
+    desc: "project.service — emit on CRUD + 4 tests"
+    files: [backend/src/app/modules/project/]
+    status: pending
+  - id: t8
+    desc: "projectMember.service — emit on add/remove + 4 tests"
+    files: [backend/src/app/modules/projectMember/]
+    status: pending
+  - id: t9
+    desc: "activityLog.validation — list query schema + cursor codec + 6 tests"
+    files: [backend/src/app/modules/activityLog/]
+    status: pending
+  - id: t10
+    desc: "activityLog.service — listGlobal + listByProject + cursor + 8 tests"
+    files: [backend/src/app/modules/activityLog/]
+    status: pending
+  - id: t11
+    desc: "activityLog.controller + global routes + 6 tests"
+    files: [backend/src/app/modules/activityLog/, backend/src/app/routes/index.ts]
+    status: pending
+  - id: t12
+    desc: "project-nested route + RBAC + 6 tests"
+    files: [backend/src/app/modules/project/project.routes.ts, backend/src/app/modules/activityLog/]
+    status: pending
+  - id: t13
+    desc: "lib/schemas/activity + lib/activity api client + 6 tests"
+    files: [frontend/src/lib/]
+    status: pending
+  - id: t14
+    desc: "hooks/useActivity + useProjectActivity (useInfiniteQuery) + 6 tests"
+    files: [frontend/src/hooks/]
+    status: pending
+  - id: t15
+    desc: "ActivityItem + verb registry + 5 tests"
+    files: [frontend/src/components/activity/]
+    status: pending
+  - id: t16
+    desc: "ActivityFeed component (list + load more + states) + 6 tests"
+    files: [frontend/src/components/activity/]
+    status: pending
+  - id: t17
+    desc: "dashboard widget integration + 3 tests"
+    files: [frontend/src/components/dashboard/, frontend/src/app/dashboard/]
+    status: pending
+  - id: t18
+    desc: "project activity page + detail link + 5 tests"
+    files: ["frontend/src/app/projects/[id]/"]
+    status: pending
+  - id: t19
+    desc: "coverage check + README updates — subgoal complete"
+    files: [README.md]
+    status: pending
+
+blockers: []
+
+next_task: t1
+
+phase_completion:
+  gstack: true # locked 2026-06-04 (4 clarifications: scope=both, actions=all-4, ui=dashboard widget + project tab, paging=cursor 10+load more)
+  gsd: true # locked 2026-06-04 — plan sliced into 19 tasks across 5 phases
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 343 # jest, all passing 2026-06-04 14:09
+  frontend_tests: 243 # vitest, all passing 2026-06-04 14:09
+  branched_off: develop@b7b9008 # PR #13 merge tip
