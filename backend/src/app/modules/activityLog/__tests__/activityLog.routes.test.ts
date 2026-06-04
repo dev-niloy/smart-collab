@@ -126,4 +126,11 @@ maybe('activity routes (global)', () => {
     const res = await agent.get('/api/v1/activity');
     expect(res.body.items.length).toBe(10);
   });
+
+  it('rejects malformed cursor with 422 INVALID_CURSOR', async () => {
+    const agent = await loginAs('project_manager');
+    const res = await agent.get('/api/v1/activity?cursor=not-a-real-cursor');
+    expect(res.status).toBe(422);
+    expect(res.body.code ?? res.body.error?.code).toBe('INVALID_CURSOR');
+  });
 });
