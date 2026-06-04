@@ -103,6 +103,9 @@ export default function ProjectDetailPage() {
                     Members{typeof memberCount === 'number' ? ` (${memberCount})` : ''} →
                   </Button>
                 </Link>
+                <Link href={`/projects/${project.id}/dashboard`}>
+                  <Button variant="secondary">Dashboard →</Button>
+                </Link>
               </div>
 
               {canMutate ? (

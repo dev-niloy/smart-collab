@@ -3,6 +3,7 @@ import authRoutes from '../modules/auth/auth.routes';
 import projectRoutes from '../modules/project/project.routes';
 import taskRoutes from '../modules/task/task.routes';
 import userRoutes from '../modules/user/user.routes';
+import dashboardRoutes from '../modules/dashboard/dashboard.routes';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/api/v1/auth', authRoutes);
 router.use('/api/v1/projects', projectRoutes);
 router.use('/api/v1/tasks', taskRoutes);
 router.use('/api/v1/users', userRoutes);
+router.use('/api/v1/dashboard', dashboardRoutes);
 
 export default router;

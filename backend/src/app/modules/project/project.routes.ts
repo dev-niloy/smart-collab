@@ -11,10 +11,18 @@ import {
 } from './project.validation';
 import { listTasksQuerySchema } from '../task/task.validation';
 import projectMemberRouter from '../projectMember/projectMember.routes';
+import { buildDashboardRouter } from '../dashboard/dashboard.routes';
+import { requireProjectRole } from '../../middlewares/requireProjectRole';
 
 const router = Router();
 
 router.use('/:id/members', projectMemberRouter);
+router.use(
+  '/:id/dashboard',
+  requireAuth,
+  requireProjectRole('member'),
+  buildDashboardRouter(),
+);
 
 router.use(requireAuth);
 
