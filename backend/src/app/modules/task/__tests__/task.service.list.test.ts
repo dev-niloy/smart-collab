@@ -190,4 +190,109 @@ maybe('taskService list', () => {
     const assigned = r.data.find((t) => t.assignedTo === assigneeId);
     expect(assigned?.assignee?.email).toBe(`a-${TEST_EMAIL}`);
   });
+
+  describe('extended filters (multi-select + range + me)', () => {
+    it('filters by status[] (in)', async () => {
+      const r = await taskService.list({
+        projectId: projectA,
+        status: [TaskStatus.todo, TaskStatus.in_progress],
+        sort: 'created',
+        page: 1,
+        limit: 20,
+      });
+      expect(r.data.every((t) => t.status === 'todo' || t.status === 'in_progress')).toBe(true);
+    });
+
+    it('filters by priority[] (in)', async () => {
+      const r = await taskService.list({
+        projectId: projectA,
+        priority: [TaskPriority.high, TaskPriority.medium],
+        sort: 'created',
+        page: 1,
+        limit: 20,
+      });
+      expect(r.data.every((t) => t.priority === 'high' || t.priority === 'medium')).toBe(true);
+    });
+
+    it('filters by dueFrom only', async () => {
+      const r = await taskService.list({
+        projectId: projectA,
+        dueFrom: future(3),
+        sort: 'created',
+        page: 1,
+        limit: 20,
+      });
+      expect(r.data.every((t) => t.dueDate.getTime() >= future(3).getTime() - 1000)).toBe(true);
+    });
+
+    it('filters by dueTo only', async () => {
+      const r = await taskService.list({
+        projectId: projectA,
+        dueTo: future(5),
+        sort: 'created',
+        page: 1,
+        limit: 20,
+      });
+      expect(r.data.every((t) => t.dueDate.getTime() <= future(5).getTime() + 1000)).toBe(true);
+    });
+
+    it('combines dueFrom + dueTo range', async () => {
+      const r = await taskService.list({
+        projectId: projectA,
+        dueFrom: future(2),
+        dueTo: future(10),
+        sort: 'created',
+        page: 1,
+        limit: 20,
+      });
+      for (const t of r.data) {
+        expect(t.dueDate.getTime()).toBeGreaterThanOrEqual(future(2).getTime() - 1000);
+        expect(t.dueDate.getTime()).toBeLessThanOrEqual(future(10).getTime() + 1000);
+      }
+    });
+
+    it('assignedTo=me resolves to actorId', async () => {
+      const r = await taskService.list({
+        projectId: projectA,
+        assignedTo: 'me',
+        actorId: assigneeId,
+        sort: 'created',
+        page: 1,
+        limit: 20,
+      });
+      expect(r.data.every((t) => t.assignedTo === assigneeId)).toBe(true);
+    });
+
+    it('createdBy=me resolves to actorId', async () => {
+      const r = await taskService.list({
+        projectId: projectA,
+        createdBy: 'me',
+        actorId,
+        sort: 'created',
+        page: 1,
+        limit: 20,
+      });
+      expect(r.data.every((t) => t.createdBy === actorId)).toBe(true);
+    });
+
+    it('combines status[] + priority[] + me + range narrows correctly', async () => {
+      const r = await taskService.list({
+        projectId: projectA,
+        status: [TaskStatus.todo, TaskStatus.in_progress],
+        priority: [TaskPriority.high, TaskPriority.medium],
+        createdBy: 'me',
+        actorId,
+        dueFrom: future(0),
+        dueTo: future(15),
+        sort: 'created',
+        page: 1,
+        limit: 20,
+      });
+      for (const t of r.data) {
+        expect(['todo', 'in_progress']).toContain(t.status);
+        expect(['high', 'medium']).toContain(t.priority);
+        expect(t.createdBy).toBe(actorId);
+      }
+    });
+  });
 });
