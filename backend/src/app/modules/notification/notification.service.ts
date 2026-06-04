@@ -1,6 +1,7 @@
 import type { Prisma, Notification } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
+import { decodeCursor, encodeCursor } from '../activityLog/activityLog.validation';
 import {
   isKnownNotificationType,
   sanitizeNotificationPayload,
@@ -62,9 +63,108 @@ export const enqueueMany = async (
   return out;
 };
 
-// Exported for routes/controller use later (t11)
+export type NotificationDTO = {
+  id: string;
+  type: string;
+  actorId: string | null;
+  actorName: string | null;
+  entityType: string;
+  entityId: string;
+  projectId: string | null;
+  payload: Record<string, unknown> | null;
+  readAt: Date | null;
+  createdAt: Date;
+};
+
+export type NotificationListPage = {
+  items: NotificationDTO[];
+  nextCursor: string | null;
+};
+
+type WithActor = Notification & { actor: { name: string } | null };
+
+const toDTO = (row: WithActor): NotificationDTO => ({
+  id: row.id,
+  type: row.type,
+  actorId: row.actorId,
+  actorName: row.actor?.name ?? null,
+  entityType: row.entityType,
+  entityId: row.entityId,
+  projectId: row.projectId,
+  payload: (row.payload as Record<string, unknown> | null) ?? null,
+  readAt: row.readAt,
+  createdAt: row.createdAt,
+});
+
+const buildCursorWhere = (cursor?: string): Prisma.NotificationWhereInput | undefined => {
+  if (!cursor) return undefined;
+  const { createdAt, id } = decodeCursor(cursor);
+  return {
+    OR: [
+      { createdAt: { lt: createdAt } },
+      { createdAt, id: { lt: id } },
+    ],
+  };
+};
+
+const listForUser = async (
+  userId: string,
+  args: { limit: number; cursor?: string; unread?: boolean },
+): Promise<NotificationListPage> => {
+  const where: Prisma.NotificationWhereInput = {
+    recipientId: userId,
+    ...(args.unread ? { readAt: null } : {}),
+    ...(buildCursorWhere(args.cursor) ?? {}),
+  };
+  const rows = await prisma.notification.findMany({
+    where,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: args.limit + 1,
+    include: { actor: { select: { name: true } } },
+  });
+  let nextCursor: string | null = null;
+  if (rows.length > args.limit) {
+    const last = rows[args.limit - 1];
+    nextCursor = encodeCursor({ createdAt: last.createdAt, id: last.id });
+    rows.length = args.limit;
+  }
+  return { items: rows.map(toDTO), nextCursor };
+};
+
+const countUnread = async (userId: string): Promise<number> => {
+  return prisma.notification.count({ where: { recipientId: userId, readAt: null } });
+};
+
+const markRead = async (id: string, userId: string): Promise<NotificationDTO> => {
+  const existing = await prisma.notification.findUnique({
+    where: { id },
+    include: { actor: { select: { name: true } } },
+  });
+  if (!existing || existing.recipientId !== userId) {
+    throw ApiError.notFound('Notification not found', 'NOTIFICATION_NOT_FOUND');
+  }
+  if (existing.readAt) return toDTO(existing);
+  const updated = await prisma.notification.update({
+    where: { id },
+    data: { readAt: new Date() },
+    include: { actor: { select: { name: true } } },
+  });
+  return toDTO(updated);
+};
+
+const markAllRead = async (userId: string): Promise<{ updated: number }> => {
+  const res = await prisma.notification.updateMany({
+    where: { recipientId: userId, readAt: null },
+    data: { readAt: new Date() },
+  });
+  return { updated: res.count };
+};
+
 export const notificationService = {
   enqueue,
   enqueueMany,
-  _prisma: prisma,
+  listForUser,
+  countUnread,
+  markRead,
+  markAllRead,
 };

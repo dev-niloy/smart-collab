@@ -49,7 +49,7 @@ tasks:
   - id: t10
     desc: "notification triggers wired into task.assigned + comment.created + 6 tests"
     files: [backend/src/app/modules/task/task.service.ts, backend/src/app/modules/comment/, backend/src/app/modules/notification/]
-    status: pending
+    status: done
   - id: t11
     desc: "notification.controller + routes (list/read/count) + 8 tests"
     files: [backend/src/app/modules/notification/, backend/src/app/routes/index.ts]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t10
+next_task: t11
 
 phase_completion:
   gstack: true

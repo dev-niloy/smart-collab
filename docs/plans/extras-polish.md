@@ -133,7 +133,7 @@ Steps:
 - 2. GREEN: extend existing `$transaction` blocks
 - 3. REFACTOR: factor `notifyAssignment(tx, ...)` helper
 - 4. Commit `[D10] notification triggers: assignment + comment + 6/6`
-Status: [ ]
+Status: [x]
 
 ### Task 11: notification.service list + read + unread-count + controller + routes
 Files:
