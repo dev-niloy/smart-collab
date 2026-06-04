@@ -77,7 +77,7 @@ tasks:
   - id: t17
     desc: "task detail integrates Comments + Attachments panels + 3 tests"
     files: ["frontend/src/app/projects/[id]/tasks/[taskId]/"]
-    status: pending
+    status: done
   - id: t18
     desc: "dark mode audit + fixes + 2 tests"
     files: [frontend/src/]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t17
+next_task: t18
 
 phase_completion:
   gstack: true

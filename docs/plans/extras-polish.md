@@ -227,7 +227,7 @@ Steps:
 - 2. GREEN: add panels below existing detail body
 - 3. REFACTOR: none
 - 4. Commit `[E17] task detail: integrate comments + attachments panels + 3/3`
-Status: [ ]
+Status: [x]
 
 ## Phase F — Dark mode + wrap
 
