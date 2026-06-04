@@ -37,7 +37,7 @@ tasks:
   - id: t7
     desc: "attachment.service — upload/list/delete + activity + 6 tests"
     files: [backend/src/app/modules/attachment/]
-    status: pending
+    status: done
   - id: t8
     desc: "attachment.controller + routes + download endpoint + 6 tests"
     files: [backend/src/app/modules/attachment/, backend/src/app/routes/index.ts]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t7
+next_task: t8
 
 phase_completion:
   gstack: true

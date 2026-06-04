@@ -92,7 +92,7 @@ Steps:
 - 2. GREEN: fs + prisma + recordActivity inside `$transaction`; permission helper
 - 3. REFACTOR: extract `toDTO` + `resolveStoragePath(id)` helper
 - 4. Commit `[C7] attachment.service: upload/list/delete + activity + 6/6`
-Status: [ ]
+Status: [x]
 
 ### Task 8: attachment.controller + routes + static download endpoint
 Files:
