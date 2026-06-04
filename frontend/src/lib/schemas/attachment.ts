@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+// Mirror of backend MAX_ATTACHMENT_SIZE. Frontend single source of truth so
+// the panel's client-side size guard does not drift from the server limit.
+export const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024;
+
 export const AttachmentDTOSchema = z.object({
   id: z.string(),
   taskId: z.string(),

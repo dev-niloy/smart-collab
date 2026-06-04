@@ -21,10 +21,11 @@ import {
 import { useUser } from '@/hooks/useUser';
 import { ApiError } from '@/lib/api';
 import { attachmentDownloadUrl } from '@/lib/attachments';
+import { MAX_ATTACHMENT_SIZE } from '@/lib/schemas/attachment';
 import type { AttachmentDTO } from '@/lib/schemas/attachment';
 import type { Role } from '@/lib/schemas/auth';
 
-const MAX_SIZE = 10 * 1024 * 1024;
+const MAX_SIZE = MAX_ATTACHMENT_SIZE;
 
 type Props = {
   taskId: string;
