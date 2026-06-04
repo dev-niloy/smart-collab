@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useProjectMembers } from '@/hooks/useProjectMembers';
 import { useUser } from '@/hooks/useUser';
 import { MemberCard } from '@/components/members/MemberCard';
+import { AddMemberForm } from '@/components/members/AddMemberForm';
 
 export default function ProjectMembersPage() {
   const params = useParams<{ id: string }>();
@@ -30,9 +31,15 @@ export default function ProjectMembersPage() {
           ← Back to project
         </Link>
 
-        <div className="mt-4 mb-4 flex items-center justify-between">
+        <div className="mt-4 mb-4 flex flex-col gap-3">
           <h1 className="text-xl font-semibold">Team members</h1>
-          {/* Add member form mounts here in E18 */}
+          {isPrivileged ? (
+            <Card>
+              <CardContent className="py-4">
+                <AddMemberForm projectId={projectId} />
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
 
         {isLoading ? (
