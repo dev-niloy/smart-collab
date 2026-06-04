@@ -146,6 +146,35 @@ Per-project endpoints scoped via `requireProjectRole('member')`; system admin by
 
 Emitted by service layer inside the originating Prisma `$transaction` so a failed mutation never leaves an orphan log. Tracked actions: `task.created/updated/deleted/status_changed/assigned`, `project.created/updated/deleted`, `member.added/removed`. `meta` is whitelisted (no `passwordHash`/`token`/etc). Per-project route enforces `requireProjectRole('member')`; admin bypasses but still gets 404 if project missing. Cursor format is opaque base64-encoded `{createdAt,id}` for stable tie-breaking. Frontend surfaces: latest 10 widget on `/dashboard` and `/projects/[id]/dashboard`; full feed at `/projects/[id]/activity` with `Load more`.
 
+### Search & advanced filters
+
+Global search — `GET /api/v1/search?q=…&limit=N`
+
+| Param | Rule | Notes |
+|-------|------|-------|
+| `q`   | required, 2..200 chars | case-insensitive substring on project name/description and task title/description |
+| `limit` | int 1..20, default 5 | per kind (projects + tasks each capped to `limit`) |
+
+Returns `{ projects: ProjectHit[], tasks: TaskHit[] }`. Hits include enough fields to link (`projectId`, `projectName` on task hits). Prefix matches rank above contains matches. Auth required (401 when not logged in).
+
+Extended list filters — `GET /api/v1/tasks` and `GET /api/v1/projects` accept:
+
+| Field | Tasks | Projects | Notes |
+|-------|-------|----------|-------|
+| `status=a,b` | yes | yes | comma-separated, unknown tokens silently dropped; single value still works |
+| `priority=a,b` | yes | — | same csv shape |
+| `dueFrom`, `dueTo` | yes | — | ISO date; rejects garbage; rejects `from > to` |
+| `deadlineFrom`, `deadlineTo` | — | yes | same shape |
+| `assignedTo=me` | yes | — | resolves to authed actor server-side |
+| `createdBy=me` | yes | yes | resolves to authed actor server-side |
+| `assignedTo=<uuid>` | yes | — | exact match |
+| `createdBy=<uuid>` | yes | yes | exact match |
+
+UI:
+- `<GlobalSearchBar>` mounted in `<Header>` (visible when authed). `/` keyboard shortcut focuses input; Esc closes. Debounced 200ms. Dropdown shows grouped Projects + Tasks with empty state.
+- `/projects` page: multi-select status chips, deadline range inputs, `Created by me` toggle; all URL-state synced via csv.
+- `/projects/[id]/tasks` page: multi-select status + priority chips, due-date range inputs, `Assigned to me` + `Created by me` toggles; all URL-state synced.
+
 ### Frontend pages
 - `/login`, `/signup` — auth
 - `/dashboard` — landing

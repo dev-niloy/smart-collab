@@ -99,7 +99,7 @@ describe('ProjectsPage', () => {
     const user = userEvent.setup();
     renderPage();
     await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
-    const input = screen.getByLabelText(/search projects/i);
+    const input = screen.getByLabelText('Search projects');
     await user.type(input, 'hello');
     await waitFor(
       () => {
@@ -162,5 +162,64 @@ describe('ProjectsPage', () => {
     await user.click(next);
     const lastUrl = String(replaceSpy.mock.calls.at(-1)?.[0]);
     expect(lastUrl).toContain('page=2');
+  });
+
+  it('renders multi-status chips with active state from URL csv', async () => {
+    setUser('admin');
+    listSpy.mockResolvedValue({ data: [sampleProject()], total: 1, page: 1, limit: 10 });
+    renderPage('status=active,on_hold');
+    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
+    const activeChip = screen.getByRole('button', { name: /^active$/i });
+    const onHoldChip = screen.getByRole('button', { name: /on hold/i });
+    expect(activeChip).toHaveAttribute('aria-pressed', 'true');
+    expect(onHoldChip).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('clicking a status chip toggles + updates URL via csv', async () => {
+    setUser('admin');
+    listSpy.mockResolvedValue({ data: [sampleProject()], total: 1, page: 1, limit: 10 });
+    const user = userEvent.setup();
+    renderPage('status=active');
+    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
+    const onHold = screen.getByRole('button', { name: /on hold/i });
+    await user.click(onHold);
+    const lastUrl = String(replaceSpy.mock.calls.at(-1)?.[0]);
+    expect(lastUrl).toContain('status=active%2Con_hold');
+  });
+
+  it('deadlineFrom input updates URL', async () => {
+    setUser('admin');
+    listSpy.mockResolvedValue({ data: [sampleProject()], total: 1, page: 1, limit: 10 });
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
+    const from = screen.getByLabelText('Deadline from');
+    await user.type(from, '2026-06-04');
+    const lastUrl = String(replaceSpy.mock.calls.at(-1)?.[0]);
+    expect(lastUrl).toContain('deadlineFrom=2026-06-04');
+  });
+
+  it('"Created by me" toggle updates URL', async () => {
+    setUser('admin');
+    listSpy.mockResolvedValue({ data: [sampleProject()], total: 1, page: 1, limit: 10 });
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
+    const toggle = screen.getByRole('button', { name: /created by me/i });
+    await user.click(toggle);
+    const lastUrl = String(replaceSpy.mock.calls.at(-1)?.[0]);
+    expect(lastUrl).toContain('createdBy=me');
+  });
+
+  it('reloading restores all filters via URL', async () => {
+    setUser('admin');
+    listSpy.mockResolvedValue({ data: [sampleProject()], total: 1, page: 1, limit: 10 });
+    renderPage('status=active,completed&deadlineFrom=2026-06-04&deadlineTo=2026-12-31&createdBy=me');
+    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /^active$/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /completed/i })).toHaveAttribute('aria-pressed', 'true');
+    expect((screen.getByLabelText('Deadline from') as HTMLInputElement).value).toBe('2026-06-04');
+    expect((screen.getByLabelText('Deadline to') as HTMLInputElement).value).toBe('2026-12-31');
+    expect(screen.getByRole('button', { name: /created by me/i })).toHaveAttribute('aria-pressed', 'true');
   });
 });

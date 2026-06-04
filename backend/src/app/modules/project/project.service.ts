@@ -4,6 +4,7 @@ import { ApiError } from '../../errors/ApiError';
 import { PAST_DEADLINE_MESSAGE, DEFAULT_LIMIT, DEFAULT_PAGE, type SortKey } from './project.constant';
 import type { CreateProjectInput, UpdateProjectInput } from './project.validation';
 import { recordActivity } from '../activityLog/activityLog.service';
+import { arrayOrEq } from '../../lib/queryFields';
 
 const ensureFutureDeadline = (deadline: Date) => {
   if (deadline.getTime() < Date.now()) {
@@ -123,7 +124,11 @@ const remove = async (id: string, actorId: string | null = null): Promise<void> 
 
 type ListArgs = {
   q?: string;
-  status?: ProjectStatus;
+  status?: ProjectStatus | ProjectStatus[];
+  createdBy?: string | 'me';
+  deadlineFrom?: Date;
+  deadlineTo?: Date;
+  actorId?: string;
   sort: SortKey;
   page: number;
   limit: number;
@@ -151,9 +156,21 @@ const sortToOrderBy = (sort: SortKey): Prisma.ProjectOrderByWithRelationInput =>
 const list = async (args: ListArgs): Promise<ListResult> => {
   const page = args.page || DEFAULT_PAGE;
   const limit = args.limit || DEFAULT_LIMIT;
+  const statusFilter = arrayOrEq(args.status);
+  const deadline: Prisma.DateTimeFilter | undefined =
+    args.deadlineFrom || args.deadlineTo
+      ? {
+          ...(args.deadlineFrom ? { gte: args.deadlineFrom } : {}),
+          ...(args.deadlineTo ? { lte: args.deadlineTo } : {}),
+        }
+      : undefined;
+  const createdByResolved =
+    args.createdBy === 'me' ? args.actorId : args.createdBy;
   const where: Prisma.ProjectWhereInput = {
     ...(args.q ? { name: { contains: args.q, mode: 'insensitive' } } : {}),
-    ...(args.status ? { status: args.status } : {}),
+    ...(statusFilter !== undefined ? { status: statusFilter } : {}),
+    ...(deadline ? { deadline } : {}),
+    ...(createdByResolved ? { createdBy: createdByResolved } : {}),
   };
   const [data, total] = await prisma.$transaction([
     prisma.project.findMany({

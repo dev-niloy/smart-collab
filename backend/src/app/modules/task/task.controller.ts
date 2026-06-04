@@ -18,7 +18,7 @@ export const taskController = {
   list: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const query = req.query as unknown as ListTasksQuery;
-      const result = await taskService.list(query);
+      const result = await taskService.list({ ...query, actorId: req.user?.id });
       res.status(200).json(result);
     } catch (err) {
       next(err);

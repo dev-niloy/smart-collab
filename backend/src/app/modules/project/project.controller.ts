@@ -20,7 +20,7 @@ export const projectController = {
   list: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const query = req.query as unknown as ListProjectsQuery;
-      const result = await projectService.list(query);
+      const result = await projectService.list({ ...query, actorId: req.user?.id });
       res.status(200).json(result);
     } catch (err) {
       next(err);
@@ -60,7 +60,7 @@ export const projectController = {
     try {
       await projectService.findById(req.params.id); // 404 if project missing
       const query = req.query as unknown as ListTasksQuery;
-      const result = await taskService.list({ ...query, projectId: req.params.id });
+      const result = await taskService.list({ ...query, projectId: req.params.id, actorId: req.user?.id });
       res.status(200).json(result);
     } catch (err) {
       next(err);

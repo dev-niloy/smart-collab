@@ -92,6 +92,60 @@ describe('task validation', () => {
       const r = listTasksQuerySchema.parse({ assignedTo: 'not-uuid' });
       expect(r.assignedTo).toBeUndefined();
     });
+
+    it('accepts status as csv → array', () => {
+      const r = listTasksQuerySchema.parse({ status: 'todo,in_progress' });
+      expect(r.status).toEqual(['todo', 'in_progress']);
+    });
+
+    it('keeps single status as 1-element array', () => {
+      const r = listTasksQuerySchema.parse({ status: 'todo' });
+      expect(r.status).toEqual(['todo']);
+    });
+
+    it('drops unknown enum tokens silently inside csv', () => {
+      const r = listTasksQuerySchema.parse({ status: 'todo,bogus,in_progress' });
+      expect(r.status).toEqual(['todo', 'in_progress']);
+    });
+
+    it('accepts priority csv', () => {
+      const r = listTasksQuerySchema.parse({ priority: 'high,medium' });
+      expect(r.priority).toEqual(['high', 'medium']);
+    });
+
+    it('parses dueFrom + dueTo ISO dates', () => {
+      const r = listTasksQuerySchema.parse({
+        dueFrom: '2026-06-04',
+        dueTo: '2026-06-30',
+      });
+      expect(r.dueFrom).toBeInstanceOf(Date);
+      expect(r.dueTo).toBeInstanceOf(Date);
+    });
+
+    it('rejects bad dueFrom date', () => {
+      expect(() => listTasksQuerySchema.parse({ dueFrom: 'not-a-date' })).toThrow();
+    });
+
+    it('rejects dueFrom > dueTo', () => {
+      expect(() =>
+        listTasksQuerySchema.parse({ dueFrom: '2026-07-01', dueTo: '2026-06-01' }),
+      ).toThrow();
+    });
+
+    it('accepts assignedTo=me literal', () => {
+      const r = listTasksQuerySchema.parse({ assignedTo: 'me' });
+      expect(r.assignedTo).toBe('me');
+    });
+
+    it('accepts createdBy=me literal', () => {
+      const r = listTasksQuerySchema.parse({ createdBy: 'me' });
+      expect(r.createdBy).toBe('me');
+    });
+
+    it('accepts createdBy=uuid', () => {
+      const r = listTasksQuerySchema.parse({ createdBy: validUuid });
+      expect(r.createdBy).toBe(validUuid);
+    });
   });
 
   describe('taskIdParamSchema', () => {

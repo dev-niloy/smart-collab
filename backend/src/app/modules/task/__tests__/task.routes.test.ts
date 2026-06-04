@@ -233,6 +233,46 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     expect(res.body.data[0].priority).toBe('high');
   });
 
+  it('list filter: status csv -> returns multi-status rows', async () => {
+    const agent = await loginAs('admin');
+    const res = await agent.get(
+      `/api/v1/tasks?projectId=${projectId}&status=todo,in_progress`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data.every((t: { status: string }) =>
+      ['todo', 'in_progress'].includes(t.status),
+    )).toBe(true);
+  });
+
+  it('list filter: assignedTo=me resolves to authed user', async () => {
+    const agent = await loginAs('team_member');
+    const res = await agent.get(`/api/v1/tasks?projectId=${projectId}&assignedTo=me`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.every((t: { assignedTo: string }) => t.assignedTo === memberId)).toBe(true);
+  });
+
+  it('list filter: createdBy=me resolves to authed user', async () => {
+    const agent = await loginAs('project_manager');
+    const res = await agent.get(`/api/v1/tasks?projectId=${projectId}&createdBy=me`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.every((t: { createdBy: string }) => t.createdBy === pmId)).toBe(true);
+  });
+
+  it('list filter: dueFrom + dueTo narrows date range', async () => {
+    const agent = await loginAs('admin');
+    await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'DueRange Task', dueDate: future(10) })
+      .expect(201);
+    const from = new Date(Date.now() - 1 * 86_400_000).toISOString().slice(0, 10);
+    const to = new Date(Date.now() + 365 * 86_400_000).toISOString().slice(0, 10);
+    const res = await agent.get(
+      `/api/v1/tasks?projectId=${projectId}&dueFrom=${from}&dueTo=${to}`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeGreaterThan(0);
+  });
+
   // ── t8: negative paths ─────────────────────────────────────────────────────
 
   it('unauth -> 401 on list', async () => {
