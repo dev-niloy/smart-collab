@@ -60,7 +60,7 @@ export const projectController = {
     try {
       await projectService.findById(req.params.id); // 404 if project missing
       const query = req.query as unknown as ListTasksQuery;
-      const result = await taskService.list({ ...query, projectId: req.params.id });
+      const result = await taskService.list({ ...query, projectId: req.params.id, actorId: req.user?.id });
       res.status(200).json(result);
     } catch (err) {
       next(err);

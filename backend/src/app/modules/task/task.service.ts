@@ -255,9 +255,13 @@ const remove = async (id: string, actorId: string | null = null): Promise<void> 
 type ListArgs = {
   projectId?: string;
   q?: string;
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  assignedTo?: string | typeof UNASSIGNED;
+  status?: TaskStatus | TaskStatus[];
+  priority?: TaskPriority | TaskPriority[];
+  assignedTo?: string | typeof UNASSIGNED | 'me';
+  createdBy?: string | 'me';
+  dueFrom?: Date;
+  dueTo?: Date;
+  actorId?: string; // used to resolve 'me' shorthands
   sort: SortKey;
   page: number;
   limit: number;
@@ -287,21 +291,49 @@ const sortToOrderBy = (sort: SortKey): Prisma.TaskOrderByWithRelationInput[] => 
 
 const buildAssignedToWhere = (
   v: ListArgs['assignedTo'],
+  actorId: string | undefined,
 ): Prisma.TaskWhereInput | Record<string, never> => {
   if (!v) return {};
   if (v === UNASSIGNED) return { assignedTo: null };
+  if (v === 'me') return actorId ? { assignedTo: actorId } : {};
   return { assignedTo: v };
+};
+
+const buildCreatedByWhere = (
+  v: ListArgs['createdBy'],
+  actorId: string | undefined,
+): Prisma.TaskWhereInput | Record<string, never> => {
+  if (!v) return {};
+  if (v === 'me') return actorId ? { createdBy: actorId } : {};
+  return { createdBy: v };
+};
+
+const arrayOrEq = <T>(v: T | T[] | undefined): T | { in: T[] } | undefined => {
+  if (v === undefined) return undefined;
+  if (Array.isArray(v)) return v.length === 0 ? undefined : { in: v };
+  return v;
 };
 
 const list = async (args: ListArgs): Promise<ListResult> => {
   const page = args.page || DEFAULT_PAGE;
   const limit = args.limit || DEFAULT_LIMIT;
+  const statusFilter = arrayOrEq(args.status);
+  const priorityFilter = arrayOrEq(args.priority);
+  const dueDate: Prisma.DateTimeFilter | undefined =
+    args.dueFrom || args.dueTo
+      ? {
+          ...(args.dueFrom ? { gte: args.dueFrom } : {}),
+          ...(args.dueTo ? { lte: args.dueTo } : {}),
+        }
+      : undefined;
   const where: Prisma.TaskWhereInput = {
     ...(args.projectId ? { projectId: args.projectId } : {}),
     ...(args.q ? { title: { contains: args.q, mode: 'insensitive' } } : {}),
-    ...(args.status ? { status: args.status } : {}),
-    ...(args.priority ? { priority: args.priority } : {}),
-    ...buildAssignedToWhere(args.assignedTo),
+    ...(statusFilter !== undefined ? { status: statusFilter } : {}),
+    ...(priorityFilter !== undefined ? { priority: priorityFilter } : {}),
+    ...(dueDate ? { dueDate } : {}),
+    ...buildAssignedToWhere(args.assignedTo, args.actorId),
+    ...buildCreatedByWhere(args.createdBy, args.actorId),
   };
   const [data, total] = await prisma.$transaction([
     prisma.task.findMany({
