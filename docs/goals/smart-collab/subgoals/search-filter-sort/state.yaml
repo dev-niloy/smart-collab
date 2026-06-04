@@ -7,85 +7,89 @@ mode:
   scope: feature
   session: new
 
-phase: 2 # GSD — 16 tasks sliced; ready for Phase 3 Superpowers
+phase: 3 # Superpowers — all 16 tasks complete; ready for Phase 4 Ralph
 
 tasks:
   - id: t1
     desc: "baseline verification commit"
     files: []
-    status: pending
+    status: done
   - id: t2
     desc: "task.validation — multi-select + dueFrom/To + me + 10 tests"
     files: [backend/src/app/modules/task/]
-    status: pending
+    status: done
   - id: t3
     desc: "task.service.list — wire new filters + 8 tests"
     files: [backend/src/app/modules/task/]
-    status: pending
+    status: done
   - id: t4
     desc: "task.controller — me resolution + routes test + 4 tests"
     files: [backend/src/app/modules/task/]
-    status: pending
+    status: done
   - id: t5
-    desc: "project.validation — multi-select + range + me + shared helpers + 6 tests"
+    desc: "project.validation — multi-select + range + me + shared helpers + 9 tests"
     files: [backend/src/app/modules/project/, backend/src/app/lib/queryFields.ts]
-    status: pending
+    status: done
   - id: t6
     desc: "project.service+controller — filters wired + 6 tests"
     files: [backend/src/app/modules/project/]
-    status: pending
+    status: done
   - id: t7
     desc: "search.validation + constant + 5 tests"
     files: [backend/src/app/modules/search/]
-    status: pending
+    status: done
   - id: t8
-    desc: "search.service — findProjects + findTasks w/ ranking + 8 tests"
+    desc: "search.service — findProjects + findTasks w/ ranking + 9 tests"
     files: [backend/src/app/modules/search/]
-    status: pending
+    status: done
   - id: t9
     desc: "search.controller + routes + 6 tests"
     files: [backend/src/app/modules/search/, backend/src/app/routes/index.ts]
-    status: pending
+    status: done
   - id: t10
     desc: "lib/schemas/search + lib/search client + 5 tests"
     files: [frontend/src/lib/]
-    status: pending
+    status: done
   - id: t11
     desc: "lib/queryString multi-value helpers + 6 tests"
     files: [frontend/src/lib/]
-    status: pending
+    status: done
   - id: t12
     desc: "hooks/useGlobalSearch + 4 tests"
     files: [frontend/src/hooks/]
-    status: pending
+    status: done
   - id: t13
     desc: "GlobalSearchBar + Header mount + 7 tests"
     files: [frontend/src/components/search/, frontend/src/components/header.tsx]
-    status: pending
+    status: done
   - id: t14
     desc: "/projects page multi-select + range + me + 5 tests"
     files: [frontend/src/app/projects/]
-    status: pending
+    status: done
   - id: t15
     desc: "/projects/[id]/tasks page multi-select + range + me + 6 tests"
     files: ["frontend/src/app/projects/[id]/tasks/"]
-    status: pending
+    status: done
   - id: t16
     desc: "coverage + README — subgoal complete"
     files: [README.md]
-    status: pending
+    status: done
 
 blockers: []
 
-next_task: t1
+next_task: null # all 16 tasks done; awaiting Phase 4 Ralph
 
 phase_completion:
   gstack: true
-  gsd: true # locked 2026-06-04 — plan sliced into 16 tasks across 6 phases
-  superpowers: false
+  gsd: true
+  superpowers: true # all 16 done 2026-06-04; backend 458/458 jest, frontend 317/317 vitest
   ralph_wiggum: false
 
 baseline:
   backend_tests: 403
   frontend_tests: 284
   branched_off: develop@9ebf81e
+
+results:
+  backend_tests_final: 458 # +55 (10 task validation + 8 task service list + 4 task routes + 9 project validation + 6 project service list + 5 search validation + 9 search service + 6 search routes; net of replaced tests)
+  frontend_tests_final: 317 # +33 (5 search lib + 6 queryString + 4 useGlobalSearch + 7 GlobalSearchBar + 5 projects page + 6 tasks page)
