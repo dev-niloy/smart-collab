@@ -127,6 +127,18 @@ Tracking the assessment scope. Each section ships as its own subgoal (`docs/goal
 
 Project creator is auto-inserted as `pm` member at project create time. Task assignees must be members of the project (system admins bypass). `GET /api/v1/users` is retained for admin tooling but is no longer consumed by task forms.
 
+### Dashboard — `/api/v1/dashboard` (global) + `/api/v1/projects/:id/dashboard` (per-project)
+| Method | Path                | Roles                                  | Description                                                                                  |
+|--------|---------------------|----------------------------------------|----------------------------------------------------------------------------------------------|
+| GET    | `/kpis`             | all authed (global) · member (scoped)  | `{totalProjects, totalTasks, completedTasks, completionPct, myOpenTasks}`                    |
+| GET    | `/status`           | all authed (global) · member (scoped)  | `{todo, in_progress, completed}` task count map                                              |
+| GET    | `/priority`         | all authed (global) · member (scoped)  | `{low, medium, high}` task count map                                                         |
+| GET    | `/productivity?days=N` | all authed · member                 | `{data: [{date: YYYY-MM-DD, completed}]}` — N=1..365, default 30, zero-filled                |
+| GET    | `/upcoming?days=N`  | all authed · member                    | `{tasks:[], projects:[]}` w/ dueDate/deadline in next N days (1..365, default 7), asc        |
+| GET    | `/high-priority`    | all authed · member                    | `{data: [{id,title,projectId,dueDate,status,assignee}]}` — priority=high AND status!=completed |
+
+Per-project endpoints scoped via `requireProjectRole('member')`; system admin bypass. Productivity series is zero-filled so the chart X-axis is continuous.
+
 ### Frontend pages
 - `/login`, `/signup` — auth
 - `/dashboard` — landing
@@ -139,6 +151,8 @@ Project creator is auto-inserted as `pm` member at project create time. Task ass
 - `/projects/[id]/tasks/[taskId]` — task detail (RBAC Edit: admin/PM/owner; Delete: admin/PM)
 - `/projects/[id]/tasks/[taskId]/edit` — update task form
 - `/projects/[id]/members` — team list with workload counts; add/remove/role-change (admin or project pm)
+- `/dashboard` — global dashboard (4 KPI cards, status donut, priority bar, productivity line, upcoming, high-priority)
+- `/projects/[id]/dashboard` — same dashboard scoped to one project
 - `/forbidden` — 403 fallback
 
 ---
