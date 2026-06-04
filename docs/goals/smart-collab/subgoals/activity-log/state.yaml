@@ -7,97 +7,102 @@ mode:
   scope: feature
   session: new
 
-phase: 2 # GSD — 19 tasks sliced; ready for Phase 3 Superpowers execution
+phase: 3 # Superpowers — all 19 tasks complete; ready for Phase 4 Ralph
 
 tasks:
   - id: t1
     desc: "baseline verification commit"
     files: []
-    status: pending
+    status: done
   - id: t2
     desc: "prisma schema — extend ActivityLog + migration + 3 tests"
     files: [backend/prisma/]
-    status: pending
+    status: done
   - id: t3
     desc: "activityLog.constant.ts — action verb registry + meta sanitizer + 4 tests"
     files: [backend/src/app/modules/activityLog/]
-    status: pending
+    status: done
   - id: t4
     desc: "activityLog.service — recordActivity helper + 5 tests"
     files: [backend/src/app/modules/activityLog/]
-    status: pending
+    status: done
   - id: t5
     desc: "task.service — emit on CRUD + 6 tests"
     files: [backend/src/app/modules/task/]
-    status: pending
+    status: done
   - id: t6
     desc: "task.service — emit on status/assignee changes + 5 tests"
     files: [backend/src/app/modules/task/]
-    status: pending
+    status: done
   - id: t7
     desc: "project.service — emit on CRUD + 4 tests"
     files: [backend/src/app/modules/project/]
-    status: pending
+    status: done
   - id: t8
     desc: "projectMember.service — emit on add/remove + 4 tests"
     files: [backend/src/app/modules/projectMember/]
-    status: pending
+    status: done
   - id: t9
     desc: "activityLog.validation — list query schema + cursor codec + 6 tests"
     files: [backend/src/app/modules/activityLog/]
-    status: pending
+    status: done
   - id: t10
     desc: "activityLog.service — listGlobal + listByProject + cursor + 8 tests"
     files: [backend/src/app/modules/activityLog/]
-    status: pending
+    status: done
   - id: t11
     desc: "activityLog.controller + global routes + 6 tests"
     files: [backend/src/app/modules/activityLog/, backend/src/app/routes/index.ts]
-    status: pending
+    status: done
   - id: t12
     desc: "project-nested route + RBAC + 6 tests"
     files: [backend/src/app/modules/project/project.routes.ts, backend/src/app/modules/activityLog/]
-    status: pending
+    status: done
   - id: t13
     desc: "lib/schemas/activity + lib/activity api client + 6 tests"
     files: [frontend/src/lib/]
-    status: pending
+    status: done
   - id: t14
     desc: "hooks/useActivity + useProjectActivity (useInfiniteQuery) + 6 tests"
     files: [frontend/src/hooks/]
-    status: pending
+    status: done
   - id: t15
-    desc: "ActivityItem + verb registry + 5 tests"
+    desc: "ActivityItem + verb registry + 6 tests"
     files: [frontend/src/components/activity/]
-    status: pending
+    status: done
   - id: t16
     desc: "ActivityFeed component (list + load more + states) + 6 tests"
     files: [frontend/src/components/activity/]
-    status: pending
+    status: done
   - id: t17
     desc: "dashboard widget integration + 3 tests"
     files: [frontend/src/components/dashboard/, frontend/src/app/dashboard/]
-    status: pending
+    status: done
   - id: t18
-    desc: "project activity page + detail link + 5 tests"
+    desc: "project activity page + detail link + 6 tests"
     files: ["frontend/src/app/projects/[id]/"]
-    status: pending
+    status: done
   - id: t19
     desc: "coverage check + README updates — subgoal complete"
     files: [README.md]
-    status: pending
+    status: done
 
 blockers: []
 
-next_task: t1
+next_task: null # all 19 tasks done; awaiting Phase 4 Ralph
 
 phase_completion:
-  gstack: true # locked 2026-06-04 (4 clarifications: scope=both, actions=all-4, ui=dashboard widget + project tab, paging=cursor 10+load more)
-  gsd: true # locked 2026-06-04 — plan sliced into 19 tasks across 5 phases
-  superpowers: false
+  gstack: true
+  gsd: true
+  superpowers: true # all 19 done 2026-06-04; backend 400/400 jest, frontend 276/276 vitest
   ralph_wiggum: false
 
 baseline:
-  backend_tests: 343 # jest, all passing 2026-06-04 14:09
-  frontend_tests: 243 # vitest, all passing 2026-06-04 14:09
-  branched_off: develop@b7b9008 # PR #13 merge tip
+  backend_tests: 343
+  frontend_tests: 243
+  branched_off: develop@b7b9008
+
+results:
+  backend_tests_final: 400 # +57 (3 schema + 4 constant + 5 record + 6 task-activity + 5 task-diff + 4 project-activity + 4 member-activity + 6 validation + 8 service-list + 6 routes + 6 routes-project)
+  frontend_tests_final: 276 # +33 (6 lib + 6 hooks + 6 ActivityItem + 6 ActivityFeed + 3 dashboard + 6 project page)
+  backend_coverage_activityLog: "91% lines"
