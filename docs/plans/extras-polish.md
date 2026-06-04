@@ -181,8 +181,8 @@ Steps:
 - 1. RED: 10 tests — useComments infinite query + add/update/delete mutations invalidate; useAttachments list + upload + delete; useNotifications infinite query + useUnreadCount + markRead mutation refetches count
 - 2. GREEN: TanStack Query wrappers
 - 3. REFACTOR: shared query key factory
-- 4. Commit `[E13] frontend: extras hooks + 10/10`
-Status: [ ]
+- 4. Commit `[E13] frontend: extras hooks + 11/11`
+Status: [x]
 
 ### Task 14: TaskCommentsPanel component
 Files:

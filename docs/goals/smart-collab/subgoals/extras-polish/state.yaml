@@ -61,7 +61,7 @@ tasks:
   - id: t13
     desc: "frontend: extras hooks + 10 tests"
     files: [frontend/src/hooks/]
-    status: pending
+    status: done
   - id: t14
     desc: "frontend: TaskCommentsPanel + 6 tests"
     files: [frontend/src/components/tasks/]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t13
+next_task: t14
 
 phase_completion:
   gstack: true
