@@ -7,17 +7,81 @@ mode:
   scope: feature
   session: new
 
-phase: 1 # GStack — SPEC locked; awaiting Phase 2 GSD slicing
+phase: 2 # GSD — plan sliced; ready for Phase 3 Superpowers
 
-tasks: [] # populated in Phase 2
+tasks:
+  - id: t1
+    desc: "dashboard.constant + dashboard.validation (daysQuerySchema) + 6 zod tests"
+    files: [backend/src/app/modules/dashboard/]
+    status: todo
+  - id: t2
+    desc: "service getKpis (global + scoped) + 5 tests"
+    files: [backend/src/app/modules/dashboard/]
+    status: todo
+  - id: t3
+    desc: "service getStatusCounts + getPriorityCounts (groupBy + zero-fill) + 6 tests"
+    files: [backend/src/app/modules/dashboard/]
+    status: todo
+  - id: t4
+    desc: "service getProductivity (date series + zero-fill) + 5 tests"
+    files: [backend/src/app/modules/dashboard/]
+    status: todo
+  - id: t5
+    desc: "service getUpcoming + getHighPriority + 6 tests"
+    files: [backend/src/app/modules/dashboard/]
+    status: todo
+  - id: t6
+    desc: "controller + routes (global + project-nested) + 12 happy"
+    files: [backend/src/app/modules/dashboard/, backend/src/app/modules/project/project.routes.ts, backend/src/app/routes/index.ts]
+    status: todo
+  - id: t7
+    desc: "routes negatives (RBAC + validation) + 8"
+    files: [backend/src/app/modules/dashboard/__tests__/]
+    status: todo
+  - id: t8
+    desc: "recharts dep + lib/schemas/dashboard + lib/dashboard api client + 8"
+    files: [frontend/package.json, frontend/src/lib/schemas/dashboard.ts, frontend/src/lib/dashboard.ts]
+    status: todo
+  - id: t9
+    desc: "hooks/useDashboard (6 hooks) + 9"
+    files: [frontend/src/hooks/useDashboard.ts]
+    status: todo
+  - id: t10
+    desc: "KpiCard component + 4"
+    files: [frontend/src/components/dashboard/KpiCard.tsx]
+    status: todo
+  - id: t11
+    desc: "StatusDonut + PriorityBar (recharts) + 6"
+    files: [frontend/src/components/dashboard/]
+    status: todo
+  - id: t12
+    desc: "ProductivityLine (recharts LineChart) + 4"
+    files: [frontend/src/components/dashboard/ProductivityLine.tsx]
+    status: todo
+  - id: t13
+    desc: "UpcomingList + HighPriorityList + 6"
+    files: [frontend/src/components/dashboard/]
+    status: todo
+  - id: t14
+    desc: "/dashboard global page (replace shell) + 4"
+    files: [frontend/src/app/dashboard/]
+    status: todo
+  - id: t15
+    desc: "/projects/[id]/dashboard scoped page + project detail link + 3"
+    files: ["frontend/src/app/projects/[id]/dashboard/", "frontend/src/app/projects/[id]/page.tsx"]
+    status: todo
+  - id: t16
+    desc: "coverage check + README updates — subgoal complete"
+    files: [README.md]
+    status: todo
 
 blockers: []
 
-next_task: null
+next_task: t1
 
 phase_completion:
   gstack: true # locked 2026-06-04 by user (4 clarifications answered)
-  gsd: false
+  gsd: true # locked 2026-06-04 — plan sliced into 16 tasks across 6 phases
   superpowers: false
   ralph_wiggum: false
 
