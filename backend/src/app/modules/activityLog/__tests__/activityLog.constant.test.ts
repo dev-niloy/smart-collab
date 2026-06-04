@@ -1,4 +1,4 @@
-import { ACTIONS, ENTITY_TYPES, sanitizeMeta, isKnownAction } from '../activityLog.constant';
+import { ACTIONS, ENTITY_TYPES, sanitizeMeta, isKnownAction, META_STRING_CAP } from '../activityLog.constant';
 
 describe('activityLog constants', () => {
   it('ACTIONS includes all task/project/member events', () => {
@@ -40,5 +40,17 @@ describe('activityLog constants', () => {
   it('isKnownAction recognises valid actions and rejects unknown', () => {
     expect(isKnownAction('task.created')).toBe(true);
     expect(isKnownAction('does.not.exist')).toBe(false);
+  });
+
+  it('sanitizeMeta caps long string fields to META_STRING_CAP', () => {
+    const long = 'a'.repeat(500);
+    const out = sanitizeMeta({ description: long }) as Record<string, unknown>;
+    expect((out.description as string).length).toBe(META_STRING_CAP);
+    expect((out.description as string).endsWith('…')).toBe(true);
+  });
+
+  it('sanitizeMeta leaves short strings untouched', () => {
+    const out = sanitizeMeta({ title: 'short' }) as Record<string, unknown>;
+    expect(out.title).toBe('short');
   });
 });
