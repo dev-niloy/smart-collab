@@ -187,7 +187,7 @@ export default function ProjectsPage() {
                   onClick={() => toggleStatus(s)}
                   aria-pressed={active}
                   className={
-                    'rounded-full border px-3 py-0.5 text-xs transition-colors ' +
+                    'rounded-full border px-3 py-0.5 text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ' +
                     (active
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-input bg-background hover:bg-muted')
