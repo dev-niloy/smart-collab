@@ -167,7 +167,7 @@ Steps:
 - 2. GREEN: zod schemas + apiGet/apiPost/apiDelete wrappers; multipart upload via fetch FormData for attachments
 - 3. REFACTOR: shared cursor-page schema
 - 4. Commit `[E12] frontend: extras schemas + clients + 12/12`
-Status: [ ]
+Status: [x]
 
 ### Task 13: hooks (useComments + useAttachments + useNotifications + useUnreadCount)
 Files:

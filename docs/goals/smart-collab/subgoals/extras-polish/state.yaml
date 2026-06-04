@@ -57,7 +57,7 @@ tasks:
   - id: t12
     desc: "frontend: extras schemas + clients (comments + attachments + notifications) + 12 tests"
     files: [frontend/src/lib/]
-    status: pending
+    status: done
   - id: t13
     desc: "frontend: extras hooks + 10 tests"
     files: [frontend/src/hooks/]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t12
+next_task: t13
 
 phase_completion:
   gstack: true
