@@ -110,7 +110,7 @@ phase_completion:
   gstack: true
   gsd: true # locked 2026-06-04 — plan sliced into 19 tasks across 6 phases
   superpowers: true # 2026-06-04 — 19/19 tasks; backend 459→520, frontend 319→364; coverage ≥85% new files
-  ralph_wiggum: false
+  ralph_wiggum: true # 2026-06-04 — 2 cycles, 9 persona commits (Dev×2, Arch×2, Des×2, QA×1, BA×1, PM verify); 521/521 backend + 364/364 frontend; PR push gated by user permission
 
 baseline:
   backend_tests: 459
