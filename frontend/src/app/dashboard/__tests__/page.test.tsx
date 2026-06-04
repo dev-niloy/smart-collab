@@ -31,6 +31,15 @@ vi.mock('@/lib/dashboard', () => ({
   getHighPriority: (...a: unknown[]) => highPrioritySpy(...a),
 }));
 
+const { activitySpy, projectActivitySpy } = vi.hoisted(() => ({
+  activitySpy: vi.fn(),
+  projectActivitySpy: vi.fn(),
+}));
+vi.mock('@/lib/activity', () => ({
+  listActivity: (...a: unknown[]) => activitySpy(...a),
+  listProjectActivity: (...a: unknown[]) => projectActivitySpy(...a),
+}));
+
 vi.mock('recharts', async () => {
   const actual = await vi.importActual<typeof import('recharts')>('recharts');
   return {
@@ -62,6 +71,8 @@ const seedHooks = () => {
   productivitySpy.mockResolvedValue([{ date: '2026-06-04', completed: 1 }]);
   upcomingSpy.mockResolvedValue({ tasks: [], projects: [] });
   highPrioritySpy.mockResolvedValue([]);
+  activitySpy.mockResolvedValue({ items: [], nextCursor: null });
+  projectActivitySpy.mockResolvedValue({ items: [], nextCursor: null });
 };
 
 describe('DashboardPage (global)', () => {
@@ -122,5 +133,54 @@ describe('DashboardPage (global)', () => {
     await waitFor(() => expect(screen.getByText('10')).toBeTruthy());
     expect(screen.getByText('3')).toBeTruthy(); // projects
     expect(screen.getByText(/40% completed/i)).toBeTruthy();
+  });
+
+  it('renders recent activity widget and calls global listActivity with limit=10', async () => {
+    render(
+      <Providers>
+        <DashboardPage />
+      </Providers>,
+    );
+    await waitFor(() => expect(activitySpy).toHaveBeenCalled());
+    expect(screen.getByRole('heading', { name: /recent activity/i })).toBeTruthy();
+    expect(activitySpy).toHaveBeenCalledWith(
+      expect.objectContaining({ limit: 10 }),
+    );
+  });
+
+  it('does not call project activity client when global', async () => {
+    render(
+      <Providers>
+        <DashboardPage />
+      </Providers>,
+    );
+    await waitFor(() => expect(activitySpy).toHaveBeenCalled());
+    expect(projectActivitySpy).not.toHaveBeenCalled();
+  });
+
+  it('does not render a "Load more" button on dashboard variant', async () => {
+    activitySpy.mockResolvedValue({
+      items: [
+        {
+          id: 'a-1',
+          action: 'task.created',
+          actorId: 'u',
+          actorName: 'Me',
+          entityType: 'task',
+          entityId: 't-1',
+          projectId: 'p-1',
+          meta: { title: 'X' },
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      nextCursor: 'CUR',
+    });
+    render(
+      <Providers>
+        <DashboardPage />
+      </Providers>,
+    );
+    await waitFor(() => expect(activitySpy).toHaveBeenCalled());
+    expect(screen.queryByRole('button', { name: /load more/i })).toBeNull();
   });
 });
