@@ -81,4 +81,18 @@ describe('lib/search client', () => {
     vi.stubGlobal('fetch', sp);
     await expect(searchAll({ q: 'foo' })).rejects.toThrow();
   });
+
+  it('fail-fast on q.trim().length < 2 without firing fetch', async () => {
+    const sp = vi.fn();
+    vi.stubGlobal('fetch', sp);
+    await expect(searchAll({ q: '  a  ' })).rejects.toThrow(/at least 2 characters/i);
+    expect(sp).not.toHaveBeenCalled();
+  });
+
+  it('fail-fast on out-of-range limit without firing fetch', async () => {
+    const sp = vi.fn();
+    vi.stubGlobal('fetch', sp);
+    await expect(searchAll({ q: 'foo', limit: 21 })).rejects.toThrow(/between 1 and 20/i);
+    expect(sp).not.toHaveBeenCalled();
+  });
 });
