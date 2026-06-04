@@ -38,7 +38,8 @@ export const projectController = {
 
   update: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const project = await projectService.update(req.params.id, req.body);
+      const actorId = req.user?.id ?? null;
+      const project = await projectService.update(req.params.id, req.body, actorId);
       res.status(200).json({ project });
     } catch (err) {
       next(err);
@@ -47,7 +48,8 @@ export const projectController = {
 
   remove: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await projectService.remove(req.params.id);
+      const actorId = req.user?.id ?? null;
+      await projectService.remove(req.params.id, actorId);
       res.status(204).send();
     } catch (err) {
       next(err);

@@ -3,6 +3,7 @@ import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
 import { PAST_DEADLINE_MESSAGE, DEFAULT_LIMIT, DEFAULT_PAGE, type SortKey } from './project.constant';
 import type { CreateProjectInput, UpdateProjectInput } from './project.validation';
+import { recordActivity } from '../activityLog/activityLog.service';
 
 const ensureFutureDeadline = (deadline: Date) => {
   if (deadline.getTime() < Date.now()) {
@@ -39,6 +40,14 @@ const create = async (input: CreateProjectInput, actorId: string): Promise<Proje
     await tx.projectMember.create({
       data: { projectId: project.id, userId: actorId, role: 'pm', addedById: actorId },
     });
+    await recordActivity(tx, {
+      actorId,
+      action: 'project.created',
+      entityType: 'project',
+      entityId: project.id,
+      projectId: project.id,
+      meta: { name: project.name, status: project.status },
+    });
     return project;
   });
 };
@@ -49,18 +58,33 @@ const findById = async (id: string): Promise<ProjectWithCreator> => {
   return p;
 };
 
-const update = async (id: string, input: UpdateProjectInput): Promise<ProjectWithCreator> => {
+const update = async (
+  id: string,
+  input: UpdateProjectInput,
+  actorId: string | null = null,
+): Promise<ProjectWithCreator> => {
   if (input.deadline) ensureFutureDeadline(input.deadline);
   try {
-    return await prisma.project.update({
-      where: { id },
-      data: {
-        ...(input.name !== undefined ? { name: input.name } : {}),
-        ...(input.description !== undefined ? { description: input.description } : {}),
-        ...(input.deadline !== undefined ? { deadline: input.deadline } : {}),
-        ...(input.status !== undefined ? { status: input.status } : {}),
-      },
-      include: creatorInclude,
+    return await prisma.$transaction(async (tx) => {
+      const project = await tx.project.update({
+        where: { id },
+        data: {
+          ...(input.name !== undefined ? { name: input.name } : {}),
+          ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.deadline !== undefined ? { deadline: input.deadline } : {}),
+          ...(input.status !== undefined ? { status: input.status } : {}),
+        },
+        include: creatorInclude,
+      });
+      await recordActivity(tx, {
+        actorId,
+        action: 'project.updated',
+        entityType: 'project',
+        entityId: project.id,
+        projectId: project.id,
+        meta: { name: project.name, status: project.status },
+      });
+      return project;
     });
   } catch (err) {
     if (isRecordNotFound(err)) {
@@ -70,10 +94,26 @@ const update = async (id: string, input: UpdateProjectInput): Promise<ProjectWit
   }
 };
 
-const remove = async (id: string): Promise<void> => {
+const remove = async (id: string, actorId: string | null = null): Promise<void> => {
   try {
-    await prisma.project.delete({ where: { id } });
+    const existing = await prisma.project.findUnique({
+      where: { id },
+      select: { id: true, name: true },
+    });
+    if (!existing) throw ApiError.notFound('Project not found', 'PROJECT_NOT_FOUND');
+    await prisma.$transaction(async (tx) => {
+      await recordActivity(tx, {
+        actorId,
+        action: 'project.deleted',
+        entityType: 'project',
+        entityId: existing.id,
+        projectId: null,
+        meta: { name: existing.name },
+      });
+      await tx.project.delete({ where: { id } });
+    });
   } catch (err) {
+    if (err instanceof ApiError) throw err;
     if (isRecordNotFound(err)) {
       throw ApiError.notFound('Project not found', 'PROJECT_NOT_FOUND');
     }
