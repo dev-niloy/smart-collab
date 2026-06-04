@@ -136,11 +136,13 @@ const countUnread = async (userId: string): Promise<number> => {
 };
 
 const markRead = async (id: string, userId: string): Promise<NotificationDTO> => {
-  const existing = await prisma.notification.findUnique({
-    where: { id },
+  // Filter by ownership in the same query so we never even fetch someone
+  // else's row (defence in depth) and short-circuit the already-read case.
+  const existing = await prisma.notification.findFirst({
+    where: { id, recipientId: userId },
     include: { actor: { select: { name: true } } },
   });
-  if (!existing || existing.recipientId !== userId) {
+  if (!existing) {
     throw ApiError.notFound('Notification not found', 'NOTIFICATION_NOT_FOUND');
   }
   if (existing.readAt) return toDTO(existing);
