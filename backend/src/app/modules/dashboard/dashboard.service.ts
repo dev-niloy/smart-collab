@@ -119,11 +119,83 @@ const getProductivity = async (
   return out;
 };
 
+const userMiniSelect = { id: true, email: true, name: true } as const;
+
+export type UpcomingTask = {
+  id: string;
+  title: string;
+  dueDate: Date;
+  projectId: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'todo' | 'in_progress' | 'completed';
+};
+export type UpcomingProject = { id: string; name: string; deadline: Date };
+export type UpcomingPayload = { tasks: UpcomingTask[]; projects: UpcomingProject[] };
+
+const getUpcoming = async (scope: Scope, days: number): Promise<UpcomingPayload> => {
+  const now = new Date();
+  const horizon = new Date(Date.now() + days * 86_400_000);
+
+  const [tasks, projects] = await Promise.all([
+    prisma.task.findMany({
+      where: taskWhere(scope, {
+        status: { not: 'completed' },
+        dueDate: { gte: now, lte: horizon },
+      }),
+      orderBy: { dueDate: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        dueDate: true,
+        projectId: true,
+        priority: true,
+        status: true,
+      },
+    }),
+    prisma.project.findMany({
+      where: {
+        ...projectWhere(scope),
+        deadline: { gte: now, lte: horizon },
+      },
+      orderBy: { deadline: 'asc' },
+      select: { id: true, name: true, deadline: true },
+    }),
+  ]);
+  return { tasks, projects };
+};
+
+export type HighPriorityTask = {
+  id: string;
+  title: string;
+  projectId: string;
+  dueDate: Date;
+  status: 'todo' | 'in_progress' | 'completed';
+  assignee: { id: string; email: string; name: string } | null;
+};
+
+const getHighPriority = async (scope: Scope): Promise<HighPriorityTask[]> => {
+  const rows = await prisma.task.findMany({
+    where: taskWhere(scope, { priority: 'high', status: { not: 'completed' } }),
+    orderBy: { dueDate: 'asc' },
+    select: {
+      id: true,
+      title: true,
+      projectId: true,
+      dueDate: true,
+      status: true,
+      assignee: { select: userMiniSelect },
+    },
+  });
+  return rows.map((r) => ({ ...r, assignee: r.assignee ?? null }));
+};
+
 export const dashboardService = {
   getKpis,
   getStatusCounts,
   getPriorityCounts,
   getProductivity,
+  getUpcoming,
+  getHighPriority,
   _taskWhere: taskWhere,
   _projectWhere: projectWhere,
   _dateKey: dateKey,
