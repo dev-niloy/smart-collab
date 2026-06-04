@@ -30,14 +30,20 @@ type Args = {
   limit?: number;
 };
 
-// Rank prefix-matches above contains-matches so "foo" → "Foo Bar" beats
-// "Barfoo". Cheap O(n) two-pass sort that doesn't need a real FTS index.
-const prefixThenContainsScore = (haystack: string, needle: string): number => {
-  const h = haystack.toLowerCase();
+// Rank: primary-field prefix > primary contains > secondary (description)
+// contains > nothing. Falling back to description score keeps body-only
+// matches from being silently dropped when the limit slice is tight.
+const rank = (primary: string, secondary: string | null, needle: string): number => {
   const n = needle.toLowerCase();
-  if (h.startsWith(n)) return 0;
-  const idx = h.indexOf(n);
-  return idx === -1 ? Number.POSITIVE_INFINITY : idx + 1;
+  const p = primary.toLowerCase();
+  if (p.startsWith(n)) return 0;
+  const pIdx = p.indexOf(n);
+  if (pIdx !== -1) return pIdx + 1;
+  if (secondary) {
+    const sIdx = secondary.toLowerCase().indexOf(n);
+    if (sIdx !== -1) return 1000 + sIdx;
+  }
+  return Number.POSITIVE_INFINITY;
 };
 
 export const search = async (args: Args): Promise<SearchResult> => {
@@ -82,7 +88,7 @@ export const search = async (args: Args): Promise<SearchResult> => {
       description: p.description,
       status: p.status,
       deadline: p.deadline,
-      _score: prefixThenContainsScore(p.name, q),
+      _score: rank(p.name, p.description, q),
     }))
     .sort((a, b) => a._score - b._score)
     .slice(0, limit)
@@ -98,7 +104,7 @@ export const search = async (args: Args): Promise<SearchResult> => {
       status: t.status,
       priority: t.priority,
       dueDate: t.dueDate,
-      _score: prefixThenContainsScore(t.title, q),
+      _score: rank(t.title, t.description, q),
     }))
     .sort((a, b) => a._score - b._score)
     .slice(0, limit)
