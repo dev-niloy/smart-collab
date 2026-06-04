@@ -100,40 +100,40 @@ tasks:
   # ── Phase D: frontend pages ─────────────────────────────────────────────────
   - id: t15
     desc: "/projects/[id]/tasks/page.tsx: list with cards/rows (title, status badge, priority badge, assignee chip, due date), inline status Select that fires PATCH, toolbar (search, status filter, priority filter, assignee filter, sort), pagination prev/next, 'New Task' button for all authed (members can create), loading/empty/error states. Page interaction tests"
-    files: [frontend/src/app/projects/[id]/tasks/page.tsx, frontend/src/app/projects/[id]/tasks/__tests__/page.test.tsx]
+    files: ["frontend/src/app/projects/[id]/tasks/page.tsx", "frontend/src/app/projects/[id]/tasks/__tests__/page.test.tsx"]
     status: done
     receipt: "URL-state source-of-truth for q/status/priority/assignedTo/sort/page; router.replace on changes resets page. Debounced search (300ms) via render-time setState sync (no effect setState). useProjectTasks hits nested route. useUsers loads assignee dropdown options (Any + Unassigned + named users). Inline status Select per card uses useUpdateTask(task.id) -> PATCH; toast.error on ApiError. Card layout: title link + priority Badge top right, status Badge + inline Select, due date + assignee chip (name or 'Unassigned' italics). Skeleton loading, two empty states (no tasks vs no matches w/ clear-filters), error -> Retry. Pagination prev/next w/ disabled boundaries. Tests 8/8: cards render, member sees New Task btn, debounced search pushes q=, two empty states (clear -> bare /projects/p-1/tasks), error retry, pagination Next advances page=2 / Prev disabled, inline status Select fires updateTask(id, {status}). FRONTEND TOTAL 123/123 (+8)."
 
   - id: t16
     desc: "/projects/[id]/tasks/new/page.tsx: create form (title, description, priority Select, status Select default Todo, assignedTo Select loaded from useUsers, dueDate). RHF+Zod. All authed can create. Success -> push to task detail. Test happy + validation"
-    files: [frontend/src/app/projects/[id]/tasks/new/page.tsx, frontend/src/app/projects/[id]/tasks/new/__tests__/page.test.tsx]
+    files: ["frontend/src/app/projects/[id]/tasks/new/page.tsx", "frontend/src/app/projects/[id]/tasks/new/__tests__/page.test.tsx"]
     status: done
     receipt: "RHF + zodResolver. FormValues split from backend coerce-date: title string, description optional, dueDate string (HTML date input), status enum default todo, priority enum default medium, assignedTo string (UNASSIGNED sentinel or uuid). Submit maps UNASSIGNED -> null, dueDate string -> Date. useCreateTask via TanStack hook. useUsers populates assignee Select. Success -> toast.success + router.push('/projects/{id}/tasks/{taskId}'). All authed can create (no RBAC redirect; members allowed). Tests 3/3: member submits valid form (createTaskSpy called w/ projectId='p-1', Date dueDate, assignedTo null, pushes to detail), title required inline error, due date required inline error. Frontend 126/126 (+3)."
 
   - id: t17
     desc: "/projects/[id]/tasks/[taskId]/page.tsx: detail view (title, description, status, priority, assignee email, creator email, due date, timestamps). Edit + Delete buttons RBAC-gated. Member can Edit own (assignedTo===self || createdBy===self); never sees Delete. Test rendering + RBAC visibility for 3 roles x own/other"
-    files: [frontend/src/app/projects/[id]/tasks/[taskId]/page.tsx, frontend/src/app/projects/[id]/tasks/[taskId]/__tests__/page.test.tsx]
+    files: ["frontend/src/app/projects/[id]/tasks/[taskId]/page.tsx", "frontend/src/app/projects/[id]/tasks/[taskId]/__tests__/page.test.tsx"]
     status: done
     receipt: "useTask(taskId) + useUser(). isPrivileged = admin|PM bypass. isOwner = task.createdBy===user.id || task.assignedTo===user.id. canEdit = isPrivileged || isOwner. canDelete = isPrivileged only. Layout: title + creator description + status + priority badges; description w/ italic fallback; dl grid (Due date, Assignee w/ email or 'Unassigned' italics, Created, Updated). Edit -> Link. Delete -> disabled stub (t19). Back to tasks link. Error -> Retry. Tests 7/7: fields render w/ Unassigned, admin sees both buttons, PM sees both, member non-owner hides both, member who is creator sees Edit hides Delete, member who is assignee sees Edit hides Delete, error/missing -> Retry. Frontend 133/133 (+7)."
 
   - id: t18
     desc: "/projects/[id]/tasks/[taskId]/edit/page.tsx: prefilled update form. Server enforces ownership for members (403 surfaces as toast). Success -> push detail. Tests happy + 403 toast on bad attempt"
-    files: [frontend/src/app/projects/[id]/tasks/[taskId]/edit/page.tsx, frontend/src/app/projects/[id]/tasks/[taskId]/edit/__tests__/page.test.tsx]
-    status: todo
-    receipt: null
+    files: ["frontend/src/app/projects/[id]/tasks/[taskId]/edit/page.tsx", "frontend/src/app/projects/[id]/tasks/[taskId]/edit/__tests__/page.test.tsx"]
+    status: done
+    receipt: "Mirrors t16 new-form pattern. Prefill via useEffect on task load: reset({title, description, dueDate: toDateInput, status, priority, assignedTo: task.assignedTo ?? UNASSIGNED}). Submit converts dueDate string -> Date, maps UNASSIGNED -> null. useUpdateTask(taskId). Success -> toast + push detail. API error -> toast.error (covers 403 FORBIDDEN_OWNERSHIP server-enforced for members). 'Checking permissions' not needed: ownership check happens server-side; UI shows form to all and lets server reject. Tests 2/2: admin prefills 'Launch', edits to 'Launch v2', updateSpy called w/ Date dueDate, pushes detail; api error -> mutation fired, pushSpy NOT called. Frontend 135/135."
 
   - id: t19
     desc: "DeleteTaskButton component (shadcn AlertDialog confirm 'Delete task? This cannot be undone.'). Fires useDeleteTask + router.push('/projects/[id]/tasks'). Wired into detail page Delete button (admin/PM only). Test confirm + cancel"
-    files: [frontend/src/components/tasks/delete-task-button.tsx, frontend/src/components/tasks/__tests__/delete-task-button.test.tsx, frontend/src/app/projects/[id]/tasks/[taskId]/page.tsx]
-    status: todo
-    receipt: null
+    files: ["frontend/src/components/tasks/delete-task-button.tsx", "frontend/src/components/tasks/__tests__/delete-task-button.test.tsx", "frontend/src/app/projects/[id]/tasks/[taskId]/page.tsx"]
+    status: done
+    receipt: "Destructive Button opens controlled AlertDialog (base-ui pattern: imperative setOpen, no asChild Trigger). Copy verbatim: 'Delete task?' title, 'This cannot be undone.' description. Confirm fires useDeleteTask.mutateAsync(taskId) -> toast.success(Deleted name) -> router.push('/projects/{projectId}/tasks'). Cancel closes w/o calling delete. API error -> toast.error. Detail page Delete stub replaced. Tests 3/3: opens w/ copy, confirm calls deleteSpy + push, cancel closes w/o calls. Phase D complete (t15-t19)."
 
   # ── Phase E: wrap ───────────────────────────────────────────────────────────
   - id: t20
     desc: "Project detail page: add a 'Tasks' section/card linking to /projects/[id]/tasks (visible to all authed). Smoke test detail page renders Tasks link"
-    files: [frontend/src/app/projects/[id]/page.tsx, frontend/src/app/projects/[id]/__tests__/page.test.tsx]
-    status: todo
-    receipt: null
+    files: ["frontend/src/app/projects/[id]/page.tsx", "frontend/src/app/projects/[id]/__tests__/page.test.tsx"]
+    status: done
+    receipt: "Added 'View tasks ->' secondary Button (Link) on project detail page above RBAC mutate actions, visible to all authed. Smoke test verifies link href = /projects/{id}/tasks for member role. Frontend 139/139 (+6 from t17 detail tests, t18 edit 2, t19 delete 3, t20 link 1 — relative to t17 end of 133). NOTE: Phase D was t15-t19; t20 begins Phase E."
 
   - id: t21
     desc: "coverage check: backend task module >=80% lines; frontend task pages+hooks >=70%. README API routes table updated with /api/v1/tasks + /api/v1/users + /api/v1/projects/:id/tasks; frontend pages list updated with task routes"
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t18
+next_task: t21
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
