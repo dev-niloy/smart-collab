@@ -1,11 +1,11 @@
 import type { RequestHandler } from 'express';
-import { prisma } from '../../../config/prisma';
-import { ApiError } from '../../errors/ApiError';
-import { projectMemberService } from '../projectMember/projectMember.service';
+import { prisma } from '../../config/prisma';
+import { ApiError } from '../errors/ApiError';
+import { projectMemberService } from '../modules/projectMember/projectMember.service';
 
 // Resolves the project for a :taskId route param, then ensures the caller is
-// a system admin or a member of that project. Caches resolved role on
-// req.projectRole for downstream handlers.
+// a system admin or a member of that project. Caches the resolved role on
+// req.projectRole for downstream handlers (e.g. delete-permission checks).
 export const requireTaskAccess: RequestHandler = async (req, _res, next) => {
   try {
     if (!req.user) {

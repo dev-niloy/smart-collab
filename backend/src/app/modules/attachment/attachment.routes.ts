@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/auth';
-import { requireTaskAccess } from '../comment/requireTaskAccess';
+import { requireTaskAccess } from '../../middlewares/requireTaskAccess';
 import { attachmentController } from './attachment.controller';
 import { attachmentUploader, handleMulterError } from './multer';
 

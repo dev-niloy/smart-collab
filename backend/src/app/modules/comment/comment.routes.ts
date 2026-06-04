@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/auth';
 import { validate } from '../../middlewares/validate';
-import { requireTaskAccess } from './requireTaskAccess';
+import { requireTaskAccess } from '../../middlewares/requireTaskAccess';
 import { commentController } from './comment.controller';
 import {
   createCommentBodySchema,
