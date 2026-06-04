@@ -12,6 +12,7 @@ import {
 import { listTasksQuerySchema } from '../task/task.validation';
 import projectMemberRouter from '../projectMember/projectMember.routes';
 import { buildDashboardRouter } from '../dashboard/dashboard.routes';
+import { buildProjectActivityRouter } from '../activityLog/activityLog.routes';
 import { requireProjectRole } from '../../middlewares/requireProjectRole';
 
 const router = Router();
@@ -22,6 +23,12 @@ router.use(
   requireAuth,
   requireProjectRole('member'),
   buildDashboardRouter(),
+);
+router.use(
+  '/:id/activity',
+  requireAuth,
+  requireProjectRole('member'),
+  buildProjectActivityRouter(),
 );
 
 router.use(requireAuth);

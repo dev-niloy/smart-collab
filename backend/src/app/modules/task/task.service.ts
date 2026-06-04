@@ -12,6 +12,7 @@ import {
   type SortKey,
 } from './task.constant';
 import type { CreateTaskInput, UpdateTaskInput } from './task.validation';
+import { recordActivity } from '../activityLog/activityLog.service';
 
 const ensureFutureDeadline = (dueDate: Date) => {
   if (dueDate.getTime() < Date.now()) {
@@ -86,18 +87,29 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
   await ensureTitleUnique(input.projectId, input.title);
   await ensureAssigneeIsProjectMember(input.projectId, input.assignedTo ?? null);
   try {
-    return await prisma.task.create({
-      data: {
-        projectId: input.projectId,
-        title: input.title,
-        description: input.description ?? null,
-        dueDate: input.dueDate,
-        status: input.status,
-        priority: input.priority,
-        assignedTo: input.assignedTo ?? null,
-        createdBy: actorId,
-      },
-      include: taskInclude,
+    return await prisma.$transaction(async (tx) => {
+      const task = await tx.task.create({
+        data: {
+          projectId: input.projectId,
+          title: input.title,
+          description: input.description ?? null,
+          dueDate: input.dueDate,
+          status: input.status,
+          priority: input.priority,
+          assignedTo: input.assignedTo ?? null,
+          createdBy: actorId,
+        },
+        include: taskInclude,
+      });
+      await recordActivity(tx, {
+        actorId,
+        action: 'task.created',
+        entityType: 'task',
+        entityId: task.id,
+        projectId: task.projectId,
+        meta: { title: task.title, status: task.status, priority: task.priority },
+      });
+      return task;
     });
   } catch (err) {
     if (isUniqueViolation(err)) {
@@ -114,12 +126,16 @@ const findById = async (id: string): Promise<TaskWithRelations> => {
   return t;
 };
 
-const update = async (id: string, input: UpdateTaskInput): Promise<TaskWithRelations> => {
+const update = async (
+  id: string,
+  input: UpdateTaskInput,
+  actorId: string | null = null,
+): Promise<TaskWithRelations> => {
   if (input.dueDate) ensureFutureDeadline(input.dueDate);
 
   const current = await prisma.task.findUnique({
     where: { id },
-    select: { projectId: true, status: true, assignedTo: true, title: true },
+    select: { projectId: true, status: true, assignedTo: true, title: true, priority: true },
   });
   if (!current) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
 
@@ -135,18 +151,68 @@ const update = async (id: string, input: UpdateTaskInput): Promise<TaskWithRelat
     await ensureAssigneeIsProjectMember(current.projectId, input.assignedTo);
   }
 
+  // Detect changed fields up-front so we can decide whether to emit task.updated.
+  const fieldChanged =
+    (input.title !== undefined && input.title !== current.title) ||
+    input.description !== undefined ||
+    input.dueDate !== undefined ||
+    (input.status !== undefined && input.status !== current.status) ||
+    (input.priority !== undefined && input.priority !== current.priority) ||
+    (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo);
+
   try {
-    return await prisma.task.update({
-      where: { id },
-      data: {
-        ...(input.title !== undefined ? { title: input.title } : {}),
-        ...(input.description !== undefined ? { description: input.description } : {}),
-        ...(input.dueDate !== undefined ? { dueDate: input.dueDate } : {}),
-        ...(input.status !== undefined ? { status: input.status } : {}),
-        ...(input.priority !== undefined ? { priority: input.priority } : {}),
-        ...(input.assignedTo !== undefined ? { assignedTo: input.assignedTo } : {}),
-      },
-      include: taskInclude,
+    return await prisma.$transaction(async (tx) => {
+      const task = await tx.task.update({
+        where: { id },
+        data: {
+          ...(input.title !== undefined ? { title: input.title } : {}),
+          ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.dueDate !== undefined ? { dueDate: input.dueDate } : {}),
+          ...(input.status !== undefined ? { status: input.status } : {}),
+          ...(input.priority !== undefined ? { priority: input.priority } : {}),
+          ...(input.assignedTo !== undefined ? { assignedTo: input.assignedTo } : {}),
+        },
+        include: taskInclude,
+      });
+
+      if (fieldChanged) {
+        await recordActivity(tx, {
+          actorId,
+          action: 'task.updated',
+          entityType: 'task',
+          entityId: task.id,
+          projectId: task.projectId,
+          meta: {
+            title: task.title,
+            status: task.status,
+            priority: task.priority,
+          },
+        });
+      }
+
+      if (input.status !== undefined && input.status !== current.status) {
+        await recordActivity(tx, {
+          actorId,
+          action: 'task.status_changed',
+          entityType: 'task',
+          entityId: task.id,
+          projectId: task.projectId,
+          meta: { from: current.status, to: task.status },
+        });
+      }
+
+      if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo) {
+        await recordActivity(tx, {
+          actorId,
+          action: 'task.assigned',
+          entityType: 'task',
+          entityId: task.id,
+          projectId: task.projectId,
+          meta: { from: current.assignedTo ?? undefined, to: task.assignedTo ?? undefined },
+        });
+      }
+
+      return task;
     });
   } catch (err) {
     if (isRecordNotFound(err)) {
@@ -159,10 +225,26 @@ const update = async (id: string, input: UpdateTaskInput): Promise<TaskWithRelat
   }
 };
 
-const remove = async (id: string): Promise<void> => {
+const remove = async (id: string, actorId: string | null = null): Promise<void> => {
   try {
-    await prisma.task.delete({ where: { id } });
+    const existing = await prisma.task.findUnique({
+      where: { id },
+      select: { id: true, projectId: true, title: true },
+    });
+    if (!existing) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+    await prisma.$transaction(async (tx) => {
+      await recordActivity(tx, {
+        actorId,
+        action: 'task.deleted',
+        entityType: 'task',
+        entityId: existing.id,
+        projectId: existing.projectId,
+        meta: { title: existing.title },
+      });
+      await tx.task.delete({ where: { id } });
+    });
   } catch (err) {
+    if (err instanceof ApiError) throw err;
     if (isRecordNotFound(err)) {
       throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
     }

@@ -11,6 +11,7 @@ import {
   ERR_CANNOT_REMOVE_LAST_PM,
   CANNOT_REMOVE_LAST_PM_MESSAGE,
 } from './projectMember.constant';
+import { recordActivity } from '../activityLog/activityLog.service';
 
 const userSelect = { id: true, email: true, name: true, role: true } as const;
 
@@ -46,9 +47,20 @@ const addMember = async (
   const user = await findUserByEmail(email);
   if (!user) throw ApiError.notFound(USER_NOT_FOUND_MESSAGE, ERR_USER_NOT_FOUND);
   try {
-    return await prisma.projectMember.create({
-      data: { projectId, userId: user.id, role, addedById: actorId },
-      include: memberInclude,
+    return await prisma.$transaction(async (tx) => {
+      const member = await tx.projectMember.create({
+        data: { projectId, userId: user.id, role, addedById: actorId },
+        include: memberInclude,
+      });
+      await recordActivity(tx, {
+        actorId,
+        action: 'member.added',
+        entityType: 'member',
+        entityId: member.id,
+        projectId,
+        meta: { userId: user.id, role: member.role, name: user.name },
+      });
+      return member;
     });
   } catch (err) {
     if (isUniqueViolation(err)) {
@@ -221,6 +233,7 @@ type RemoveResult = { removedMemberId: string; tasksUnassigned: number };
 const removeMember = async (
   projectId: string,
   memberId: string,
+  actorId: string | null = null,
 ): Promise<RemoveResult> => {
   return prisma.$transaction(async (tx) => {
     const target = await tx.projectMember.findUnique({
@@ -247,6 +260,15 @@ const removeMember = async (
     const unassigned = await tx.task.updateMany({
       where: { projectId, assignedTo: target.userId },
       data: { assignedTo: null },
+    });
+
+    await recordActivity(tx, {
+      actorId,
+      action: 'member.removed',
+      entityType: 'member',
+      entityId: target.id,
+      projectId,
+      meta: { userId: target.userId, role: target.role },
     });
 
     await tx.projectMember.delete({ where: { id: memberId } });

@@ -107,6 +107,17 @@ describe('ProjectDetailPage', () => {
     expect(scopedLink).toBeTruthy();
   });
 
+  it('renders Activity link to /projects/:id/activity', async () => {
+    setUser('team_member');
+    getSpy.mockResolvedValue(sampleProject);
+    membersSpy.mockResolvedValue([]);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Launch Site')).toBeInTheDocument());
+    const links = screen.getAllByRole('link', { name: /activity/i });
+    const scoped = links.find((l) => l.getAttribute('href') === '/projects/p-1/activity');
+    expect(scoped).toBeTruthy();
+  });
+
   it('Members button shows count when members are loaded — PM done-criterion #14', async () => {
     setUser('admin');
     getSpy.mockResolvedValue(sampleProject);

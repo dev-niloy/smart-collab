@@ -15,6 +15,8 @@ import {
   useUpcoming,
   useHighPriority,
 } from '@/hooks/useDashboard';
+import { useScopedActivity } from '@/hooks/useActivity';
+import { ActivityFeed } from '@/components/activity/ActivityFeed';
 
 export interface DashboardGridProps {
   projectId?: string;
@@ -27,6 +29,7 @@ export function DashboardGrid({ projectId }: DashboardGridProps) {
   const productivity = useProductivity(projectId, 30);
   const upcoming = useUpcoming(projectId, 7);
   const highPriority = useHighPriority(projectId);
+  const activityQuery = useScopedActivity(projectId, { limit: 10 });
 
   return (
     <div className="flex flex-1 flex-col">
@@ -89,6 +92,21 @@ export function DashboardGrid({ projectId }: DashboardGridProps) {
             loading={highPriority.isLoading}
             error={highPriority.isError}
           />
+        </section>
+
+        <section className="mt-6 rounded-lg border p-4">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold tracking-tight">Recent activity</h2>
+            {projectId ? (
+              <a
+                href={`/projects/${projectId}/activity`}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                View all →
+              </a>
+            ) : null}
+          </div>
+          <ActivityFeed query={activityQuery} hideLoadMore />
         </section>
       </main>
     </div>

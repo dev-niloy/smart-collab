@@ -139,6 +139,13 @@ Project creator is auto-inserted as `pm` member at project create time. Task ass
 
 Per-project endpoints scoped via `requireProjectRole('member')`; system admin bypass. Productivity series is zero-filled so the chart X-axis is continuous.
 
+### Activity log — `/api/v1/activity` (global) + `/api/v1/projects/:id/activity` (per-project)
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| GET    | `/?limit=N&cursor=…` | all authed (global) · member (scoped) | `{items: ActivityDTO[], nextCursor}` — latest first, cursor pagination, limit 1..50 default 10 |
+
+Emitted by service layer inside the originating Prisma `$transaction` so a failed mutation never leaves an orphan log. Tracked actions: `task.created/updated/deleted/status_changed/assigned`, `project.created/updated/deleted`, `member.added/removed`. `meta` is whitelisted (no `passwordHash`/`token`/etc). Per-project route enforces `requireProjectRole('member')`; admin bypasses but still gets 404 if project missing. Cursor format is opaque base64-encoded `{createdAt,id}` for stable tie-breaking. Frontend surfaces: latest 10 widget on `/dashboard` and `/projects/[id]/dashboard`; full feed at `/projects/[id]/activity` with `Load more`.
+
 ### Frontend pages
 - `/login`, `/signup` — auth
 - `/dashboard` — landing
@@ -153,6 +160,7 @@ Per-project endpoints scoped via `requireProjectRole('member')`; system admin by
 - `/projects/[id]/members` — team list with workload counts; add/remove/role-change (admin or project pm)
 - `/dashboard` — global dashboard (4 KPI cards, status donut, priority bar, productivity line, upcoming, high-priority)
 - `/projects/[id]/dashboard` — same dashboard scoped to one project
+- `/projects/[id]/activity` — full per-project activity feed (cursor pagination)
 - `/forbidden` — 403 fallback
 
 ---

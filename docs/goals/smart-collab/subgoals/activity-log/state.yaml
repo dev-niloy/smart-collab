@@ -1,0 +1,110 @@
+feature: activity-log
+created: 2026-06-04
+updated: 2026-06-04
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 4 # Ralph Wiggum — 1 iter, 6 persona wins (Dev/Architect/Designer/QA/PM/BA); DONE
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit"
+    files: []
+    status: done
+  - id: t2
+    desc: "prisma schema — extend ActivityLog + migration + 3 tests"
+    files: [backend/prisma/]
+    status: done
+  - id: t3
+    desc: "activityLog.constant.ts — action verb registry + meta sanitizer + 4 tests"
+    files: [backend/src/app/modules/activityLog/]
+    status: done
+  - id: t4
+    desc: "activityLog.service — recordActivity helper + 5 tests"
+    files: [backend/src/app/modules/activityLog/]
+    status: done
+  - id: t5
+    desc: "task.service — emit on CRUD + 6 tests"
+    files: [backend/src/app/modules/task/]
+    status: done
+  - id: t6
+    desc: "task.service — emit on status/assignee changes + 5 tests"
+    files: [backend/src/app/modules/task/]
+    status: done
+  - id: t7
+    desc: "project.service — emit on CRUD + 4 tests"
+    files: [backend/src/app/modules/project/]
+    status: done
+  - id: t8
+    desc: "projectMember.service — emit on add/remove + 4 tests"
+    files: [backend/src/app/modules/projectMember/]
+    status: done
+  - id: t9
+    desc: "activityLog.validation — list query schema + cursor codec + 6 tests"
+    files: [backend/src/app/modules/activityLog/]
+    status: done
+  - id: t10
+    desc: "activityLog.service — listGlobal + listByProject + cursor + 8 tests"
+    files: [backend/src/app/modules/activityLog/]
+    status: done
+  - id: t11
+    desc: "activityLog.controller + global routes + 6 tests"
+    files: [backend/src/app/modules/activityLog/, backend/src/app/routes/index.ts]
+    status: done
+  - id: t12
+    desc: "project-nested route + RBAC + 6 tests"
+    files: [backend/src/app/modules/project/project.routes.ts, backend/src/app/modules/activityLog/]
+    status: done
+  - id: t13
+    desc: "lib/schemas/activity + lib/activity api client + 6 tests"
+    files: [frontend/src/lib/]
+    status: done
+  - id: t14
+    desc: "hooks/useActivity + useProjectActivity (useInfiniteQuery) + 6 tests"
+    files: [frontend/src/hooks/]
+    status: done
+  - id: t15
+    desc: "ActivityItem + verb registry + 6 tests"
+    files: [frontend/src/components/activity/]
+    status: done
+  - id: t16
+    desc: "ActivityFeed component (list + load more + states) + 6 tests"
+    files: [frontend/src/components/activity/]
+    status: done
+  - id: t17
+    desc: "dashboard widget integration + 3 tests"
+    files: [frontend/src/components/dashboard/, frontend/src/app/dashboard/]
+    status: done
+  - id: t18
+    desc: "project activity page + detail link + 6 tests"
+    files: ["frontend/src/app/projects/[id]/"]
+    status: done
+  - id: t19
+    desc: "coverage check + README updates — subgoal complete"
+    files: [README.md]
+    status: done
+
+blockers: []
+
+next_task: null # all 19 tasks done; awaiting Phase 4 Ralph
+
+phase_completion:
+  gstack: true
+  gsd: true
+  superpowers: true # all 19 done 2026-06-04; backend 400/400 jest, frontend 276/276 vitest
+  ralph_wiggum: true # 1 iter; 6 persona wins (Dev: ApiError on unknown action; Architect: useScopedActivity; Designer: a11y on ActivityFeed; QA: INVALID_CURSOR 422; PM: verbRegistry coverage; BA: meta string cap); backend 403/403, frontend 284/284
+
+baseline:
+  backend_tests: 343
+  frontend_tests: 243
+  branched_off: develop@b7b9008
+
+results:
+  backend_tests_final: 403 # phase3 400 + ralph QA (+1) + ralph BA (+2)
+  frontend_tests_final: 284 # phase3 276 + ralph PM verbRegistry (+8)
+  backend_coverage_activityLog: "91%+ lines (constant 95%, controller 82%)"
+  ralph_iterations: 1
+  ralph_status: DONE

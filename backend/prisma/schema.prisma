@@ -54,9 +54,10 @@ model Project {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  creator User            @relation("ProjectCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
-  tasks   Task[]
-  members ProjectMember[]
+  creator    User            @relation("ProjectCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  tasks      Task[]
+  members    ProjectMember[]
+  activities ActivityLog[]
 
   @@index([status, createdAt])
   @@index([deadline])
@@ -142,15 +143,21 @@ model Session {
 }
 
 model ActivityLog {
-  id        String   @id @default(uuid()) @db.Uuid
-  actorId   String?  @db.Uuid
-  action    String
-  meta      Json?
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid
+  action     String
+  entityType String
+  entityId   String   @db.Uuid
+  projectId  String?  @db.Uuid
+  meta       Json?
+  createdAt  DateTime @default(now())
 
-  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actor   User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
   @@index([actorId])
+  @@index([projectId, createdAt])
+  @@index([entityType, entityId, createdAt])
   @@map("activity_logs")
 }
