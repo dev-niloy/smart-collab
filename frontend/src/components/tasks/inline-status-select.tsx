@@ -28,7 +28,7 @@ export function InlineStatusSelect({ task }: Props) {
           await mutation.mutateAsync({ status: v as TaskStatus });
         } catch (err) {
           const msg = err instanceof ApiError ? err.message : 'Update failed';
-          toast.error(msg);
+          toast.error(`"${task.title}": ${msg}`);
         }
       }}
     >
