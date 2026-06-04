@@ -67,6 +67,16 @@ describe('ProjectDetailPage', () => {
     expect(screen.getAllByText(/active/i).length).toBeGreaterThan(0);
   });
 
+  it('renders View tasks link (all authed)', async () => {
+    setUser('team_member');
+    getSpy.mockResolvedValue(sampleProject);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Launch Site')).toBeInTheDocument());
+    const link = screen.getByRole('link', { name: /view tasks/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', '/projects/p-1/tasks');
+  });
+
   it('admin: shows Edit + Delete buttons', async () => {
     setUser('admin');
     getSpy.mockResolvedValue(sampleProject);

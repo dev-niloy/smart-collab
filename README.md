@@ -93,13 +93,28 @@ Tracking the assessment scope. Each section ships as its own subgoal (`docs/goal
 | GET    | `/me`          | ✓    | Current user                                 |
 
 ### Projects — `/api/v1/projects`
-| Method | Path     | Roles            | Description                                                                   |
-|--------|----------|------------------|-------------------------------------------------------------------------------|
-| GET    | `/`      | all authed       | List with `q`, `status`, `sort` (`created`/`deadline`/`updated`), `page`, `limit` (max 50) |
-| GET    | `/:id`   | all authed       | Single project (includes creator)                                             |
-| POST   | `/`      | admin, project_manager | Create (rejects past deadlines with 422 PAST_DEADLINE)                  |
-| PATCH  | `/:id`   | admin, project_manager | Partial update (same past-deadline guard)                               |
-| DELETE | `/:id`   | admin, project_manager | Hard delete                                                             |
+| Method | Path             | Roles                  | Description                                                                                 |
+|--------|------------------|------------------------|---------------------------------------------------------------------------------------------|
+| GET    | `/`              | all authed             | List with `q`, `status`, `sort` (`created`/`deadline`/`updated`), `page`, `limit` (max 50)  |
+| GET    | `/:id`           | all authed             | Single project (includes creator)                                                           |
+| GET    | `/:id/tasks`     | all authed             | Nested task list scoped to project — same query params as `/api/v1/tasks`                   |
+| POST   | `/`              | admin, project_manager | Create (rejects past deadlines with 422 PAST_DEADLINE)                                      |
+| PATCH  | `/:id`           | admin, project_manager | Partial update (same past-deadline guard)                                                   |
+| DELETE | `/:id`           | admin, project_manager | Hard delete (cascades tasks)                                                                |
+
+### Tasks — `/api/v1/tasks`
+| Method | Path     | Roles                                       | Description                                                                                            |
+|--------|----------|---------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| GET    | `/`      | all authed                                  | List with `projectId`, `q`, `status`, `priority`, `assignedTo` (uuid or `unassigned`), `sort` (`created`/`dueDate`/`priority`/`updated`), `page`, `limit` (max 50) |
+| GET    | `/:id`   | all authed                                  | Single task (includes creator + assignee)                                                              |
+| POST   | `/`      | all authed                                  | Create. Members can create. Past-deadline -> 422 PAST_DEADLINE. Duplicate title within same project -> 422 DUPLICATE_TASK_TITLE |
+| PATCH  | `/:id`   | admin, project_manager, OR creator/assignee | Partial update. Member must own (createdBy=self or assignedTo=self). Reassign-while-completed -> 422 REASSIGN_COMPLETED |
+| DELETE | `/:id`   | admin, project_manager                      | Hard delete                                                                                            |
+
+### Users — `/api/v1/users`
+| Method | Path | Auth | Description                                                                              |
+|--------|------|------|------------------------------------------------------------------------------------------|
+| GET    | `/`  | ✓    | List users (minimal shape: `id`, `email`, `name`, `role`) — powers task assignee picker  |
 
 ### Frontend pages
 - `/login`, `/signup` — auth
@@ -108,6 +123,10 @@ Tracking the assessment scope. Each section ships as its own subgoal (`docs/goal
 - `/projects/new` — create form (admin / PM)
 - `/projects/[id]` — detail with creator, RBAC edit + delete
 - `/projects/[id]/edit` — update form (admin / PM)
+- `/projects/[id]/tasks` — task list (filters: status, priority, assignee, sort, search; inline status change)
+- `/projects/[id]/tasks/new` — create task form (all authed)
+- `/projects/[id]/tasks/[taskId]` — task detail (RBAC Edit: admin/PM/owner; Delete: admin/PM)
+- `/projects/[id]/tasks/[taskId]/edit` — update task form
 - `/forbidden` — 403 fallback
 
 ---
