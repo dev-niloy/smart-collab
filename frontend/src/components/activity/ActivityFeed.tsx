@@ -13,7 +13,12 @@ type Props = {
 };
 
 const Skeleton = () => (
-  <ul className="divide-y" data-testid="activity-skeleton">
+  <ul
+    className="divide-y"
+    data-testid="activity-skeleton"
+    role="status"
+    aria-label="Loading activity"
+  >
     {[0, 1, 2].map((i) => (
       <li key={i} className="py-2">
         <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
@@ -50,7 +55,7 @@ export const ActivityFeed = ({ query, hideLoadMore, emptyText = 'No activity yet
 
   return (
     <div className="space-y-2">
-      <ul className="divide-y">
+      <ul className="divide-y" aria-label="Activity feed" aria-busy={isFetchingNextPage}>
         {items.map((it) => (
           <ActivityItem key={it.id} item={it} />
         ))}
