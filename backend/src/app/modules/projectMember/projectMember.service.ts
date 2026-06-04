@@ -6,6 +6,8 @@ import {
   USER_NOT_FOUND_MESSAGE,
   ERR_ALREADY_MEMBER,
   ALREADY_MEMBER_MESSAGE,
+  ERR_MEMBER_NOT_FOUND,
+  MEMBER_NOT_FOUND_MESSAGE,
 } from './projectMember.constant';
 
 const userSelect = { id: true, email: true, name: true, role: true } as const;
@@ -116,12 +118,79 @@ const listAssignable = async (projectId: string): Promise<AssignableEntry[]> => 
   return out;
 };
 
+export type Workload = {
+  todo: number;
+  in_progress: number;
+  completed: number;
+  due_soon: number;
+};
+
+export type MemberRow = MemberWithUser & { workload: Workload };
+
+const loadWorkload = async (projectId: string, userId: string): Promise<Workload> => {
+  const horizon = new Date(Date.now() + 7 * 86_400_000);
+  const [todo, in_progress, completed, due_soon] = await Promise.all([
+    prisma.task.count({ where: { projectId, assignedTo: userId, status: 'todo' } }),
+    prisma.task.count({ where: { projectId, assignedTo: userId, status: 'in_progress' } }),
+    prisma.task.count({ where: { projectId, assignedTo: userId, status: 'completed' } }),
+    prisma.task.count({
+      where: {
+        projectId,
+        assignedTo: userId,
+        status: { not: 'completed' },
+        dueDate: { lte: horizon, gte: new Date() },
+      },
+    }),
+  ]);
+  return { todo, in_progress, completed, due_soon };
+};
+
+const listMembers = async (projectId: string): Promise<MemberRow[]> => {
+  await ensureProjectExists(projectId);
+  const rows = await prisma.projectMember.findMany({
+    where: { projectId },
+    include: memberInclude,
+    orderBy: { user: { name: 'asc' } },
+  });
+  return Promise.all(
+    rows.map(async (r) => ({
+      ...r,
+      workload: await loadWorkload(projectId, r.userId),
+    })),
+  );
+};
+
+const updateRole = async (
+  projectId: string,
+  memberId: string,
+  role: ProjectRole,
+): Promise<MemberWithUser> => {
+  try {
+    return await prisma.projectMember.update({
+      where: { id: memberId, projectId },
+      data: { role },
+      include: memberInclude,
+    });
+  } catch (err) {
+    if (isRecordNotFound(err)) {
+      throw ApiError.notFound(MEMBER_NOT_FOUND_MESSAGE, ERR_MEMBER_NOT_FOUND);
+    }
+    throw err;
+  }
+};
+
+const isRecordNotFound = (err: unknown): boolean =>
+  typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'P2025';
+
 export const projectMemberService = {
   addMember,
   isMember,
   getProjectRole,
   listAssignable,
+  listMembers,
+  updateRole,
   // exposed for tests + future tasks
   _findUserByEmail: findUserByEmail,
   _ensureProjectExists: ensureProjectExists,
+  _loadWorkload: loadWorkload,
 };
