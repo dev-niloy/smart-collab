@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 3 # Superpowers — all 19 tasks complete; ready for Phase 4 Ralph
+phase: 4 # Ralph Wiggum — 1 iter, 6 persona wins (Dev/Architect/Designer/QA/PM/BA); DONE
 
 tasks:
   - id: t1
@@ -95,7 +95,7 @@ phase_completion:
   gstack: true
   gsd: true
   superpowers: true # all 19 done 2026-06-04; backend 400/400 jest, frontend 276/276 vitest
-  ralph_wiggum: false
+  ralph_wiggum: true # 1 iter; 6 persona wins (Dev: ApiError on unknown action; Architect: useScopedActivity; Designer: a11y on ActivityFeed; QA: INVALID_CURSOR 422; PM: verbRegistry coverage; BA: meta string cap); backend 403/403, frontend 284/284
 
 baseline:
   backend_tests: 343
@@ -103,6 +103,8 @@ baseline:
   branched_off: develop@b7b9008
 
 results:
-  backend_tests_final: 400 # +57 (3 schema + 4 constant + 5 record + 6 task-activity + 5 task-diff + 4 project-activity + 4 member-activity + 6 validation + 8 service-list + 6 routes + 6 routes-project)
-  frontend_tests_final: 276 # +33 (6 lib + 6 hooks + 6 ActivityItem + 6 ActivityFeed + 3 dashboard + 6 project page)
-  backend_coverage_activityLog: "91% lines"
+  backend_tests_final: 403 # phase3 400 + ralph QA (+1) + ralph BA (+2)
+  frontend_tests_final: 284 # phase3 276 + ralph PM verbRegistry (+8)
+  backend_coverage_activityLog: "91%+ lines (constant 95%, controller 82%)"
+  ralph_iterations: 1
+  ralph_status: DONE

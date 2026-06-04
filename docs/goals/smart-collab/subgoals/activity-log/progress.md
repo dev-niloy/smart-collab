@@ -6,18 +6,19 @@
 - Last updated: 2026-06-04
 
 ## Current Phase
-Phase 3 Superpowers complete → Phase 4 Ralph Wiggum next
+DONE — all 4 phases complete
 
 ## Session Log
 - 2026-06-04: branched feature/activity-log off develop@b7b9008. Baselines green (backend 343, frontend 243). 4 clarifications locked (scope both, all 4 action categories, dashboard widget + project tab, cursor pagination 10+load more). goal.md (SPEC) written.
 - 2026-06-04: docs/plans/activity-log.md written — 19 tasks across 5 phases (A schema+emitter, B service wiring, C endpoints+RBAC, D frontend, E wrap). state.yaml populated.
 - 2026-06-04: Phase 3 executed t1..t19 RED→GREEN→REFACTOR→commit each. Schema extended with projectId/entityType/entityId + indexes. Emitter wired into task/project/projectMember services inside Prisma $transaction (rolls back with originating mutation). 2 endpoints (global + nested), cursor pagination. Frontend: zod schemas + axios client + 2 useInfiniteQuery hooks + ActivityItem + verb registry + ActivityFeed + dashboard widget (latest 10, hideLoadMore) + /projects/[id]/activity page + project detail link. Final suites: backend 400/400 (+57 from baseline), frontend 276/276 (+33). activityLog backend coverage 91%. README updated.
+- 2026-06-04: Phase 4 Ralph 1 iter, 6 persona wins. Developer: recordActivity throws ApiError.internal with UNKNOWN_ACTIVITY_ACTION code so the error envelope stays consistent. Architect: extracted useScopedActivity composite hook, hides projectId branching from DashboardGrid. Designer: ActivityFeed a11y — role=status on skeleton, aria-label + aria-busy on list. QA: added INVALID_CURSOR 422 route test. PM: lifted verbRegistry to focused unit tests (8 cases covering all 10 actions + relTime buckets + entityLink edges). BA: capped meta string fields at 200 chars to keep audit rows compact. Final suites: backend 403/403, frontend 284/284. No constraint violated.
 
 ## Last Completed Task
-Phase 3 t19 — coverage check + README updates — subgoal complete
+Phase 4 Ralph Wiggum — 1 iter, 6 persona wins, [DONE]
 
 ## Next Task
-Phase 4 Ralph Wiggum — `/ralph-wiggum feature/activity-log` for multi-persona review (Developer/Architect/Designer/QA/PM/BA loop)
+Open PR `feature/activity-log` → `develop` (awaiting user permission for `git push` and PR open).
 
 ## Blockers
 none
@@ -26,4 +27,4 @@ none
 - [x] Phase 1 GStack — goal.md written and complete
 - [x] Phase 2 GSD — docs/plans/activity-log.md written and all 19 tasks listed
 - [x] Phase 3 Superpowers — all 19 tasks checked off, suites passing (400 backend / 276 frontend)
-- [ ] Phase 4 Ralph Wiggum — [DONE] output received
+- [x] Phase 4 Ralph Wiggum — [DONE] 2026-06-04 (403 backend / 284 frontend)
