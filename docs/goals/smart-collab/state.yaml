@@ -43,7 +43,8 @@ tasks:
 
   - id: t6
     desc: "activity-log — §7 actor+timestamp+action, latest 5-10"
-    files: [backend/src/app/modules/activity/, frontend/src/components/activity/]
+    files:
+      [backend/src/app/modules/activity/, frontend/src/components/activity/]
     status: todo
     receipt: null
 
@@ -55,7 +56,12 @@ tasks:
 
   - id: t8
     desc: "extras-polish — §10 dark mode, attachments, comments, notifications"
-    files: [backend/src/app/modules/comment/, backend/src/app/modules/notification/, frontend/src/components/]
+    files:
+      [
+        backend/src/app/modules/comment/,
+        backend/src/app/modules/notification/,
+        frontend/src/components/,
+      ]
     status: todo
     receipt: null
 
@@ -67,10 +73,10 @@ tasks:
 
 blockers: []
 
-next_task: t2     # foundation done; projects-crud is next subgoal
+next_task: t2 # foundation done; projects-crud is next subgoal
 
 phase_completion:
-  gstack: true            # locked 2026-06-03 by user
+  gstack: true # locked 2026-06-03 by user
   gsd: false
   superpowers: false
   ralph_wiggum: false
