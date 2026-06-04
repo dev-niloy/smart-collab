@@ -17,6 +17,7 @@ Phase 3 Superpowers — COMPLETE (all 16 tasks done). Phase 4 Ralph next.
 - 2026-06-04: Phase 3 D (t10-t13) — KpiCard, StatusDonut, PriorityBar, ProductivityLine, UpcomingList, HighPriorityList. ResponsiveContainer mocked for jsdom test envs. Frontend 235/235.
 - 2026-06-04: Phase 3 E (t14-t15) — /dashboard global page rewritten (replaces shell). Shared DashboardGrid(projectId?) exported. /projects/[id]/dashboard delegates. Project detail page adds Dashboard link. Frontend 242/242.
 - 2026-06-04: Phase 3 F (t16) — controller unit test added to bump coverage from 11% to 85%. README updated w/ API table + frontend pages.
+- 2026-06-04: Phase 4 Ralph iter 1 — [Developer] dashboard.controller typed via ProductivityQuery/UpcomingQuery (drop dead `?? 30` fallbacks). [Architect] DashboardGrid extracted from app/dashboard/page to components/dashboard (avoid cross-route page import). [Designer] HighPriorityList shows 'overdue' badge + colored due date + aria-label when dueDate has passed. [BA] documented productivity completion-date proxy limitation in service comment. QA + PM skipped (no actionable findings). [DONE]: backend 343/343, frontend 243/243. PR push remains user-permissioned.
 
 ## Last Completed Task
 Phase 3 t16 — coverage check + README updates.
@@ -35,4 +36,4 @@ none
 - [x] Phase 1 GStack — SPEC.md (goal.md) written and complete
 - [x] Phase 2 GSD — docs/plans/dashboard-analytics.md written and all 16 tasks listed
 - [x] Phase 3 Superpowers — all 16 tasks checked off, suites passing (backend 343/343, frontend 242/242)
-- [ ] Phase 4 Ralph Wiggum — [DONE] output received
+- [x] Phase 4 Ralph Wiggum — [DONE] 2026-06-04: 1 iter, 4 persona wins. backend 343/343, frontend 243/243.

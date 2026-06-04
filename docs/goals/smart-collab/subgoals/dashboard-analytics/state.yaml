@@ -83,7 +83,7 @@ phase_completion:
   gstack: true # locked 2026-06-04 by user (4 clarifications answered)
   gsd: true # locked 2026-06-04 — plan sliced into 16 tasks across 6 phases
   superpowers: true # all 16 done 2026-06-04; backend 343/343 jest, frontend 242/242 vitest
-  ralph_wiggum: false
+  ralph_wiggum: true # 1 iter; 4 persona wins (Dev/Architect/Designer/BA); backend 343/343, frontend 243/243
 
 baseline:
   backend_tests: 287 # jest, all passing 2026-06-04 12:44
