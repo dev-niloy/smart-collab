@@ -1,4 +1,4 @@
-import type { Task, TaskStatus, TaskPriority, Prisma } from '@prisma/client';
+import { Role, type Task, type TaskStatus, type TaskPriority, type Prisma } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
 import {
@@ -51,7 +51,7 @@ const ensureAssigneeIsProjectMember = async (
   if (!candidate) {
     throw ApiError.unprocessable(ASSIGNEE_NOT_PROJECT_MEMBER_MESSAGE, 'ASSIGNEE_NOT_PROJECT_MEMBER');
   }
-  if (candidate.role === 'admin') return; // system admin bypass
+  if (candidate.role === Role.admin) return; // system admin bypass — enum-safe vs string drift
   const member = await prisma.projectMember.findFirst({
     where: { projectId, userId: assignedTo },
     select: { id: true },
