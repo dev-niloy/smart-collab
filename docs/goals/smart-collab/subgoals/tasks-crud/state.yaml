@@ -81,9 +81,9 @@ tasks:
   # ── Phase C: frontend lib + hooks + format helpers ───────────────────────────
   - id: t12
     desc: "lib/schemas/task.ts (mirror backend Zod) + lib/tasks.ts (createTask, listTasks, getTask, updateTask, deleteTask) + lib/users.ts (listUsers). Zod v4 syntax. Unit tests for schema + client"
-    files: [frontend/src/lib/schemas/task.ts, frontend/src/lib/tasks.ts, frontend/src/lib/users.ts, frontend/src/lib/__tests__/tasks.test.ts, frontend/src/lib/schemas/__tests__/task.test.ts]
-    status: todo
-    receipt: null
+    files: [frontend/src/lib/schemas/task.ts, frontend/src/lib/tasks.ts, frontend/src/lib/users.ts, frontend/src/lib/__tests__/tasks.test.ts, frontend/src/lib/__tests__/users.test.ts, frontend/src/lib/schemas/__tests__/task.test.ts]
+    status: done
+    receipt: "schemas/task.ts mirrors backend: TASK_STATUSES, TASK_PRIORITIES, SORT_KEYS, UNASSIGNED literal, 3 verbatim §4 messages exported. createTaskSchema (projectId uuid, title 1-200, optional desc 5000, dueDate coerce, status default todo, priority default medium, assignedTo nullable uuid). updateTaskSchema all optional + at-least-one refine. listTasksQuerySchema with limit cap 50. Task type embeds creator + nullable assignee. tasks.ts: listTasks/listTasksForProject (nested) buildQuery via URLSearchParams; getTask/createTask/updateTask unwrap {task}; serializes Date dueDate -> ISO; deleteTask void. users.ts: listUsers unwraps {data}. Tests 22/22: 11 schema (defaults, refusals, assignedTo null, limit cap, status/priority validation, assignedTo passthrough), 9 tasks client (URL building, nested route, ISO serialization, void delete, ApiError on 422 DUPLICATE_TASK_TITLE), 2 users client (data unwrap, 401 ApiError). Zod v4 UUID test fixed (v4 strict format requires actual v4 uuid). Frontend 96/96 vitest (+22), typecheck + lint clean."
 
   - id: t13
     desc: "lib/task-format.ts (STATUS_LABEL, STATUS_VARIANT, PRIORITY_LABEL, PRIORITY_VARIANT, mirrors lib/project-format). Unit tests"
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t12
+next_task: t13
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
