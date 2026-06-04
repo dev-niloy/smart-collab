@@ -204,7 +204,7 @@ Steps:
 - 2. GREEN: panel using useAttachments; multipart FormData upload via hook
 - 3. REFACTOR: extract AttachmentRow subcomponent
 - 4. Commit `[E15] frontend: TaskAttachmentsPanel + 5/5`
-Status: [ ]
+Status: [x]
 
 ### Task 16: NotificationBell in Header
 Files:

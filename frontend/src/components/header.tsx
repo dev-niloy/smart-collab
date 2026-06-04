@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { GlobalSearchBar } from '@/components/search/GlobalSearchBar';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useUser, useLogout } from '@/hooks/useUser';
 
 const ROLE_LABEL: Record<string, string> = {
@@ -51,6 +52,7 @@ export function Header() {
               {user.email} · {ROLE_LABEL[user.role] ?? user.role}
             </span>
           )}
+          {!isLoading && user ? <NotificationBell /> : null}
           <ThemeToggle />
           {user && (
             <Button variant="outline" size="sm" onClick={onLogout} disabled={logout.isPending}>
