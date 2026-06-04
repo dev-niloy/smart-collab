@@ -9,6 +9,7 @@ import {
   listProjectsQuerySchema,
   projectIdParamSchema,
 } from './project.validation';
+import { listTasksQuerySchema } from '../task/task.validation';
 
 const router = Router();
 
@@ -18,6 +19,11 @@ const mutateRoles = requireRole('admin', 'project_manager');
 
 router.get('/', validate({ query: listProjectsQuerySchema }), projectController.list);
 router.get('/:id', validate({ params: projectIdParamSchema }), projectController.getById);
+router.get(
+  '/:id/tasks',
+  validate({ params: projectIdParamSchema, query: listTasksQuerySchema }),
+  projectController.listTasks,
+);
 router.post('/', mutateRoles, validate({ body: createProjectSchema }), projectController.create);
 router.patch(
   '/:id',

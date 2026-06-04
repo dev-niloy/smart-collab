@@ -257,4 +257,63 @@ maybe('project routes /api/v1/projects', () => {
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('PROJECT_NOT_FOUND');
   });
+
+  // ── t11: nested GET /:id/tasks convenience route ─────────────────────────
+
+  it('GET /:id/tasks returns paginated tasks scoped to project', async () => {
+    const agent = await loginAs('admin');
+    const proj = await agent
+      .post('/api/v1/projects')
+      .send({ name: 'NestedTasksProj', deadline: future() });
+    const pid = proj.body.project.id;
+    await agent
+      .post('/api/v1/tasks')
+      .send({ projectId: pid, title: 'Nested A', dueDate: future(2) })
+      .expect(201);
+    await agent
+      .post('/api/v1/tasks')
+      .send({ projectId: pid, title: 'Nested B', dueDate: future(3) })
+      .expect(201);
+
+    const res = await agent.get(`/api/v1/projects/${pid}/tasks`);
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(2);
+    expect(res.body.data.every((t: { projectId: string }) => t.projectId === pid)).toBe(true);
+  });
+
+  it('GET /:id/tasks for unknown project -> 404 PROJECT_NOT_FOUND', async () => {
+    const agent = await loginAs('admin');
+    const res = await agent.get(
+      '/api/v1/projects/00000000-0000-0000-0000-000000000000/tasks',
+    );
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('PROJECT_NOT_FOUND');
+  });
+
+  it('GET /:id/tasks unauth -> 401', async () => {
+    const res = await request(app).get(
+      '/api/v1/projects/00000000-0000-0000-0000-000000000000/tasks',
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /:id/tasks honors query filters (status)', async () => {
+    const agent = await loginAs('admin');
+    const proj = await agent
+      .post('/api/v1/projects')
+      .send({ name: 'NestedFilterProj', deadline: future() });
+    const pid = proj.body.project.id;
+    await agent
+      .post('/api/v1/tasks')
+      .send({ projectId: pid, title: 'T1', dueDate: future(2), status: 'todo' })
+      .expect(201);
+    await agent
+      .post('/api/v1/tasks')
+      .send({ projectId: pid, title: 'T2', dueDate: future(3), status: 'in_progress' })
+      .expect(201);
+    const res = await agent.get(`/api/v1/projects/${pid}/tasks?status=in_progress`);
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(1);
+    expect(res.body.data[0].status).toBe('in_progress');
+  });
 });
