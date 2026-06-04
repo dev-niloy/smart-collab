@@ -5,6 +5,7 @@ import taskRoutes from '../modules/task/task.routes';
 import userRoutes from '../modules/user/user.routes';
 import dashboardRoutes from '../modules/dashboard/dashboard.routes';
 import activityLogRoutes from '../modules/activityLog/activityLog.routes';
+import searchRoutes from '../modules/search/search.routes';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/api/v1/tasks', taskRoutes);
 router.use('/api/v1/users', userRoutes);
 router.use('/api/v1/dashboard', dashboardRoutes);
 router.use('/api/v1/activity', activityLogRoutes);
+router.use('/api/v1/search', searchRoutes);
 
 export default router;
