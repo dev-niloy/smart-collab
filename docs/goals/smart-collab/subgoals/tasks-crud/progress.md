@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-04: Phase 3 — t11 done. Phase B complete. Nested GET /api/v1/projects/:id/tasks delegates to taskService.list, validates project existence first (404 PROJECT_NOT_FOUND), honors task query filters. 4 tests added. Backend 218/218. Next: Phase C frontend — t12 lib/schemas/task + lib/tasks + lib/users.
 - 2026-06-04: Phase 3 — t10 done. GET /api/v1/users minimal shape (id, email, name, role) ordered by name. requireAuth global. 5/5 tests verify 401 unauth + shape + RBAC (all 3 roles can list). Backend 214/214. Next: t11 nested GET /api/v1/projects/:id/tasks convenience route.
 - 2026-06-04: Phase 3 — t9 done. All 3 assessment §4 verbatim messages verified e2e: PAST_DEADLINE (POST+PATCH), DUPLICATE_TASK_TITLE (POST+PATCH, same-project case-insensitive; different project allowed), REASSIGN_COMPLETED (PATCH assignedTo while completed; also same-call status->completed+reassign blocked; status->completed alone allowed). +8 tests; backend 209/209. Next: t10 GET /api/v1/users endpoint.
 - 2026-06-04: Phase 3 — t8 done. +12 negative integration tests on task.routes (401/403/404/422 + pagination cap). Member PATCH on unknown id surfaces 404 (ownership middleware checks existence first — desired). Backend 201/201. Next: t9 e2e validation rules (past-deadline, dup title per project, reassign-completed).

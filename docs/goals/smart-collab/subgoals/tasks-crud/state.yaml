@@ -75,8 +75,8 @@ tasks:
   - id: t11
     desc: "GET /api/v1/projects/:id/tasks convenience route: delegates to taskService.list with projectId from params. Integration test confirms it equals /api/v1/tasks?projectId="
     files: [backend/src/app/modules/project/project.routes.ts, backend/src/app/modules/project/project.controller.ts, backend/src/app/modules/project/__tests__/project.routes.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "projectController.listTasks: ensures project exists first (404 PROJECT_NOT_FOUND if missing), then delegates to taskService.list with projectId from params overriding any query projectId. Route validates both params (uuid) + listTasksQuerySchema. Tests 4/4 added (project.routes 22/22 total): returns paginated tasks scoped to project, 404 unknown project, 401 unauth, query filters honored (status). BACKEND TOTAL 218/218 (+4). Phase B complete (t7-t11)."
 
   # ── Phase C: frontend lib + hooks + format helpers ───────────────────────────
   - id: t12
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t11
+next_task: t12
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
