@@ -7,17 +7,105 @@ mode:
   scope: feature
   session: new
 
-phase: 1 # GStack — SPEC locked; awaiting Phase 2 GSD slicing
+phase: 2 # GSD — plan sliced; ready for Phase 3 Superpowers
 
-tasks: [] # populated in Phase 2
+tasks:
+  - id: t1
+    desc: "ProjectMember model + ProjectRole enum + relations + indexes"
+    files: [backend/prisma/schema.prisma]
+    status: todo
+  - id: t2
+    desc: "migration add_project_member + backfill creators as pm"
+    files: [backend/prisma/migrations/]
+    status: todo
+  - id: t3
+    desc: "prisma smoke + backfill verification test"
+    files: [backend/src/config/__tests__/prisma.test.ts]
+    status: todo
+  - id: t4
+    desc: "projectMember.constant.ts"
+    files: [backend/src/app/modules/projectMember/projectMember.constant.ts]
+    status: todo
+  - id: t5
+    desc: "projectMember.validation.ts + zod unit tests"
+    files: [backend/src/app/modules/projectMember/]
+    status: todo
+  - id: t6
+    desc: "service core: add, isMember, getProjectRole, listAssignable"
+    files: [backend/src/app/modules/projectMember/]
+    status: todo
+  - id: t7
+    desc: "service: listMembers w/ workload aggregation + updateRole"
+    files: [backend/src/app/modules/projectMember/]
+    status: todo
+  - id: t8
+    desc: "service: removeMember tx w/ auto-unassign + last-pm guard"
+    files: [backend/src/app/modules/projectMember/]
+    status: todo
+  - id: t9
+    desc: "requireProjectRole middleware w/ admin bypass"
+    files: [backend/src/app/middleware/]
+    status: todo
+  - id: t10
+    desc: "controller + routes mounted + 8 happy-path tests"
+    files: [backend/src/app/modules/projectMember/, backend/src/app/modules/project/project.routes.ts]
+    status: todo
+  - id: t11
+    desc: "integration negatives (10 cases)"
+    files: [backend/src/app/modules/projectMember/__tests__/]
+    status: todo
+  - id: t12
+    desc: "project.service.create — auto-insert creator as pm in same tx"
+    files: [backend/src/app/modules/project/project.service.ts]
+    status: todo
+  - id: t13
+    desc: "task.service — ASSIGNEE_NOT_PROJECT_MEMBER guard (admin bypass)"
+    files: [backend/src/app/modules/task/]
+    status: todo
+  - id: t14
+    desc: "frontend lib: schemas + api client (12 tests)"
+    files: [frontend/src/lib/schemas/project-member.ts, frontend/src/lib/project-members.ts]
+    status: todo
+  - id: t15
+    desc: "lib/project-member-format helpers"
+    files: [frontend/src/lib/project-member-format.ts]
+    status: todo
+  - id: t16
+    desc: "hooks/useProjectMembers + mutations (9 tests)"
+    files: [frontend/src/hooks/useProjectMembers.ts]
+    status: todo
+  - id: t17
+    desc: "/projects/[id]/members page + MemberCard + RBAC"
+    files: ["frontend/src/app/projects/[id]/members/page.tsx", frontend/src/components/members/]
+    status: todo
+  - id: t18
+    desc: "AddMemberForm component + wired"
+    files: [frontend/src/components/members/AddMemberForm.tsx]
+    status: todo
+  - id: t19
+    desc: "RemoveMemberButton + RoleSelect wired to PATCH/DELETE"
+    files: [frontend/src/components/members/]
+    status: todo
+  - id: t20
+    desc: "refactor task assignee picker -> useAssignableMembers (3 spots) + AssigneeSelect"
+    files: ["frontend/src/app/projects/[id]/tasks/", frontend/src/components/]
+    status: todo
+  - id: t21
+    desc: "project detail Members link + count"
+    files: ["frontend/src/app/projects/[id]/page.tsx"]
+    status: todo
+  - id: t22
+    desc: "coverage check + README updates — subgoal complete"
+    files: [README.md]
+    status: todo
 
 blockers: []
 
-next_task: null
+next_task: t1
 
 phase_completion:
   gstack: true # locked 2026-06-04 by user (4 clarifications answered)
-  gsd: false
+  gsd: true # locked 2026-06-04 — plan sliced into 22 tasks across 6 phases
   superpowers: false
   ralph_wiggum: false
 
