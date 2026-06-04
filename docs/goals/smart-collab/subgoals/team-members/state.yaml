@@ -1,0 +1,27 @@
+feature: team-members
+created: 2026-06-04
+updated: 2026-06-04
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 1 # GStack — SPEC locked; awaiting Phase 2 GSD slicing
+
+tasks: [] # populated in Phase 2
+
+blockers: []
+
+next_task: null
+
+phase_completion:
+  gstack: true # locked 2026-06-04 by user (4 clarifications answered)
+  gsd: false
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 219 # jest, all passing 2026-06-04 11:06
+  frontend_tests: 143 # vitest, all passing 2026-06-04 11:06
+  branched_off: develop@d29f04d # PR #11 merge tip
