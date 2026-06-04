@@ -69,8 +69,8 @@ tasks:
   - id: t10
     desc: "user.controller.ts list + user.routes.ts: GET /api/v1/users -> [{id,email,name,role}] all authed; mount under /api/v1/users; integration tests for shape + auth gate (401 unauth)"
     files: [backend/src/app/modules/user/user.controller.ts, backend/src/app/modules/user/user.routes.ts, backend/src/app/routes/index.ts, backend/src/app/modules/user/__tests__/user.routes.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "user.controller.list selects {id,email,name,role} only (no passwordHash, no createdAt/updatedAt) orderBy name asc. user.routes applies requireAuth globally. Mounted at /api/v1/users. Tests 5/5: 401 MISSING_TOKEN unauth, admin sees >=3 demo users, minimal shape verified (presence of 4 fields + absence of passwordHash/timestamps), member can also list (assignee picker UX), PM can also list. BACKEND TOTAL 214/214 (+5)."
 
   - id: t11
     desc: "GET /api/v1/projects/:id/tasks convenience route: delegates to taskService.list with projectId from params. Integration test confirms it equals /api/v1/tasks?projectId="
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t10
+next_task: t11
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
