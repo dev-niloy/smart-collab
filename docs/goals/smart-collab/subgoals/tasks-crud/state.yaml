@@ -57,8 +57,8 @@ tasks:
   - id: t8
     desc: "integration negative paths: 401 unauth, 403 member edits non-own task, 403 member tries DELETE, 404 missing id, 422 invalid body, pagination cap (limit=999 -> 50)"
     files: [backend/src/app/modules/task/__tests__/task.routes.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "+12 negative tests (total task.routes 20/20): 401 MISSING_TOKEN on list + POST, 403 FORBIDDEN_OWNERSHIP (member edits non-own, non-assigned task), 403 FORBIDDEN_ROLE (member DELETE), 404 TASK_NOT_FOUND on GET/PATCH/DELETE unknown id, member PATCH unknown id also 404 (ownership middleware checks existence first), 422 VALIDATION_ERROR (invalid POST body, invalid uuid path param, empty PATCH body via at-least-one refine), pagination cap limit=999 -> 50. BACKEND TOTAL 201/201 (+12)."
 
   - id: t9
     desc: "validation rules end-to-end: POST + PATCH past deadline -> 422 PAST_DEADLINE assessment-verbatim; POST duplicate title in same project -> 422 DUPLICATE_TASK_TITLE; PATCH assignedTo while status=completed -> 422 REASSIGN_COMPLETED. Same title in DIFFERENT project allowed"
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t8
+next_task: t9
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
