@@ -91,9 +91,12 @@ export default function ProjectDetailPage() {
                 </div>
               </dl>
 
-              <div className="pt-2">
+              <div className="flex flex-wrap gap-2 pt-2">
                 <Link href={`/projects/${project.id}/tasks`}>
                   <Button variant="secondary">View tasks →</Button>
+                </Link>
+                <Link href={`/projects/${project.id}/members`}>
+                  <Button variant="secondary">Members →</Button>
                 </Link>
               </div>
 

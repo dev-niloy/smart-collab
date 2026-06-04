@@ -77,6 +77,15 @@ describe('ProjectDetailPage', () => {
     expect(link).toHaveAttribute('href', '/projects/p-1/tasks');
   });
 
+  it('renders Members link (all authed) — E21', async () => {
+    setUser('team_member');
+    getSpy.mockResolvedValue(sampleProject);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Launch Site')).toBeInTheDocument());
+    const link = screen.getByRole('link', { name: /members/i });
+    expect(link).toHaveAttribute('href', '/projects/p-1/members');
+  });
+
   it('admin: shows Edit + Delete buttons', async () => {
     setUser('admin');
     getSpy.mockResolvedValue(sampleProject);
