@@ -1,0 +1,103 @@
+feature: extras-polish
+created: 2026-06-04
+updated: 2026-06-04
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 2 # GSD — 19 tasks sliced; ready for Phase 3 Superpowers
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit"
+    files: []
+    status: pending
+  - id: t2
+    desc: "prisma schema — Comment + Attachment + Notification + migration + 4 tests"
+    files: [backend/prisma/]
+    status: pending
+  - id: t3
+    desc: "comment.constant + validation + 5 tests"
+    files: [backend/src/app/modules/comment/]
+    status: pending
+  - id: t4
+    desc: "comment.service — CRUD + activity emit + 8 tests"
+    files: [backend/src/app/modules/comment/]
+    status: pending
+  - id: t5
+    desc: "comment.controller + routes mounted under task + 8 tests"
+    files: [backend/src/app/modules/comment/, backend/src/app/modules/task/task.routes.ts]
+    status: pending
+  - id: t6
+    desc: "attachment: deps + constants + filename sanitiser + 4 tests"
+    files: [backend/src/app/modules/attachment/, backend/package.json]
+    status: pending
+  - id: t7
+    desc: "attachment.service — upload/list/delete + activity + 6 tests"
+    files: [backend/src/app/modules/attachment/]
+    status: pending
+  - id: t8
+    desc: "attachment.controller + routes + download endpoint + 6 tests"
+    files: [backend/src/app/modules/attachment/, backend/src/app/routes/index.ts]
+    status: pending
+  - id: t9
+    desc: "notification: enqueue helper + 5 tests"
+    files: [backend/src/app/modules/notification/]
+    status: pending
+  - id: t10
+    desc: "notification triggers wired into task.assigned + comment.created + 6 tests"
+    files: [backend/src/app/modules/task/task.service.ts, backend/src/app/modules/comment/, backend/src/app/modules/notification/]
+    status: pending
+  - id: t11
+    desc: "notification.controller + routes (list/read/count) + 8 tests"
+    files: [backend/src/app/modules/notification/, backend/src/app/routes/index.ts]
+    status: pending
+  - id: t12
+    desc: "frontend: extras schemas + clients (comments + attachments + notifications) + 12 tests"
+    files: [frontend/src/lib/]
+    status: pending
+  - id: t13
+    desc: "frontend: extras hooks + 10 tests"
+    files: [frontend/src/hooks/]
+    status: pending
+  - id: t14
+    desc: "frontend: TaskCommentsPanel + 6 tests"
+    files: [frontend/src/components/tasks/]
+    status: pending
+  - id: t15
+    desc: "frontend: TaskAttachmentsPanel + 5 tests"
+    files: [frontend/src/components/tasks/]
+    status: pending
+  - id: t16
+    desc: "frontend: NotificationBell + Header mount + 6 tests"
+    files: [frontend/src/components/notifications/, frontend/src/components/header.tsx]
+    status: pending
+  - id: t17
+    desc: "task detail integrates Comments + Attachments panels + 3 tests"
+    files: ["frontend/src/app/projects/[id]/tasks/[taskId]/"]
+    status: pending
+  - id: t18
+    desc: "dark mode audit + fixes + 2 tests"
+    files: [frontend/src/]
+    status: pending
+  - id: t19
+    desc: "coverage + README — subgoal complete"
+    files: [README.md]
+    status: pending
+
+blockers: []
+
+next_task: t1
+
+phase_completion:
+  gstack: true
+  gsd: true # locked 2026-06-04 — plan sliced into 19 tasks across 6 phases
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 459
+  frontend_tests: 319
+  branched_off: develop@7218dc2
