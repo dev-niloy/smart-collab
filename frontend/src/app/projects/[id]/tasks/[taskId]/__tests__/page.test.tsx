@@ -26,6 +26,23 @@ vi.mock('@/lib/tasks', () => ({
   deleteTask: vi.fn(),
 }));
 
+vi.mock('@/lib/comments', () => ({
+  listComments: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
+  createComment: vi.fn(),
+  updateComment: vi.fn(),
+  deleteComment: vi.fn(),
+}));
+
+vi.mock('@/lib/attachments', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/attachments')>('@/lib/attachments');
+  return {
+    ...actual,
+    listAttachments: vi.fn().mockResolvedValue({ items: [] }),
+    uploadAttachment: vi.fn(),
+    deleteAttachment: vi.fn(),
+  };
+});
+
 import TaskDetailPage from '../page';
 
 type UserOpts = {
@@ -133,6 +150,32 @@ describe('TaskDetailPage', () => {
     renderPage();
     await waitFor(() => expect(screen.getByRole('link', { name: /edit/i })).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
+  });
+
+  it('renders TaskCommentsPanel below detail card', async () => {
+    setUser({ role: 'admin' });
+    getTaskSpy.mockResolvedValue(sampleTask());
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('heading', { name: /comments/i })).toBeInTheDocument());
+    expect(screen.getByLabelText('New comment body')).toBeInTheDocument();
+  });
+
+  it('renders TaskAttachmentsPanel below detail card', async () => {
+    setUser({ role: 'admin' });
+    getTaskSpy.mockResolvedValue(sampleTask());
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('heading', { name: /attachments/i })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /upload file/i })).toBeInTheDocument();
+  });
+
+  it('existing detail fields still rendered alongside panels', async () => {
+    setUser({ role: 'admin' });
+    getTaskSpy.mockResolvedValue(sampleTask());
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Launch site')).toBeInTheDocument());
+    expect(screen.getByText(/marketing rebuild/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /comments/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /attachments/i })).toBeInTheDocument();
   });
 
   it('error/missing: Retry shown', async () => {

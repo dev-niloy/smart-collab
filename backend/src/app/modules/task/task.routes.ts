@@ -4,6 +4,8 @@ import { requireAuth } from '../../middlewares/auth';
 import { requireRole } from '../../middlewares/rbac';
 import { taskController } from './task.controller';
 import { requireTaskOwnerOrPrivileged } from './task.ownership';
+import commentRoutes from '../comment/comment.routes';
+import attachmentRoutes from '../attachment/attachment.routes';
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -14,6 +16,9 @@ import {
 const router = Router();
 
 router.use(requireAuth);
+
+router.use('/:taskId/comments', commentRoutes);
+router.use('/:taskId/attachments', attachmentRoutes);
 
 router.get('/', validate({ query: listTasksQuerySchema }), taskController.list);
 router.get('/:id', validate({ params: taskIdParamSchema }), taskController.getById);

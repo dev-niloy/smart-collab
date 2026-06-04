@@ -33,6 +33,10 @@ model User {
   tasksAssigned           Task[]           @relation("TaskAssignedTo")
   projectMemberships      ProjectMember[]  @relation("ProjectMemberUser")
   projectMembershipsAdded ProjectMember[]  @relation("ProjectMemberAddedBy")
+  comments                Comment[]        @relation("CommentAuthor")
+  attachments             Attachment[]     @relation("AttachmentUploader")
+  notificationsReceived   Notification[]   @relation("NotificationRecipient")
+  notificationsSent       Notification[]   @relation("NotificationActor")
 
   @@index([role])
   @@map("users")
@@ -90,9 +94,11 @@ model Task {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  creator  User    @relation("TaskCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
-  assignee User?   @relation("TaskAssignedTo", fields: [assignedTo], references: [id], onDelete: SetNull)
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator     User         @relation("TaskCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  assignee    User?        @relation("TaskAssignedTo", fields: [assignedTo], references: [id], onDelete: SetNull)
+  comments    Comment[]
+  attachments Attachment[]
 
   @@unique([projectId, title], name: "tasks_projectId_title_unique")
   @@index([projectId, status])
@@ -160,4 +166,58 @@ model ActivityLog {
   @@index([projectId, createdAt])
   @@index([entityType, entityId, createdAt])
   @@map("activity_logs")
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @db.Uuid
+  authorId  String   @db.Uuid
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([taskId, createdAt])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model Attachment {
+  id          String   @id @default(uuid()) @db.Uuid
+  taskId      String   @db.Uuid
+  uploaderId  String   @db.Uuid
+  filename    String
+  mimeType    String
+  sizeBytes   Int
+  storagePath String
+  createdAt   DateTime @default(now())
+
+  task     Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploader User @relation("AttachmentUploader", fields: [uploaderId], references: [id], onDelete: Restrict)
+
+  @@index([taskId, createdAt])
+  @@index([uploaderId])
+  @@map("attachments")
+}
+
+model Notification {
+  id          String    @id @default(uuid()) @db.Uuid
+  recipientId String    @db.Uuid
+  actorId     String?   @db.Uuid
+  type        String
+  entityType  String
+  entityId    String    @db.Uuid
+  projectId   String?   @db.Uuid
+  payload     Json?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, createdAt])
+  @@index([recipientId, readAt])
+  @@map("notifications")
 }

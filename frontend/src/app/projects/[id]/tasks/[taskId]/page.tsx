@@ -15,6 +15,8 @@ import {
 import { useTask } from '@/hooks/useTasks';
 import { useUser } from '@/hooks/useUser';
 import { DeleteTaskButton } from '@/components/tasks/delete-task-button';
+import { TaskCommentsPanel } from '@/components/tasks/TaskCommentsPanel';
+import { TaskAttachmentsPanel } from '@/components/tasks/TaskAttachmentsPanel';
 import {
   STATUS_LABEL,
   STATUS_VARIANT,
@@ -136,6 +138,19 @@ export default function TaskDetailPage() {
             </CardContent>
           </Card>
         )}
+
+        {!isLoading && !isError && task ? (
+          <div className="mt-6 space-y-8">
+            <TaskCommentsPanel
+              taskId={task.id}
+              projectRole={role === 'admin' ? 'admin' : role === 'project_manager' ? 'pm' : 'member'}
+            />
+            <TaskAttachmentsPanel
+              taskId={task.id}
+              projectRole={role === 'admin' ? 'admin' : role === 'project_manager' ? 'pm' : 'member'}
+            />
+          </div>
+        ) : null}
       </main>
     </div>
   );
