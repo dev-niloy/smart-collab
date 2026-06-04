@@ -266,5 +266,4 @@ export const projectMemberService = {
   // exposed for tests + future tasks
   _findUserByEmail: findUserByEmail,
   _ensureProjectExists: ensureProjectExists,
-  _loadWorkload: loadWorkload,
 };
