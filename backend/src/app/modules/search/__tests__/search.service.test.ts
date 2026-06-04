@@ -127,6 +127,23 @@ maybe('search.service', () => {
     }
   });
 
+  it('description-only match still surfaces when title matches exist', async () => {
+    // Seed an extra task whose title does NOT contain the needle but whose
+    // description does. With the old ranking it would score Infinity and get
+    // dropped from the slice. After the fix it should still appear.
+    await prisma.task.create({
+      data: {
+        projectId: projectFoo,
+        title: 'unrelated headline',
+        description: 'this body mentions foo somewhere',
+        dueDate: future(5),
+        createdBy: actorId,
+      },
+    });
+    const r = await search({ q: 'foo', limit: 5 });
+    expect(r.tasks.some((t) => t.title === 'unrelated headline')).toBe(true);
+  });
+
   it('returns required DTO fields on task hits incl projectName', async () => {
     const r = await search({ q: 'fix foo' });
     const hit = r.tasks.find((t) => t.title === 'fix foo bar');
