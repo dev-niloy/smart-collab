@@ -300,6 +300,129 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
   });
 
+  // ── t9: e2e assessment §4 validation rules ─────────────────────────────────
+
+  it('POST past dueDate -> 422 PAST_DEADLINE assessment-verbatim', async () => {
+    const agent = await loginAs('admin');
+    const res = await agent.post('/api/v1/tasks').send({
+      projectId,
+      title: 'Late task',
+      dueDate: new Date(Date.now() - 86_400_000).toISOString(),
+    });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('PAST_DEADLINE');
+    expect(res.body.error.message).toBe('Please select a valid deadline.');
+  });
+
+  it('PATCH past dueDate -> 422 PAST_DEADLINE', async () => {
+    const agent = await loginAs('admin');
+    const created = await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Will become late', dueDate: future() });
+    const res = await agent
+      .patch(`/api/v1/tasks/${created.body.task.id}`)
+      .send({ dueDate: new Date(Date.now() - 86_400_000).toISOString() });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('PAST_DEADLINE');
+    expect(res.body.error.message).toBe('Please select a valid deadline.');
+  });
+
+  it('POST duplicate title in same project (case-insensitive) -> 422 DUPLICATE_TASK_TITLE assessment-verbatim', async () => {
+    const agent = await loginAs('admin');
+    await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Ship it', dueDate: future() })
+      .expect(201);
+    const res = await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'SHIP IT', dueDate: future(2) });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('DUPLICATE_TASK_TITLE');
+    expect(res.body.error.message).toBe('Task title already exists in this project.');
+  });
+
+  it('PATCH title to existing one in same project -> 422 DUPLICATE_TASK_TITLE', async () => {
+    const agent = await loginAs('admin');
+    await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'First', dueDate: future() })
+      .expect(201);
+    const second = await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Second', dueDate: future(2) });
+    const res = await agent
+      .patch(`/api/v1/tasks/${second.body.task.id}`)
+      .send({ title: 'FIRST' });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('DUPLICATE_TASK_TITLE');
+  });
+
+  it('same title allowed in DIFFERENT project', async () => {
+    const agent = await loginAs('admin');
+    const otherProj = await prisma.project.create({
+      data: { name: 'Other Proj', deadline: new Date(future(60)), status: 'active', createdBy: adminId },
+    });
+    await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Common name', dueDate: future() })
+      .expect(201);
+    const res = await agent
+      .post('/api/v1/tasks')
+      .send({ projectId: otherProj.id, title: 'Common name', dueDate: future() });
+    expect(res.status).toBe(201);
+    expect(res.body.task.projectId).toBe(otherProj.id);
+    await prisma.project.delete({ where: { id: otherProj.id } });
+  });
+
+  it('PATCH assignedTo while status=completed -> 422 REASSIGN_COMPLETED assessment-verbatim', async () => {
+    const agent = await loginAs('admin');
+    const created = await agent.post('/api/v1/tasks').send({
+      projectId,
+      title: 'Done task',
+      dueDate: future(),
+      status: 'completed',
+      assignedTo: adminId,
+    });
+    const res = await agent
+      .patch(`/api/v1/tasks/${created.body.task.id}`)
+      .send({ assignedTo: memberId });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('REASSIGN_COMPLETED');
+    expect(res.body.error.message).toBe('Cannot reassign a completed task.');
+  });
+
+  it('PATCH transitioning to completed AND reassigning in same call -> 422 REASSIGN_COMPLETED', async () => {
+    const agent = await loginAs('admin');
+    const created = await agent.post('/api/v1/tasks').send({
+      projectId,
+      title: 'In progress',
+      dueDate: future(),
+      status: 'in_progress',
+      assignedTo: adminId,
+    });
+    const res = await agent
+      .patch(`/api/v1/tasks/${created.body.task.id}`)
+      .send({ status: 'completed', assignedTo: memberId });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('REASSIGN_COMPLETED');
+  });
+
+  it('PATCH status -> completed without reassign allowed (200)', async () => {
+    const agent = await loginAs('admin');
+    const created = await agent.post('/api/v1/tasks').send({
+      projectId,
+      title: 'Finishing',
+      dueDate: future(),
+      status: 'in_progress',
+      assignedTo: adminId,
+    });
+    const res = await agent
+      .patch(`/api/v1/tasks/${created.body.task.id}`)
+      .send({ status: 'completed' });
+    expect(res.status).toBe(200);
+    expect(res.body.task.status).toBe('completed');
+  });
+
   it('list pagination cap: limit=999 coerced to MAX_LIMIT=50', async () => {
     const agent = await loginAs('admin');
     await agent
