@@ -22,6 +22,10 @@ const isRecordNotFound = (err: unknown): boolean => {
   return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'P2025';
 };
 
+const isUniqueViolation = (err: unknown): boolean => {
+  return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'P2002';
+};
+
 const userSelect = { id: true, email: true, name: true, role: true } as const;
 
 const taskInclude = {
@@ -57,19 +61,27 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
   ensureFutureDeadline(input.dueDate);
   await ensureProjectExists(input.projectId);
   await ensureTitleUnique(input.projectId, input.title);
-  return prisma.task.create({
-    data: {
-      projectId: input.projectId,
-      title: input.title,
-      description: input.description ?? null,
-      dueDate: input.dueDate,
-      status: input.status,
-      priority: input.priority,
-      assignedTo: input.assignedTo ?? null,
-      createdBy: actorId,
-    },
-    include: taskInclude,
-  });
+  try {
+    return await prisma.task.create({
+      data: {
+        projectId: input.projectId,
+        title: input.title,
+        description: input.description ?? null,
+        dueDate: input.dueDate,
+        status: input.status,
+        priority: input.priority,
+        assignedTo: input.assignedTo ?? null,
+        createdBy: actorId,
+      },
+      include: taskInclude,
+    });
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      // Race: another insert won between ensureTitleUnique and create.
+      throw ApiError.unprocessable(DUPLICATE_TASK_TITLE_MESSAGE, 'DUPLICATE_TASK_TITLE');
+    }
+    throw err;
+  }
 };
 
 const findById = async (id: string): Promise<TaskWithRelations> => {
@@ -114,6 +126,9 @@ const update = async (id: string, input: UpdateTaskInput): Promise<TaskWithRelat
   } catch (err) {
     if (isRecordNotFound(err)) {
       throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+    }
+    if (isUniqueViolation(err)) {
+      throw ApiError.unprocessable(DUPLICATE_TASK_TITLE_MESSAGE, 'DUPLICATE_TASK_TITLE');
     }
     throw err;
   }
