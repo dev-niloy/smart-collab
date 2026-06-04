@@ -1,5 +1,6 @@
 import type { Prisma, ActivityLog } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
+import { ApiError } from '../../errors/ApiError';
 import { isKnownAction, sanitizeMeta, type ActivityAction, type EntityType } from './activityLog.constant';
 import { decodeCursor, encodeCursor } from './activityLog.validation';
 
@@ -17,7 +18,12 @@ export async function recordActivity(
   input: RecordActivityInput,
 ): Promise<ActivityLog> {
   if (!isKnownAction(input.action)) {
-    throw new Error(`unknown activity action: ${input.action}`);
+    // Programmer error — caller passed an action not in the registry.
+    // Surface as 500-level ApiError so the error envelope is consistent.
+    throw ApiError.internal(
+      `unknown activity action: ${input.action}`,
+      'UNKNOWN_ACTIVITY_ACTION',
+    );
   }
   const meta = sanitizeMeta(input.meta);
   return tx.activityLog.create({

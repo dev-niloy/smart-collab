@@ -93,7 +93,9 @@ maybe('recordActivity', () => {
           entityId: projectId,
         }),
       ),
-    ).rejects.toThrow(/unknown activity action/i);
+    ).rejects.toMatchObject({
+      code: 'UNKNOWN_ACTIVITY_ACTION',
+    });
   });
 
   it('rolls back when outer transaction fails', async () => {
