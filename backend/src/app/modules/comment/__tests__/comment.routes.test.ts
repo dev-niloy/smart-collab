@@ -184,4 +184,11 @@ maybe('comment routes /api/v1/tasks/:taskId/comments', () => {
       .send({ body: 'x'.repeat(MAX_COMMENT_BODY + 1) });
     expect([400, 422]).toContain(res.status);
   });
+
+  it('GET 4xx on malformed taskId (uuid param validation, not 500)', async () => {
+    const agent = await loginAs('team_member');
+    const res = await agent.get('/api/v1/tasks/not-a-uuid/comments');
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.status).toBeLessThan(500);
+  });
 });
