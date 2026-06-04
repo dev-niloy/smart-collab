@@ -65,7 +65,7 @@ Steps:
 - 2. GREEN: standard controller pattern + mount `/api/v1/tasks/:taskId/comments`
 - 3. REFACTOR: extract `loadCommentOr404` middleware
 - 4. Commit `[B5] comment: controller + routes mounted under task + 8/8`
-Status: [ ]
+Status: [x]
 
 ## Phase C — Attachments backend
 

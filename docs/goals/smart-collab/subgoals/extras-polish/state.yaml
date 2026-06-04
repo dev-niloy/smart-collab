@@ -29,7 +29,7 @@ tasks:
   - id: t5
     desc: "comment.controller + routes mounted under task + 8 tests"
     files: [backend/src/app/modules/comment/, backend/src/app/modules/task/task.routes.ts]
-    status: pending
+    status: done
   - id: t6
     desc: "attachment: deps + constants + filename sanitiser + 4 tests"
     files: [backend/src/app/modules/attachment/, backend/package.json]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t5
+next_task: t6
 
 phase_completion:
   gstack: true
