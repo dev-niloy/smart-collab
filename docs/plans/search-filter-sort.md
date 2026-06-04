@@ -15,7 +15,7 @@ Files: none
 Steps:
 - 1. Run backend + frontend suites + prisma migrate status, confirm 403/284 green
 - 2. Commit `[Baseline] existing tests passing before search-filter-sort work begins` (empty commit)
-Status: [ ]
+Status: [x]
 
 ### Task 2: task.validation — multi-select status/priority + dueFrom/dueTo + me shorthands
 Files:
@@ -26,7 +26,7 @@ Steps:
 - 2. GREEN: add `multiEnum` helper splitting on `,` then z.array(enum); add `dateField`; add `assignedTo: z.union([uuid, 'me', UNASSIGNED]).optional()`; add `createdBy: z.union([uuid, 'me']).optional()`
 - 3. REFACTOR: factor `csvOf(z.nativeEnum(X))` helper
 - 4. Commit `[A2] task.validation: multi-select + date range + me shorthands + 10/10`
-Status: [ ]
+Status: [x]
 
 ### Task 3: task.service.list — wire new filters
 Files:
@@ -37,7 +37,7 @@ Steps:
 - 2. GREEN: extend ListArgs + buildWhere — `status?: TaskStatus | TaskStatus[]`; `priority?: TaskPriority | TaskPriority[]`; `dueFrom?: Date`; `dueTo?: Date`; `actorId?: string` (used to resolve `me`)
 - 3. REFACTOR: helper `arrayOrEq(field, v)`
 - 4. Commit `[A3] task.service.list: multi-select + date range + me + 8/8`
-Status: [ ]
+Status: [x]
 
 ### Task 4: task.controller — pass actorId for me resolution
 Files:
@@ -48,7 +48,7 @@ Steps:
 - 2. GREEN: controller passes `actorId: req.user.id` into service when query has `'me'`
 - 3. REFACTOR: none
 - 4. Commit `[A4] task.controller + routes: me resolution + 4/4`
-Status: [ ]
+Status: [x]
 
 ## Phase B — Backend: extend project list filters
 
@@ -61,7 +61,7 @@ Steps:
 - 2. GREEN: reuse `csvOf` helper from task module (move to shared lib first if needed)
 - 3. REFACTOR: extract `backend/src/app/lib/queryFields.ts` for csvOf + dateField + meOrUuid
 - 4. Commit `[B5] project.validation: multi-select + range + me + shared helpers + 6/6`
-Status: [ ]
+Status: [x]
 
 ### Task 6: project.service.list + controller — wire filters
 Files:
@@ -74,7 +74,7 @@ Steps:
 - 2. GREEN: extend ListArgs + buildWhere; controller passes actorId
 - 3. REFACTOR: none
 - 4. Commit `[B6] project.service+controller: multi-select + range + me + 6/6`
-Status: [ ]
+Status: [x]
 
 ## Phase C — Backend: global search module
 
@@ -88,7 +88,7 @@ Steps:
 - 2. GREEN: zod schema + constants (`MIN_Q`, `MAX_Q`, `DEFAULT_HIT_LIMIT`, `MAX_HIT_LIMIT`)
 - 3. REFACTOR: none
 - 4. Commit `[C7] search: validation + constants + 5/5`
-Status: [ ]
+Status: [x]
 
 ### Task 8: search.service — findProjects + findTasks
 Files:
@@ -99,7 +99,7 @@ Steps:
 - 2. GREEN: 2 parallel prisma queries w/ `mode: 'insensitive' contains`; assemble DTOs; sort by `startsWith` before `contains`
 - 3. REFACTOR: extract `prefixThenContainsScore` comparator
 - 4. Commit `[C8] search.service: project + task hits w/ ranking + 8/8`
-Status: [ ]
+Status: [x]
 
 ### Task 9: search.controller + route mount
 Files:
@@ -112,7 +112,7 @@ Steps:
 - 2. GREEN: standard controller + Router + mount `/api/v1/search`
 - 3. REFACTOR: none
 - 4. Commit `[C9] search: controller + routes + 6/6`
-Status: [ ]
+Status: [x]
 
 ## Phase D — Frontend: schemas + client + hook
 
@@ -126,7 +126,7 @@ Steps:
 - 2. GREEN: zod + apiGet wrapper
 - 3. REFACTOR: none
 - 4. Commit `[D10] search: schemas + api client + 5/5`
-Status: [ ]
+Status: [x]
 
 ### Task 11: lib/queryString — multi-value helpers
 Files:
@@ -137,7 +137,7 @@ Steps:
 - 2. GREEN: pure functions
 - 3. REFACTOR: none
 - 4. Commit `[D11] lib: queryString multi-value helpers + 6/6`
-Status: [ ]
+Status: [x]
 
 ### Task 12: hooks/useGlobalSearch
 Files:
@@ -148,7 +148,7 @@ Steps:
 - 2. GREEN: useQuery wrapper
 - 3. REFACTOR: none
 - 4. Commit `[D12] hooks: useGlobalSearch + 4/4`
-Status: [ ]
+Status: [x]
 
 ## Phase E — Frontend: GlobalSearchBar + URL-state on list pages
 
@@ -162,7 +162,7 @@ Steps:
 - 2. GREEN: input + dropdown + keyboard handlers; uses useGlobalSearch w/ debounce 200ms
 - 3. REFACTOR: extract HitGroup subcomponent
 - 4. Commit `[E13] search: GlobalSearchBar + Header mount + 7/7`
-Status: [ ]
+Status: [x]
 
 ### Task 14: /projects page multi-select + range URL-state
 Files:
@@ -174,7 +174,7 @@ Steps:
 - 2. GREEN: replace single-select status w/ multi-select chips; add date range inputs; add "Created by me" toggle; serialize via toCsv
 - 3. REFACTOR: factor MultiSelectChip component
 - 4. Commit `[E14] projects page: multi-select + date range + me toggle + 5/5`
-Status: [ ]
+Status: [x]
 
 ### Task 15: /projects/[id]/tasks page multi-select + range URL-state
 Files:
@@ -186,7 +186,7 @@ Steps:
 - 2. GREEN: same pattern as projects page
 - 3. REFACTOR: reuse MultiSelectChip
 - 4. Commit `[E15] tasks page: multi-select + date range + me toggles + 6/6`
-Status: [ ]
+Status: [x]
 
 ## Phase F — Wrap
 
@@ -198,4 +198,4 @@ Steps:
 - 2. Run full suites — backend 403 baseline + new pass; frontend 284 baseline + new pass
 - 3. Append `## Search & advanced filters` section to README documenting endpoints + UI
 - 4. Commit `[F16] search-filter-sort: coverage + README — subgoal complete`
-Status: [ ]
+Status: [x]
