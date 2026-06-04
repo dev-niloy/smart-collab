@@ -264,3 +264,48 @@ Branches:
 | `npm run db:up`        | Start dev Postgres (Docker Compose)               |
 | `npm run db:migrate`   | Apply Prisma migrations                           |
 | `npm run db:seed`      | Seed demo users                                   |
+
+---
+
+## Extras: comments, attachments, notifications, dark mode
+
+Subgoal `extras-polish` (§10 of the assessment) — collaboration bonus features.
+
+### Comments on tasks
+- Endpoints under `/api/v1/tasks/:taskId/comments`:
+  - `POST /` — create (project member or admin; body 1..2000 chars)
+  - `GET /?limit=50&cursor=…` — list newest-first w/ cursor pagination
+  - `PATCH /:id` — edit own (admin can edit any)
+  - `DELETE /:id` — author + PM + admin
+- Emits `comment.created` and `comment.deleted` into the existing activity log.
+- UI: `TaskCommentsPanel` on the task detail page — list + create form (live char counter) + inline edit + delete.
+
+### File attachments on tasks
+- Local-disk storage at `backend/uploads/` (gitignored). UUID-prefix filename to avoid collisions.
+- 10 MB per file. Whitelisted mime types: pdf, png, jpg, gif, webp, txt, csv, zip, doc/docx, xls/xlsx.
+- Endpoints under `/api/v1/tasks/:taskId/attachments`:
+  - `POST /` — multipart upload (multer single `file`)
+  - `GET /` — metadata list (never streams payloads)
+  - `DELETE /:id` — uploader + PM + admin (tx removes row + activity, then unlinks file; orphan file logged on unlink failure, not 500'd)
+- Authenticated download at `/api/v1/attachments/file/:id` (auth required).
+- Emits `attachment.added` and `attachment.removed`.
+- UI: `TaskAttachmentsPanel` — file picker w/ client-side size guard, download link, RBAC-aware delete.
+
+### In-app notifications
+- Triggered automatically inside the same Prisma transaction as the originating mutation, so a failed mutation never leaves an orphan notification.
+  - `task.assigned` → notify the assignee on create + reassign (never the actor)
+  - `comment.created` → notify task assignee + creator (deduped, skip actor)
+- Endpoints under `/api/v1/notifications`:
+  - `GET /?unread=true&limit=20&cursor=…` — mine only, cursor-paginated
+  - `GET /unread-count` → `{ count }`
+  - `POST /:id/read` flips `readAt`; 404 if not mine
+  - `POST /read-all` → `{ updated }`
+- Payload whitelist + 200-char cap (no secrets / no large blobs).
+- UI: `NotificationBell` in the header with unread-count badge, dropdown of the latest 10, mark-all-read, click navigates to the entity.
+
+### Dark mode
+- App-wide via `next-themes`. Audit found zero hardcoded light-only classnames in source (`bg-white`, `text-black`, etc.). Theme tokens (`bg-card`, `text-foreground`, `text-muted-foreground`, …) are the default vocabulary. A snapshot test (`src/components/__tests__/dark-mode-audit.test.ts`) guards against regressions.
+
+### Tests added (subgoal totals)
+- Backend: +61 tests (459 → 520)
+- Frontend: +45 tests (319 → 364)

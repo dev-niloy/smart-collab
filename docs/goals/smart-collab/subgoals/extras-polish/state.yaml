@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 2 # GSD — 19 tasks sliced; ready for Phase 3 Superpowers
+phase: 3 # Superpowers — all 19 tasks complete; ready for Phase 4 Ralph Wiggum
 
 tasks:
   - id: t1
@@ -28,7 +28,11 @@ tasks:
     status: done
   - id: t5
     desc: "comment.controller + routes mounted under task + 8 tests"
-    files: [backend/src/app/modules/comment/, backend/src/app/modules/task/task.routes.ts]
+    files:
+      [
+        backend/src/app/modules/comment/,
+        backend/src/app/modules/task/task.routes.ts,
+      ]
     status: done
   - id: t6
     desc: "attachment: deps + constants + filename sanitiser + 4 tests"
@@ -40,7 +44,8 @@ tasks:
     status: done
   - id: t8
     desc: "attachment.controller + routes + download endpoint + 6 tests"
-    files: [backend/src/app/modules/attachment/, backend/src/app/routes/index.ts]
+    files:
+      [backend/src/app/modules/attachment/, backend/src/app/routes/index.ts]
     status: done
   - id: t9
     desc: "notification: enqueue helper + 5 tests"
@@ -48,11 +53,17 @@ tasks:
     status: done
   - id: t10
     desc: "notification triggers wired into task.assigned + comment.created + 6 tests"
-    files: [backend/src/app/modules/task/task.service.ts, backend/src/app/modules/comment/, backend/src/app/modules/notification/]
+    files:
+      [
+        backend/src/app/modules/task/task.service.ts,
+        backend/src/app/modules/comment/,
+        backend/src/app/modules/notification/,
+      ]
     status: done
   - id: t11
     desc: "notification.controller + routes (list/read/count) + 8 tests"
-    files: [backend/src/app/modules/notification/, backend/src/app/routes/index.ts]
+    files:
+      [backend/src/app/modules/notification/, backend/src/app/routes/index.ts]
     status: done
   - id: t12
     desc: "frontend: extras schemas + clients (comments + attachments + notifications) + 12 tests"
@@ -72,7 +83,11 @@ tasks:
     status: done
   - id: t16
     desc: "frontend: NotificationBell + Header mount + 6 tests"
-    files: [frontend/src/components/notifications/, frontend/src/components/header.tsx]
+    files:
+      [
+        frontend/src/components/notifications/,
+        frontend/src/components/header.tsx,
+      ]
     status: done
   - id: t17
     desc: "task detail integrates Comments + Attachments panels + 3 tests"
@@ -81,20 +96,20 @@ tasks:
   - id: t18
     desc: "dark mode audit + fixes + 2 tests"
     files: [frontend/src/]
-    status: pending
+    status: done
   - id: t19
     desc: "coverage + README — subgoal complete"
     files: [README.md]
-    status: pending
+    status: done
 
 blockers: []
 
-next_task: t18
+next_task: null
 
 phase_completion:
   gstack: true
   gsd: true # locked 2026-06-04 — plan sliced into 19 tasks across 6 phases
-  superpowers: false
+  superpowers: true # 2026-06-04 — 19/19 tasks; backend 459→520, frontend 319→364; coverage ≥85% new files
   ralph_wiggum: false
 
 baseline:

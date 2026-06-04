@@ -241,7 +241,7 @@ Steps:
 - 2. GREEN: grep + fix hardcoded colors; ensure Tailwind tokens used (`bg-background`, `text-foreground`)
 - 3. REFACTOR: none
 - 4. Commit `[F18] dark mode: audit + fix hardcoded colors + 2/2`
-Status: [ ]
+Status: [x]
 
 ### Task 19: README + coverage + final regression
 Files:
@@ -251,4 +251,4 @@ Steps:
 - 2. Run full suites
 - 3. Append `## Extras: comments + attachments + notifications` section documenting endpoints + UI
 - 4. Commit `[F19] extras-polish: coverage + README — subgoal complete`
-Status: [ ]
+Status: [x]
