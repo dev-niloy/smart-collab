@@ -38,3 +38,15 @@ export const useProjectActivity = (
     staleTime: STALE,
   });
 };
+
+// Composite hook for the dashboard grid: keeps the conditional-scope choice
+// out of components. Both underlying hooks are still mounted (React rules of
+// hooks), but only the enabled one actually fetches.
+export const useScopedActivity = (
+  projectId: string | undefined,
+  opts: { limit?: number } = {},
+) => {
+  const global = useActivity(opts);
+  const scoped = useProjectActivity(projectId ?? '', opts);
+  return projectId ? scoped : global;
+};

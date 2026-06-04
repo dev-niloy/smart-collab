@@ -15,7 +15,7 @@ import {
   useUpcoming,
   useHighPriority,
 } from '@/hooks/useDashboard';
-import { useActivity, useProjectActivity } from '@/hooks/useActivity';
+import { useScopedActivity } from '@/hooks/useActivity';
 import { ActivityFeed } from '@/components/activity/ActivityFeed';
 
 export interface DashboardGridProps {
@@ -29,9 +29,7 @@ export function DashboardGrid({ projectId }: DashboardGridProps) {
   const productivity = useProductivity(projectId, 30);
   const upcoming = useUpcoming(projectId, 7);
   const highPriority = useHighPriority(projectId);
-  const globalActivity = useActivity({ limit: 10 });
-  const projectActivity = useProjectActivity(projectId ?? '', { limit: 10 });
-  const activityQuery = projectId ? projectActivity : globalActivity;
+  const activityQuery = useScopedActivity(projectId, { limit: 10 });
 
   return (
     <div className="flex flex-1 flex-col">
