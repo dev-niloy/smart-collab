@@ -91,6 +91,12 @@ export default function ProjectDetailPage() {
                 </div>
               </dl>
 
+              <div className="pt-2">
+                <Link href={`/projects/${project.id}/tasks`}>
+                  <Button variant="secondary">View tasks →</Button>
+                </Link>
+              </div>
+
               {canMutate ? (
                 <div className="flex gap-2 pt-2">
                   <Link href={`/projects/${project.id}/edit`}>
