@@ -147,6 +147,56 @@ const loadWorkload = async (projectId: string, userId: string): Promise<Workload
   return { todo, in_progress, completed, due_soon };
 };
 
+// Build a {userId -> Workload} map for all members of a project in a fixed
+// number of queries (2), instead of N+1 (members × 4 counts).
+const buildWorkloadMap = async (
+  projectId: string,
+  userIds: string[],
+): Promise<Map<string, Workload>> => {
+  const map = new Map<string, Workload>();
+  for (const id of userIds) {
+    map.set(id, { todo: 0, in_progress: 0, completed: 0, due_soon: 0 });
+  }
+  if (userIds.length === 0) return map;
+  const horizon = new Date(Date.now() + 7 * 86_400_000);
+  const now = new Date();
+
+  const [byStatus, dueSoon] = await Promise.all([
+    prisma.task.groupBy({
+      by: ['assignedTo', 'status'],
+      where: { projectId, assignedTo: { in: userIds } },
+      _count: { _all: true },
+    }),
+    prisma.task.groupBy({
+      by: ['assignedTo'],
+      where: {
+        projectId,
+        assignedTo: { in: userIds },
+        status: { not: 'completed' },
+        dueDate: { lte: horizon, gte: now },
+      },
+      _count: { _all: true },
+    }),
+  ]);
+
+  for (const row of byStatus) {
+    if (!row.assignedTo) continue;
+    const w = map.get(row.assignedTo);
+    if (!w) continue;
+    const count = row._count?._all ?? 0;
+    if (row.status === 'todo') w.todo = count;
+    else if (row.status === 'in_progress') w.in_progress = count;
+    else if (row.status === 'completed') w.completed = count;
+  }
+  for (const row of dueSoon) {
+    if (!row.assignedTo) continue;
+    const w = map.get(row.assignedTo);
+    if (!w) continue;
+    w.due_soon = row._count?._all ?? 0;
+  }
+  return map;
+};
+
 const listMembers = async (projectId: string): Promise<MemberRow[]> => {
   await ensureProjectExists(projectId);
   const rows = await prisma.projectMember.findMany({
@@ -154,12 +204,12 @@ const listMembers = async (projectId: string): Promise<MemberRow[]> => {
     include: memberInclude,
     orderBy: { user: { name: 'asc' } },
   });
-  return Promise.all(
-    rows.map(async (r) => ({
-      ...r,
-      workload: await loadWorkload(projectId, r.userId),
-    })),
-  );
+  const userIds = rows.map((r) => r.userId);
+  const wlMap = await buildWorkloadMap(projectId, userIds);
+  return rows.map((r) => ({
+    ...r,
+    workload: wlMap.get(r.userId) ?? { todo: 0, in_progress: 0, completed: 0, due_soon: 0 },
+  }));
 };
 
 const updateRole = async (
