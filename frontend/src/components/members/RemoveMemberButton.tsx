@@ -53,9 +53,9 @@ export function RemoveMemberButton({ projectId, memberId, memberName }: Props) {
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove member?</AlertDialogTitle>
+            <AlertDialogTitle>Remove {memberName}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Their assigned tasks will be unassigned.
+              {memberName}&apos;s assigned tasks will be unassigned. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

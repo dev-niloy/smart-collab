@@ -37,12 +37,13 @@ describe('RemoveMemberButton', () => {
     vi.clearAllMocks();
   });
 
-  it('opens dialog w/ correct copy', async () => {
+  it('opens dialog w/ correct copy including member name', async () => {
     renderBtn();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /remove/i }));
-    await waitFor(() => expect(screen.getByText(/remove member\?/i)).toBeTruthy());
-    expect(screen.getByText(/their assigned tasks will be unassigned/i)).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(/remove alice\?/i)).toBeTruthy());
+    expect(screen.getByText(/alice's assigned tasks will be unassigned/i)).toBeTruthy();
+    expect(screen.getByText(/cannot be undone/i)).toBeTruthy();
   });
 
   it('confirm fires removeProjectMember + toast.success', async () => {
@@ -50,7 +51,7 @@ describe('RemoveMemberButton', () => {
     renderBtn();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /^remove$/i }));
-    await waitFor(() => screen.getByText(/remove member\?/i));
+    await waitFor(() => screen.getByText(/remove alice\?/i));
     const confirmBtn = screen
       .getAllByRole('button', { name: /^remove$/i })
       .pop()!;
@@ -64,7 +65,7 @@ describe('RemoveMemberButton', () => {
     renderBtn();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /^remove$/i }));
-    await waitFor(() => screen.getByText(/remove member\?/i));
+    await waitFor(() => screen.getByText(/remove alice\?/i));
     await user.click(screen.getByRole('button', { name: /cancel/i }));
     expect(removeSpy).not.toHaveBeenCalled();
   });
@@ -80,7 +81,7 @@ describe('RemoveMemberButton', () => {
     renderBtn();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /^remove$/i }));
-    await waitFor(() => screen.getByText(/remove member\?/i));
+    await waitFor(() => screen.getByText(/remove alice\?/i));
     const confirmBtn = screen
       .getAllByRole('button', { name: /^remove$/i })
       .pop()!;
