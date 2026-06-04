@@ -40,8 +40,8 @@ Steps:
 - 1. RED: 5 tests — body required 1..2000; trims whitespace; rejects empty; rejects 2001; listQuery has limit 1..50 default 50 + cursor optional
 - 2. GREEN: zod schemas + constants (`MAX_BODY=2000`, `DEFAULT_LIST_LIMIT=50`, `MAX_LIST_LIMIT=50`)
 - 3. REFACTOR: reuse cursor codec from activityLog.validation if useful
-- 4. Commit `[B3] comment: constants + validation + 5/5`
-Status: [ ]
+- 4. Commit `[B3] comment: constants + validation + 6/6`
+Status: [x]
 
 ### Task 4: comment.service — create/list/update/delete + activity emit
 Files:

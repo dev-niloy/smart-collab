@@ -21,7 +21,7 @@ tasks:
   - id: t3
     desc: "comment.constant + validation + 5 tests"
     files: [backend/src/app/modules/comment/]
-    status: pending
+    status: done
   - id: t4
     desc: "comment.service — CRUD + activity emit + 8 tests"
     files: [backend/src/app/modules/comment/]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t3
+next_task: t4
 
 phase_completion:
   gstack: true
