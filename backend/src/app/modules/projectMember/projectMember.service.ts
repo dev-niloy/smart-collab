@@ -8,6 +8,8 @@ import {
   ALREADY_MEMBER_MESSAGE,
   ERR_MEMBER_NOT_FOUND,
   MEMBER_NOT_FOUND_MESSAGE,
+  ERR_CANNOT_REMOVE_LAST_PM,
+  CANNOT_REMOVE_LAST_PM_MESSAGE,
 } from './projectMember.constant';
 
 const userSelect = { id: true, email: true, name: true, role: true } as const;
@@ -182,6 +184,45 @@ const updateRole = async (
 const isRecordNotFound = (err: unknown): boolean =>
   typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'P2025';
 
+type RemoveResult = { removedMemberId: string; tasksUnassigned: number };
+
+const removeMember = async (
+  projectId: string,
+  memberId: string,
+): Promise<RemoveResult> => {
+  return prisma.$transaction(async (tx) => {
+    const target = await tx.projectMember.findUnique({
+      where: { id: memberId },
+      select: { id: true, projectId: true, userId: true, role: true },
+    });
+    if (!target || target.projectId !== projectId) {
+      throw ApiError.notFound(MEMBER_NOT_FOUND_MESSAGE, ERR_MEMBER_NOT_FOUND);
+    }
+
+    if (target.role === 'pm') {
+      const [pmCount, taskCount] = await Promise.all([
+        tx.projectMember.count({ where: { projectId, role: 'pm' } }),
+        tx.task.count({ where: { projectId } }),
+      ]);
+      if (pmCount === 1 && taskCount > 0) {
+        throw ApiError.unprocessable(
+          CANNOT_REMOVE_LAST_PM_MESSAGE,
+          ERR_CANNOT_REMOVE_LAST_PM,
+        );
+      }
+    }
+
+    const unassigned = await tx.task.updateMany({
+      where: { projectId, assignedTo: target.userId },
+      data: { assignedTo: null },
+    });
+
+    await tx.projectMember.delete({ where: { id: memberId } });
+
+    return { removedMemberId: memberId, tasksUnassigned: unassigned.count };
+  });
+};
+
 export const projectMemberService = {
   addMember,
   isMember,
@@ -189,6 +230,7 @@ export const projectMemberService = {
   listAssignable,
   listMembers,
   updateRole,
+  removeMember,
   // exposed for tests + future tasks
   _findUserByEmail: findUserByEmail,
   _ensureProjectExists: ensureProjectExists,
