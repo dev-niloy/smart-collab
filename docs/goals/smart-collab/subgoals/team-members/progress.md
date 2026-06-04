@@ -17,6 +17,8 @@ Phase 3 Superpowers — COMPLETE (all 22 tasks done). Phase 4 Ralph next.
 - 2026-06-04: Phase 3 Phase D (t14-t16) — frontend schemas + api client, format helpers, hooks (useProjectMembers/useAssignableMembers/useAddMember/useUpdateMemberRole/useRemoveMember invalidates members AND tasks).
 - 2026-06-04: Phase 3 Phase E (t17-t21) — members list page, MemberCard, AddMemberForm (RHF+Zod), RemoveMemberButton (AlertDialog), RoleSelect, refactor 3 task assignee pickers to useAssignableMembers, project detail Members link.
 - 2026-06-04: Phase 3 Phase F (t22) — coverage check + README updates.
+- 2026-06-04: Phase 4 Ralph iter 1 — [Developer] listMembers groupBy (N+1→2 queries), [Designer] RemoveMember dialog names target, [QA] e2e auto-PM via POST/projects+GET/members, [PM] Members button count, [BA] task.service Role.admin enum. Architect skipped (conflict avoidance on projectMember.service.ts).
+- 2026-06-04: Phase 4 Ralph iter 2 — [Architect] drop dead loadWorkload + dangling export fix, [QA] frontend test for Members button count. Dev/Designer/PM/BA skipped (no actionable findings). [DONE]: backend 287/287, frontend 198/198. PR push to origin remains user-permissioned.
 
 ## Last Completed Task
 Phase 3 t22 — coverage verified + README API table + frontend pages updated.
@@ -35,7 +37,7 @@ none
 - [x] Phase 1 GStack — SPEC.md (goal.md) written and complete
 - [x] Phase 2 GSD — docs/plans/team-members.md written and all 22 tasks listed
 - [x] Phase 3 Superpowers — all 22 tasks checked off, suite passing (backend 286/286, frontend 197/197)
-- [ ] Phase 4 Ralph Wiggum — [DONE] output received
+- [x] Phase 4 Ralph Wiggum — [DONE] 2026-06-04: 2 iters, 7 persona wins. backend 287/287, frontend 198/198.
 
 ## Subgoal commits (Phase 3, chronological)
 - c345b60 [A1] prisma model + migration
