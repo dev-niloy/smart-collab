@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-04: Phase 3 — t17 done. /projects/[id]/tasks/[taskId] detail page: fields + creator + assignee, RBAC Edit gated to admin|PM|owner (createdBy or assignedTo), Delete admin|PM only (stub for t19). 7 page tests covering 3 roles × own/other ownership cases. Frontend 133/133. Next: t18 edit form.
 - 2026-06-04: Phase 3 — t16 done. /projects/[id]/tasks/new create form: RHF+Zod, useUsers assignee dropdown (UNASSIGNED sentinel), all authed can create (members included), push to detail on submit. 3 page tests; frontend 126/126. Next: t17 task detail page.
 - 2026-06-04: Phase 3 — t15 done (Phase D start). /projects/[id]/tasks list page: URL-state filters (q + status + priority + assignee + sort), debounced search, inline status Select per card (PATCH via useUpdateTask), assignee filter populated from useUsers, RBAC-open New Task button. 8 page tests; frontend 123/123. PR #9 (Phases A-C) merged to develop. Next: t16 /projects/[id]/tasks/new create form.
 - 2026-06-04: Phase 3 — t14 done. Phase C complete. hooks/useTasks (+ useProjectTasks nested), hooks/useUsers; cache invalidation on parent ['tasks'] key invalidates all derived lists. 11 hook tests; frontend 115/115. Next: Phase D — t15 /projects/[id]/tasks list page.

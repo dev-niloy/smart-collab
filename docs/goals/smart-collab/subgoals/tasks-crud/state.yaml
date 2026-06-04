@@ -113,8 +113,8 @@ tasks:
   - id: t17
     desc: "/projects/[id]/tasks/[taskId]/page.tsx: detail view (title, description, status, priority, assignee email, creator email, due date, timestamps). Edit + Delete buttons RBAC-gated. Member can Edit own (assignedTo===self || createdBy===self); never sees Delete. Test rendering + RBAC visibility for 3 roles x own/other"
     files: [frontend/src/app/projects/[id]/tasks/[taskId]/page.tsx, frontend/src/app/projects/[id]/tasks/[taskId]/__tests__/page.test.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "useTask(taskId) + useUser(). isPrivileged = admin|PM bypass. isOwner = task.createdBy===user.id || task.assignedTo===user.id. canEdit = isPrivileged || isOwner. canDelete = isPrivileged only. Layout: title + creator description + status + priority badges; description w/ italic fallback; dl grid (Due date, Assignee w/ email or 'Unassigned' italics, Created, Updated). Edit -> Link. Delete -> disabled stub (t19). Back to tasks link. Error -> Retry. Tests 7/7: fields render w/ Unassigned, admin sees both buttons, PM sees both, member non-owner hides both, member who is creator sees Edit hides Delete, member who is assignee sees Edit hides Delete, error/missing -> Retry. Frontend 133/133 (+7)."
 
   - id: t18
     desc: "/projects/[id]/tasks/[taskId]/edit/page.tsx: prefilled update form. Server enforces ownership for members (403 surfaces as toast). Success -> push detail. Tests happy + 403 toast on bad attempt"
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t17
+next_task: t18
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
