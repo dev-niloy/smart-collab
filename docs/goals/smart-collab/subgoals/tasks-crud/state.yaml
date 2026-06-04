@@ -107,8 +107,8 @@ tasks:
   - id: t16
     desc: "/projects/[id]/tasks/new/page.tsx: create form (title, description, priority Select, status Select default Todo, assignedTo Select loaded from useUsers, dueDate). RHF+Zod. All authed can create. Success -> push to task detail. Test happy + validation"
     files: [frontend/src/app/projects/[id]/tasks/new/page.tsx, frontend/src/app/projects/[id]/tasks/new/__tests__/page.test.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "RHF + zodResolver. FormValues split from backend coerce-date: title string, description optional, dueDate string (HTML date input), status enum default todo, priority enum default medium, assignedTo string (UNASSIGNED sentinel or uuid). Submit maps UNASSIGNED -> null, dueDate string -> Date. useCreateTask via TanStack hook. useUsers populates assignee Select. Success -> toast.success + router.push('/projects/{id}/tasks/{taskId}'). All authed can create (no RBAC redirect; members allowed). Tests 3/3: member submits valid form (createTaskSpy called w/ projectId='p-1', Date dueDate, assignedTo null, pushes to detail), title required inline error, due date required inline error. Frontend 126/126 (+3)."
 
   - id: t17
     desc: "/projects/[id]/tasks/[taskId]/page.tsx: detail view (title, description, status, priority, assignee email, creator email, due date, timestamps). Edit + Delete buttons RBAC-gated. Member can Edit own (assignedTo===self || createdBy===self); never sees Delete. Test rendering + RBAC visibility for 3 roles x own/other"
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t16
+next_task: t17
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
