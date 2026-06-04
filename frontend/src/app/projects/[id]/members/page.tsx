@@ -9,6 +9,8 @@ import { useProjectMembers } from '@/hooks/useProjectMembers';
 import { useUser } from '@/hooks/useUser';
 import { MemberCard } from '@/components/members/MemberCard';
 import { AddMemberForm } from '@/components/members/AddMemberForm';
+import { RemoveMemberButton } from '@/components/members/RemoveMemberButton';
+import { RoleSelect } from '@/components/members/RoleSelect';
 
 export default function ProjectMembersPage() {
   const params = useParams<{ id: string }>();
@@ -73,13 +75,21 @@ export default function ProjectMembersPage() {
                 member={m}
                 actions={
                   isPrivileged ? (
-                    <span
+                    <div
                       data-testid={`member-actions-${m.id}`}
-                      className="text-xs text-muted-foreground"
+                      className="flex items-center gap-2"
                     >
-                      {/* RoleSelect + RemoveMemberButton mount here in E19 */}
-                      Manage
-                    </span>
+                      <RoleSelect
+                        projectId={projectId}
+                        memberId={m.id}
+                        currentRole={m.role}
+                      />
+                      <RemoveMemberButton
+                        projectId={projectId}
+                        memberId={m.id}
+                        memberName={m.user.name}
+                      />
+                    </div>
                   ) : null
                 }
               />
