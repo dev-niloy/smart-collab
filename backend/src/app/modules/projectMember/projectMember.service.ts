@@ -129,24 +129,6 @@ export type Workload = {
 
 export type MemberRow = MemberWithUser & { workload: Workload };
 
-const loadWorkload = async (projectId: string, userId: string): Promise<Workload> => {
-  const horizon = new Date(Date.now() + 7 * 86_400_000);
-  const [todo, in_progress, completed, due_soon] = await Promise.all([
-    prisma.task.count({ where: { projectId, assignedTo: userId, status: 'todo' } }),
-    prisma.task.count({ where: { projectId, assignedTo: userId, status: 'in_progress' } }),
-    prisma.task.count({ where: { projectId, assignedTo: userId, status: 'completed' } }),
-    prisma.task.count({
-      where: {
-        projectId,
-        assignedTo: userId,
-        status: { not: 'completed' },
-        dueDate: { lte: horizon, gte: new Date() },
-      },
-    }),
-  ]);
-  return { todo, in_progress, completed, due_soon };
-};
-
 // Build a {userId -> Workload} map for all members of a project in a fixed
 // number of queries (2), instead of N+1 (members × 4 counts).
 const buildWorkloadMap = async (
