@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { useTask } from '@/hooks/useTasks';
 import { useUser } from '@/hooks/useUser';
+import { DeleteTaskButton } from '@/components/tasks/delete-task-button';
 import {
   STATUS_LABEL,
   STATUS_VARIANT,
@@ -124,9 +125,11 @@ export default function TaskDetailPage() {
                     </Link>
                   ) : null}
                   {canDelete ? (
-                    <Button variant="destructive" disabled aria-label="Delete (coming in t19)">
-                      Delete
-                    </Button>
+                    <DeleteTaskButton
+                      projectId={projectId}
+                      taskId={task.id}
+                      taskTitle={task.title}
+                    />
                   ) : null}
                 </div>
               ) : null}
