@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../../errors/ApiError';
+import { prisma } from '../../../config/prisma';
 import { listGlobal, listByProject } from './activityLog.service';
 import type { ListActivityQuery } from './activityLog.validation';
 
@@ -28,6 +29,13 @@ export const activityLogController = {
     try {
       requireActor(req);
       const projectId = req.params.id;
+      const exists = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { id: true },
+      });
+      if (!exists) {
+        return next(ApiError.notFound('Project not found', 'PROJECT_NOT_FOUND'));
+      }
       const { limit, cursor } = req.query as unknown as ListActivityQuery;
       const page = await listByProject(projectId, { limit, cursor });
       res.status(200).json(page);
