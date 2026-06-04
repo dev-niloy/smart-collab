@@ -226,4 +226,4 @@ phase_completion:
   gstack: true # locked 2026-06-03 by user
   gsd: true # locked 2026-06-03 by user (auto via plan-and-proceed)
   superpowers: true       # all 21 tasks done 2026-06-04
-  ralph_wiggum: false
+  ralph_wiggum: true      # 1 iter, 6 persona wins landed 2026-06-04

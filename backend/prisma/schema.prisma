@@ -90,6 +90,7 @@ model Task {
   creator  User    @relation("TaskCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
   assignee User?   @relation("TaskAssignedTo", fields: [assignedTo], references: [id], onDelete: SetNull)
 
+  @@unique([projectId, title], name: "tasks_projectId_title_unique")
   @@index([projectId, status])
   @@index([assignedTo])
   @@index([dueDate])

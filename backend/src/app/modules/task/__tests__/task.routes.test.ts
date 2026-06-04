@@ -150,6 +150,27 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     expect(res.status).toBe(200);
   });
 
+  it('GET /:id returns task with creator + assignee embedded (done-criterion 5)', async () => {
+    const agent = await loginAs('admin');
+    const created = await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Embed check', dueDate: future(), assignedTo: memberId });
+    const id = created.body.task.id;
+    const res = await agent.get(`/api/v1/tasks/${id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.task.creator).toMatchObject({
+      id: adminId,
+      email: 'admin@demo.local',
+      name: 'Demo Admin',
+      role: 'admin',
+    });
+    expect(res.body.task.assignee).toMatchObject({
+      id: memberId,
+      email: 'member@demo.local',
+      role: 'team_member',
+    });
+  });
+
   it('admin deletes -> 204; subsequent GET -> 404', async () => {
     const agent = await loginAs('admin');
     const created = await agent

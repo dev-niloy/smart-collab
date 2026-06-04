@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useProjectTasks, useUpdateTask } from '@/hooks/useTasks';
+import { useProjectTasks } from '@/hooks/useTasks';
 import { useUsers } from '@/hooks/useUsers';
 import {
   STATUS_LABEL,
@@ -36,7 +35,7 @@ import {
   type SortKey,
   type Task,
 } from '@/lib/schemas/task';
-import { ApiError } from '@/lib/api';
+import { InlineStatusSelect } from '@/components/tasks/inline-status-select';
 
 const SORT_LABEL: Record<SortKey, string> = {
   created: 'Newest',
@@ -60,38 +59,6 @@ const parsePage = (v: string | null): number => {
   const n = v ? parseInt(v, 10) : 1;
   return Number.isFinite(n) && n > 0 ? n : 1;
 };
-
-function InlineStatusSelect({ task }: { task: Task }) {
-  const mutation = useUpdateTask(task.id);
-  return (
-    <Select
-      value={task.status}
-      onValueChange={async (v) => {
-        try {
-          await mutation.mutateAsync({ status: v as TaskStatus });
-        } catch (err) {
-          const msg = err instanceof ApiError ? err.message : 'Update failed';
-          toast.error(msg);
-        }
-      }}
-    >
-      <SelectTrigger
-        className="h-7 w-32 text-xs"
-        aria-label={`Status for ${task.title}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {TASK_STATUSES.map((s) => (
-          <SelectItem key={s} value={s}>
-            {STATUS_LABEL[s]}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
 
 export default function ProjectTasksPage() {
   const router = useRouter();
