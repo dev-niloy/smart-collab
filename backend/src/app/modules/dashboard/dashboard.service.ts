@@ -76,10 +76,55 @@ const getPriorityCounts = async (scope: Scope): Promise<PriorityCounts> => {
   return zeroFill(PRIORITY_KEYS, rows.map((r) => ({ key: r.priority as keyof PriorityCounts, count: r._count?._all ?? 0 })));
 };
 
+export type ProductivityPoint = { date: string; completed: number };
+
+const dateKey = (d: Date): string => {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const getProductivity = async (
+  scope: Scope,
+  days: number,
+): Promise<ProductivityPoint[]> => {
+  // Anchor at UTC midnight today; build N descending dates then reverse.
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const horizonStart = new Date(today);
+  horizonStart.setUTCDate(horizonStart.getUTCDate() - (days - 1));
+
+  const tasks = await prisma.task.findMany({
+    where: taskWhere(scope, {
+      status: 'completed',
+      updatedAt: { gte: horizonStart },
+    }),
+    select: { updatedAt: true },
+  });
+
+  const tally = new Map<string, number>();
+  for (const t of tasks) {
+    const k = dateKey(t.updatedAt);
+    tally.set(k, (tally.get(k) ?? 0) + 1);
+  }
+
+  const out: ProductivityPoint[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(horizonStart);
+    d.setUTCDate(d.getUTCDate() + i);
+    const k = dateKey(d);
+    out.push({ date: k, completed: tally.get(k) ?? 0 });
+  }
+  return out;
+};
+
 export const dashboardService = {
   getKpis,
   getStatusCounts,
   getPriorityCounts,
+  getProductivity,
   _taskWhere: taskWhere,
   _projectWhere: projectWhere,
+  _dateKey: dateKey,
 };
