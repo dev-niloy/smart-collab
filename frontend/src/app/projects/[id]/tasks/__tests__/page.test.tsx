@@ -184,4 +184,76 @@ describe('ProjectTasksPage', () => {
     expect(calledId).toBe('t-9');
     expect(payload).toMatchObject({ status: 'in_progress' });
   });
+
+  it('multi-status chips reflect csv URL state', async () => {
+    setUser('admin');
+    listTasksForProjectSpy.mockResolvedValue({ data: [sampleTask()], total: 1, page: 1, limit: 10 });
+    renderPage('status=todo,in_progress');
+    await waitFor(() => expect(screen.getByText('Ship docs')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /^todo$/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /in progress/i })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('clicking priority chip updates URL csv', async () => {
+    setUser('admin');
+    listTasksForProjectSpy.mockResolvedValue({ data: [sampleTask()], total: 1, page: 1, limit: 10 });
+    const user = userEvent.setup();
+    renderPage('priority=high');
+    await waitFor(() => expect(screen.getByText('Ship docs')).toBeInTheDocument());
+    const med = screen.getByRole('button', { name: /^medium$/i });
+    await user.click(med);
+    const lastUrl = String(replaceSpy.mock.calls.at(-1)?.[0]);
+    expect(lastUrl).toContain('priority=high%2Cmedium');
+  });
+
+  it('dueFrom date input updates URL', async () => {
+    setUser('admin');
+    listTasksForProjectSpy.mockResolvedValue({ data: [sampleTask()], total: 1, page: 1, limit: 10 });
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Ship docs')).toBeInTheDocument());
+    const from = screen.getByLabelText('Due from');
+    await user.type(from, '2026-06-04');
+    const lastUrl = String(replaceSpy.mock.calls.at(-1)?.[0]);
+    expect(lastUrl).toContain('dueFrom=2026-06-04');
+  });
+
+  it('"Assigned to me" toggle updates URL', async () => {
+    setUser('admin');
+    listTasksForProjectSpy.mockResolvedValue({ data: [sampleTask()], total: 1, page: 1, limit: 10 });
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Ship docs')).toBeInTheDocument());
+    const toggle = screen.getByRole('button', { name: /assigned to me/i });
+    await user.click(toggle);
+    const lastUrl = String(replaceSpy.mock.calls.at(-1)?.[0]);
+    expect(lastUrl).toContain('assignedTo=me');
+  });
+
+  it('"Created by me" toggle updates URL', async () => {
+    setUser('admin');
+    listTasksForProjectSpy.mockResolvedValue({ data: [sampleTask()], total: 1, page: 1, limit: 10 });
+    const user = userEvent.setup();
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Ship docs')).toBeInTheDocument());
+    const toggle = screen.getByRole('button', { name: /created by me/i });
+    await user.click(toggle);
+    const lastUrl = String(replaceSpy.mock.calls.at(-1)?.[0]);
+    expect(lastUrl).toContain('createdBy=me');
+  });
+
+  it('reloading restores all filter state from URL', async () => {
+    setUser('admin');
+    listTasksForProjectSpy.mockResolvedValue({ data: [sampleTask()], total: 1, page: 1, limit: 10 });
+    renderPage('status=todo,completed&priority=high,low&dueFrom=2026-06-04&dueTo=2026-12-31&assignedTo=me&createdBy=me');
+    await waitFor(() => expect(screen.getByText('Ship docs')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /^todo$/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /completed/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /^high$/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /^low$/i })).toHaveAttribute('aria-pressed', 'true');
+    expect((screen.getByLabelText('Due from') as HTMLInputElement).value).toBe('2026-06-04');
+    expect((screen.getByLabelText('Due to') as HTMLInputElement).value).toBe('2026-12-31');
+    expect(screen.getByRole('button', { name: /assigned to me/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /created by me/i })).toHaveAttribute('aria-pressed', 'true');
+  });
 });

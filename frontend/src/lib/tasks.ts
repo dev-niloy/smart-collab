@@ -9,9 +9,15 @@ import type {
 
 type TaskResponse = { task: Task };
 
-export type ListTasksParams = Partial<
-  Omit<ListTasksQuery, 'sort' | 'page' | 'limit'>
-> & {
+export type ListTasksParams = {
+  projectId?: string;
+  q?: string;
+  status?: string; // csv allowed
+  priority?: string; // csv allowed
+  assignedTo?: string; // uuid, UNASSIGNED, or 'me'
+  createdBy?: string; // uuid or 'me'
+  dueFrom?: string;
+  dueTo?: string;
   sort?: ListTasksQuery['sort'];
   page?: number;
   limit?: number;
@@ -24,6 +30,9 @@ const buildQuery = (params: ListTasksParams = {}): string => {
   if (params.status) usp.set('status', params.status);
   if (params.priority) usp.set('priority', params.priority);
   if (params.assignedTo) usp.set('assignedTo', params.assignedTo);
+  if (params.createdBy) usp.set('createdBy', params.createdBy);
+  if (params.dueFrom) usp.set('dueFrom', params.dueFrom);
+  if (params.dueTo) usp.set('dueTo', params.dueTo);
   if (params.sort) usp.set('sort', params.sort);
   if (params.page !== undefined) usp.set('page', String(params.page));
   if (params.limit !== undefined) usp.set('limit', String(params.limit));

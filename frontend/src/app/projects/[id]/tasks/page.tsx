@@ -36,6 +36,7 @@ import {
   type Task,
 } from '@/lib/schemas/task';
 import { InlineStatusSelect } from '@/components/tasks/inline-status-select';
+import { parseCsv, toCsv, parseDateParam } from '@/lib/queryString';
 
 const SORT_LABEL: Record<SortKey, string> = {
   created: 'Newest',
@@ -46,11 +47,15 @@ const SORT_LABEL: Record<SortKey, string> = {
 
 const ALL = '__all__';
 
-const parseStatus = (v: string | null): TaskStatus | undefined =>
-  v && (TASK_STATUSES as readonly string[]).includes(v) ? (v as TaskStatus) : undefined;
+const parseStatusList = (v: string | null): TaskStatus[] => {
+  const allowed = new Set<string>(TASK_STATUSES);
+  return parseCsv(v).filter((s): s is TaskStatus => allowed.has(s));
+};
 
-const parsePriority = (v: string | null): TaskPriority | undefined =>
-  v && (TASK_PRIORITIES as readonly string[]).includes(v) ? (v as TaskPriority) : undefined;
+const parsePriorityList = (v: string | null): TaskPriority[] => {
+  const allowed = new Set<string>(TASK_PRIORITIES);
+  return parseCsv(v).filter((p): p is TaskPriority => allowed.has(p));
+};
 
 const parseSort = (v: string | null): SortKey =>
   v && (SORT_KEYS as readonly string[]).includes(v) ? (v as SortKey) : 'created';
@@ -67,11 +72,15 @@ export default function ProjectTasksPage() {
   const params = useSearchParams();
 
   const q = params.get('q') ?? '';
-  const status = parseStatus(params.get('status'));
-  const priority = parsePriority(params.get('priority'));
-  const assignedTo = params.get('assignedTo') ?? undefined;
+  const statusList = parseStatusList(params.get('status'));
+  const priorityList = parsePriorityList(params.get('priority'));
+  const assignedToRaw = params.get('assignedTo') ?? undefined;
+  const assignedToMe = assignedToRaw === 'me';
   const sort = parseSort(params.get('sort'));
   const page = parsePage(params.get('page'));
+  const dueFrom = parseDateParam(params.get('dueFrom'));
+  const dueTo = parseDateParam(params.get('dueTo'));
+  const createdByMe = params.get('createdBy') === 'me';
 
   const [queryInput, setQueryInput] = useState(q);
   const [lastSyncedQ, setLastSyncedQ] = useState(q);
@@ -86,7 +95,16 @@ export default function ProjectTasksPage() {
       if (v === null || v === '') next.delete(k);
       else next.set(k, v);
     }
-    if ('q' in patch || 'status' in patch || 'priority' in patch || 'assignedTo' in patch || 'sort' in patch) {
+    if (
+      'q' in patch ||
+      'status' in patch ||
+      'priority' in patch ||
+      'assignedTo' in patch ||
+      'createdBy' in patch ||
+      'dueFrom' in patch ||
+      'dueTo' in patch ||
+      'sort' in patch
+    ) {
       next.delete('page');
     }
     const qs = next.toString();
@@ -102,17 +120,22 @@ export default function ProjectTasksPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput]);
 
+  const statusCsv = useMemo(() => toCsv(statusList), [statusList]);
+  const priorityCsv = useMemo(() => toCsv(priorityList), [priorityList]);
   const queryParams = useMemo(
     () => ({
       q: q || undefined,
-      status,
-      priority,
-      assignedTo,
+      status: statusCsv || undefined,
+      priority: priorityCsv || undefined,
+      assignedTo: assignedToRaw,
+      createdBy: createdByMe ? 'me' : undefined,
+      dueFrom,
+      dueTo,
       sort,
       page,
       limit: TASK_DEFAULT_LIMIT,
     }),
-    [q, status, priority, assignedTo, sort, page],
+    [q, statusCsv, priorityCsv, assignedToRaw, createdByMe, dueFrom, dueTo, sort, page],
   );
 
   const { data, isLoading, isError, refetch } = useProjectTasks(projectId, queryParams);
@@ -122,7 +145,27 @@ export default function ProjectTasksPage() {
   const limit = data?.limit ?? TASK_DEFAULT_LIMIT;
   const totalPages = total === 0 ? 1 : Math.ceil(total / limit);
   const items: Task[] = data?.data ?? [];
-  const hasFilters = !!q || !!status || !!priority || !!assignedTo;
+  const hasFilters =
+    !!q ||
+    statusList.length > 0 ||
+    priorityList.length > 0 ||
+    !!assignedToRaw ||
+    !!dueFrom ||
+    !!dueTo ||
+    createdByMe;
+
+  const toggleStatus = (s: TaskStatus) => {
+    const next = statusList.includes(s)
+      ? statusList.filter((x) => x !== s)
+      : [...statusList, s];
+    setParam({ status: next.length === 0 ? null : toCsv(next) });
+  };
+  const togglePriority = (p: TaskPriority) => {
+    const next = priorityList.includes(p)
+      ? priorityList.filter((x) => x !== p)
+      : [...priorityList, p];
+    setParam({ priority: next.length === 0 ? null : toCsv(next) });
+  };
 
   const assigneeMap = useMemo(() => {
     const map = new Map<string, { name: string; email: string }>();
@@ -153,7 +196,7 @@ export default function ProjectTasksPage() {
           </Button>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Input
             value={queryInput}
             onChange={(e) => setQueryInput(e.target.value)}
@@ -161,39 +204,7 @@ export default function ProjectTasksPage() {
             aria-label="Search tasks"
           />
           <Select
-            value={status ?? ALL}
-            onValueChange={(v) => setParam({ status: v === ALL ? null : v })}
-          >
-            <SelectTrigger aria-label="Filter by status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All statuses</SelectItem>
-              {TASK_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {STATUS_LABEL[s]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={priority ?? ALL}
-            onValueChange={(v) => setParam({ priority: v === ALL ? null : v })}
-          >
-            <SelectTrigger aria-label="Filter by priority">
-              <SelectValue placeholder="Priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All priorities</SelectItem>
-              {TASK_PRIORITIES.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {PRIORITY_LABEL[p]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={assignedTo ?? ALL}
+            value={assignedToRaw ?? ALL}
             onValueChange={(v) => setParam({ assignedTo: v === ALL ? null : v })}
           >
             <SelectTrigger aria-label="Filter by assignee">
@@ -221,6 +232,113 @@ export default function ProjectTasksPage() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="mt-3 flex flex-col gap-3">
+          <div
+            className="flex flex-wrap items-center gap-2"
+            role="group"
+            aria-label="Filter by status"
+          >
+            <span className="text-xs text-muted-foreground">Status:</span>
+            {TASK_STATUSES.map((s) => {
+              const active = statusList.includes(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => toggleStatus(s)}
+                  aria-pressed={active}
+                  className={
+                    'rounded-full border px-3 py-0.5 text-xs transition-colors ' +
+                    (active
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input bg-background hover:bg-muted')
+                  }
+                >
+                  {STATUS_LABEL[s]}
+                </button>
+              );
+            })}
+          </div>
+
+          <div
+            className="flex flex-wrap items-center gap-2"
+            role="group"
+            aria-label="Filter by priority"
+          >
+            <span className="text-xs text-muted-foreground">Priority:</span>
+            {TASK_PRIORITIES.map((p) => {
+              const active = priorityList.includes(p);
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => togglePriority(p)}
+                  aria-pressed={active}
+                  className={
+                    'rounded-full border px-3 py-0.5 text-xs transition-colors ' +
+                    (active
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input bg-background hover:bg-muted')
+                  }
+                >
+                  {PRIORITY_LABEL[p]}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Due from
+              <input
+                type="date"
+                aria-label="Due from"
+                value={dueFrom ?? ''}
+                onChange={(e) => setParam({ dueFrom: e.target.value || null })}
+                className="h-8 rounded-md border bg-background px-2 text-xs"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Due to
+              <input
+                type="date"
+                aria-label="Due to"
+                value={dueTo ?? ''}
+                onChange={(e) => setParam({ dueTo: e.target.value || null })}
+                className="h-8 rounded-md border bg-background px-2 text-xs"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() =>
+                setParam({ assignedTo: assignedToMe ? null : 'me' })
+              }
+              aria-pressed={assignedToMe}
+              className={
+                'rounded-full border px-3 py-0.5 text-xs transition-colors ' +
+                (assignedToMe
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background hover:bg-muted')
+              }
+            >
+              Assigned to me
+            </button>
+            <button
+              type="button"
+              onClick={() => setParam({ createdBy: createdByMe ? null : 'me' })}
+              aria-pressed={createdByMe}
+              className={
+                'rounded-full border px-3 py-0.5 text-xs transition-colors ' +
+                (createdByMe
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-background hover:bg-muted')
+              }
+            >
+              Created by me
+            </button>
+          </div>
         </div>
 
         <div className="mt-6">
@@ -261,7 +379,15 @@ export default function ProjectTasksPage() {
                       variant="outline"
                       onClick={() => {
                         setQueryInput('');
-                        setParam({ q: null, status: null, priority: null, assignedTo: null });
+                        setParam({
+                          q: null,
+                          status: null,
+                          priority: null,
+                          assignedTo: null,
+                          createdBy: null,
+                          dueFrom: null,
+                          dueTo: null,
+                        });
                       }}
                     >
                       Clear filters
