@@ -106,7 +106,7 @@ Steps:
 - 2. GREEN: multer single('file') middleware; controllers; `res.download` for static stream
 - 3. REFACTOR: handle multer error -> 422 with consistent envelope
 - 4. Commit `[C8] attachment: controller + routes + download + 6/6`
-Status: [ ]
+Status: [x]
 
 ## Phase D — Notifications backend
 

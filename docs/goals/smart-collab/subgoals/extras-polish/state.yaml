@@ -41,7 +41,7 @@ tasks:
   - id: t8
     desc: "attachment.controller + routes + download endpoint + 6 tests"
     files: [backend/src/app/modules/attachment/, backend/src/app/routes/index.ts]
-    status: pending
+    status: done
   - id: t9
     desc: "notification: enqueue helper + 5 tests"
     files: [backend/src/app/modules/notification/]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t8
+next_task: t9
 
 phase_completion:
   gstack: true
