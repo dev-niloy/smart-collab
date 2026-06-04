@@ -20,4 +20,4 @@ CREATE INDEX "activity_logs_entityType_entityId_createdAt_idx" ON "activity_logs
 ALTER TABLE "activity_logs" ADD CONSTRAINT "activity_logs_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- RenameIndex
-ALTER INDEX "tasks_projectId_title_unique" RENAME TO "tasks_projectId_title_key";
+ALTER INDEX IF EXISTS "tasks_projectId_title_unique" RENAME TO "tasks_projectId_title_key";

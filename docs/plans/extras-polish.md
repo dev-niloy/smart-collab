@@ -15,7 +15,7 @@ Files: none
 Steps:
 - 1. Run backend + frontend suites + prisma migrate status, confirm 459/319 green
 - 2. Commit `[Baseline] existing tests passing before extras-polish work begins`
-Status: [ ]
+Status: [x]
 
 ### Task 2: prisma schema — add Comment, Attachment, Notification + migration
 Files:
