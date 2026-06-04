@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+// Mirror of backend MAX_COMMENT_BODY. Kept here as the single source of truth
+// for the frontend so panel + form + tests don't drift independently.
+export const MAX_COMMENT_BODY = 2000;
+export const MIN_COMMENT_BODY = 1;
+
 export const CommentDTOSchema = z.object({
   id: z.string(),
   taskId: z.string(),

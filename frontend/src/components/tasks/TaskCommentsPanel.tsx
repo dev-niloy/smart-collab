@@ -12,10 +12,11 @@ import {
 } from '@/hooks/useComments';
 import { useUser } from '@/hooks/useUser';
 import { ApiError } from '@/lib/api';
+import { MAX_COMMENT_BODY } from '@/lib/schemas/comment';
 import type { CommentDTO } from '@/lib/schemas/comment';
 import type { Role } from '@/lib/schemas/auth';
 
-const MAX_BODY = 2000;
+const MAX_BODY = MAX_COMMENT_BODY;
 
 type Props = {
   taskId: string;
