@@ -24,15 +24,22 @@ export type ProjectWithCreator = Project & {
 
 const create = async (input: CreateProjectInput, actorId: string): Promise<ProjectWithCreator> => {
   ensureFutureDeadline(input.deadline);
-  return prisma.project.create({
-    data: {
-      name: input.name,
-      description: input.description ?? null,
-      deadline: input.deadline,
-      status: input.status,
-      createdBy: actorId,
-    },
-    include: creatorInclude,
+  return prisma.$transaction(async (tx) => {
+    const project = await tx.project.create({
+      data: {
+        name: input.name,
+        description: input.description ?? null,
+        deadline: input.deadline,
+        status: input.status,
+        createdBy: actorId,
+      },
+      include: creatorInclude,
+    });
+    // Auto-add creator as project pm (team-members subgoal §C12).
+    await tx.projectMember.create({
+      data: { projectId: project.id, userId: actorId, role: 'pm', addedById: actorId },
+    });
+    return project;
   });
 };
 

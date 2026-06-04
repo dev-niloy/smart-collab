@@ -64,6 +64,19 @@ maybe('projectService CRUD', () => {
         projectService.create({ name: 'X', deadline: past(), status: ProjectStatus.active }, actorId),
       ).rejects.toThrow(ApiError);
     });
+
+    it('auto-inserts creator as pm ProjectMember in same tx', async () => {
+      const p = await projectService.create(
+        { name: 'Auto-PM', deadline: future(), status: ProjectStatus.active },
+        actorId,
+      );
+      const mem = await prisma.projectMember.findFirst({
+        where: { projectId: p.id, userId: actorId },
+      });
+      expect(mem).not.toBeNull();
+      expect(mem?.role).toBe('pm');
+      expect(mem?.addedById).toBe(actorId);
+    });
   });
 
   describe('findById', () => {

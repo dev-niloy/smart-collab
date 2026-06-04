@@ -26,11 +26,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  sessions          Session[]
-  activities        ActivityLog[]
-  projects          Project[]     @relation("ProjectCreatedBy")
-  tasksCreated      Task[]        @relation("TaskCreatedBy")
-  tasksAssigned     Task[]        @relation("TaskAssignedTo")
+  sessions                Session[]
+  activities              ActivityLog[]
+  projects                Project[]        @relation("ProjectCreatedBy")
+  tasksCreated            Task[]           @relation("TaskCreatedBy")
+  tasksAssigned           Task[]           @relation("TaskAssignedTo")
+  projectMemberships      ProjectMember[]  @relation("ProjectMemberUser")
+  projectMembershipsAdded ProjectMember[]  @relation("ProjectMemberAddedBy")
 
   @@index([role])
   @@map("users")
@@ -52,8 +54,9 @@ model Project {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  creator User   @relation("ProjectCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  creator User            @relation("ProjectCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
   tasks   Task[]
+  members ProjectMember[]
 
   @@index([status, createdAt])
   @@index([deadline])
@@ -95,6 +98,31 @@ model Task {
   @@index([assignedTo])
   @@index([dueDate])
   @@map("tasks")
+}
+
+enum ProjectRole {
+  pm
+  member
+
+  @@map("project_role")
+}
+
+model ProjectMember {
+  id          String      @id @default(uuid()) @db.Uuid
+  projectId   String      @db.Uuid
+  userId      String      @db.Uuid
+  role        ProjectRole @default(member)
+  addedAt     DateTime    @default(now())
+  addedById   String?     @db.Uuid
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation("ProjectMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy User?   @relation("ProjectMemberAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, userId], name: "project_members_project_user_unique")
+  @@index([userId])
+  @@index([projectId])
+  @@map("project_members")
 }
 
 model Session {

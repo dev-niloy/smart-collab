@@ -25,6 +25,15 @@ vi.mock('@/lib/projects', () => ({
   deleteProject: vi.fn(),
 }));
 
+const { membersSpy } = vi.hoisted(() => ({ membersSpy: vi.fn() }));
+vi.mock('@/lib/project-members', () => ({
+  listProjectMembers: () => membersSpy(),
+  listAssignableMembers: vi.fn(),
+  addProjectMember: vi.fn(),
+  updateProjectMemberRole: vi.fn(),
+  removeProjectMember: vi.fn(),
+}));
+
 import ProjectDetailPage from '../page';
 
 const setUser = (role: 'admin' | 'project_manager' | 'team_member') => {
@@ -75,6 +84,36 @@ describe('ProjectDetailPage', () => {
     const link = screen.getByRole('link', { name: /view tasks/i });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute('href', '/projects/p-1/tasks');
+  });
+
+  it('renders Members link (all authed) — E21', async () => {
+    setUser('team_member');
+    getSpy.mockResolvedValue(sampleProject);
+    membersSpy.mockResolvedValue([]);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Launch Site')).toBeInTheDocument());
+    const link = screen.getByRole('link', { name: /members/i });
+    expect(link).toHaveAttribute('href', '/projects/p-1/members');
+  });
+
+  it('Members button shows count when members are loaded — PM done-criterion #14', async () => {
+    setUser('admin');
+    getSpy.mockResolvedValue(sampleProject);
+    membersSpy.mockResolvedValue([
+      { id: 'm-1', userId: 'u-1', role: 'pm', addedAt: '', addedById: null,
+        user: { id: 'u-1', email: 'a@x.co', name: 'A', role: 'project_manager' },
+        workload: { todo: 0, in_progress: 0, completed: 0, due_soon: 0 }, projectId: 'p-1' },
+      { id: 'm-2', userId: 'u-2', role: 'member', addedAt: '', addedById: null,
+        user: { id: 'u-2', email: 'b@x.co', name: 'B', role: 'team_member' },
+        workload: { todo: 0, in_progress: 0, completed: 0, due_soon: 0 }, projectId: 'p-1' },
+      { id: 'm-3', userId: 'u-3', role: 'member', addedAt: '', addedById: null,
+        user: { id: 'u-3', email: 'c@x.co', name: 'C', role: 'team_member' },
+        workload: { todo: 0, in_progress: 0, completed: 0, due_soon: 0 }, projectId: 'p-1' },
+    ]);
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: /members \(3\)/i })).toBeInTheDocument(),
+    );
   });
 
   it('admin: shows Edit + Delete buttons', async () => {

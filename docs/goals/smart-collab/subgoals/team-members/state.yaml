@@ -1,0 +1,118 @@
+feature: team-members
+created: 2026-06-04
+updated: 2026-06-04
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 3 # Superpowers — all 22 tasks complete; ready for Phase 4 Ralph
+
+tasks:
+  - id: t1
+    desc: "ProjectMember model + ProjectRole enum + relations + indexes"
+    files: [backend/prisma/schema.prisma, backend/prisma/migrations/20260604051802_add_project_member/]
+    status: done
+    receipt: "ProjectMember model + ProjectRole enum added. 3 FKs (project Cascade, user Cascade, addedBy SetNull). Unique(projectId,userId) + 2 indexes. User+Project back-relations. Migration 20260604051802_add_project_member applied to docker postgres (rogue tasks-index rename stripped from generated SQL). prisma smoke 5/5. Backend full 220/220."
+  - id: t2
+    desc: "migration add_project_member + backfill creators as pm"
+    files: [backend/prisma/migrations/20260604052411_backfill_project_member_pm/, backend/src/app/modules/projectMember/__tests__/projectMember.backfill.test.ts]
+    status: done
+    receipt: "Separate backfill migration 20260604052411_backfill_project_member_pm w/ idempotent INSERT...SELECT...WHERE NOT EXISTS. 2 verification tests pass: (a) inserts pm row matching createdBy, (b) idempotent re-run produces no duplicates. Backend 222/222."
+  - id: t3
+    desc: "prisma smoke + backfill verification test"
+    files: [backend/src/app/modules/projectMember/__tests__/projectMember.backfill.test.ts]
+    status: done
+    receipt: "Merged into t2 commit — backfill migration + idempotency verification are a single GREEN cycle. Slice retained in plan for traceability."
+  - id: t4
+    desc: "projectMember.constant.ts"
+    files: [backend/src/app/modules/projectMember/projectMember.constant.ts]
+    status: done
+  - id: t5
+    desc: "projectMember.validation.ts + zod unit tests"
+    files: [backend/src/app/modules/projectMember/]
+    status: done
+  - id: t6
+    desc: "service core: add, isMember, getProjectRole, listAssignable"
+    files: [backend/src/app/modules/projectMember/]
+    status: done
+  - id: t7
+    desc: "service: listMembers w/ workload aggregation + updateRole"
+    files: [backend/src/app/modules/projectMember/]
+    status: done
+  - id: t8
+    desc: "service: removeMember tx w/ auto-unassign + last-pm guard"
+    files: [backend/src/app/modules/projectMember/]
+    status: done
+  - id: t9
+    desc: "requireProjectRole middleware w/ admin bypass"
+    files: [backend/src/app/middleware/]
+    status: done
+  - id: t10
+    desc: "controller + routes mounted + 8 happy-path tests"
+    files: [backend/src/app/modules/projectMember/, backend/src/app/modules/project/project.routes.ts]
+    status: done
+  - id: t11
+    desc: "integration negatives (10 cases)"
+    files: [backend/src/app/modules/projectMember/__tests__/]
+    status: done
+  - id: t12
+    desc: "project.service.create — auto-insert creator as pm in same tx"
+    files: [backend/src/app/modules/project/project.service.ts]
+    status: done
+  - id: t13
+    desc: "task.service — ASSIGNEE_NOT_PROJECT_MEMBER guard (admin bypass)"
+    files: [backend/src/app/modules/task/]
+    status: done
+  - id: t14
+    desc: "frontend lib: schemas + api client (12 tests)"
+    files: [frontend/src/lib/schemas/project-member.ts, frontend/src/lib/project-members.ts]
+    status: done
+  - id: t15
+    desc: "lib/project-member-format helpers"
+    files: [frontend/src/lib/project-member-format.ts]
+    status: done
+  - id: t16
+    desc: "hooks/useProjectMembers + mutations (9 tests)"
+    files: [frontend/src/hooks/useProjectMembers.ts]
+    status: done
+  - id: t17
+    desc: "/projects/[id]/members page + MemberCard + RBAC"
+    files: ["frontend/src/app/projects/[id]/members/page.tsx", frontend/src/components/members/]
+    status: done
+  - id: t18
+    desc: "AddMemberForm component + wired"
+    files: [frontend/src/components/members/AddMemberForm.tsx]
+    status: done
+  - id: t19
+    desc: "RemoveMemberButton + RoleSelect wired to PATCH/DELETE"
+    files: [frontend/src/components/members/]
+    status: done
+  - id: t20
+    desc: "refactor task assignee picker -> useAssignableMembers (3 spots) + AssigneeSelect"
+    files: ["frontend/src/app/projects/[id]/tasks/", frontend/src/components/]
+    status: done
+  - id: t21
+    desc: "project detail Members link + count"
+    files: ["frontend/src/app/projects/[id]/page.tsx"]
+    status: done
+  - id: t22
+    desc: "coverage check + README updates — subgoal complete"
+    files: [README.md]
+    status: done
+
+blockers: []
+
+next_task: null # all 22 tasks done; awaiting Phase 4 Ralph
+
+phase_completion:
+  gstack: true # locked 2026-06-04 by user (4 clarifications answered)
+  gsd: true # locked 2026-06-04 — plan sliced into 22 tasks across 6 phases
+  superpowers: true # all 22 tasks done 2026-06-04; backend 286/286 jest, frontend 197/197 vitest
+  ralph_wiggum: true # 2 iters; 7 persona commits across Dev/Designer/QA/PM/BA/Architect; backend 287/287, frontend 198/198
+
+baseline:
+  backend_tests: 219 # jest, all passing 2026-06-04 11:06
+  frontend_tests: 143 # vitest, all passing 2026-06-04 11:06
+  branched_off: develop@d29f04d # PR #11 merge tip

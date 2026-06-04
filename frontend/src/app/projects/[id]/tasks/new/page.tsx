@@ -36,7 +36,7 @@ import {
 } from '@/lib/schemas/task';
 import { STATUS_LABEL, PRIORITY_LABEL } from '@/lib/task-format';
 import { useCreateTask } from '@/hooks/useTasks';
-import { useUsers } from '@/hooks/useUsers';
+import { useAssignableMembers } from '@/hooks/useProjectMembers';
 import { ApiError } from '@/lib/api';
 
 const formSchema = z.object({
@@ -55,7 +55,7 @@ export default function NewTaskPage() {
   const routeParams = useParams<{ id: string }>();
   const projectId = routeParams?.id ?? '';
   const createMutation = useCreateTask();
-  const usersQuery = useUsers();
+  const assigneeQuery = useAssignableMembers(projectId);
   const [submitting, setSubmitting] = useState(false);
 
   const {
@@ -190,7 +190,7 @@ export default function NewTaskPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
-                      {(usersQuery.data ?? []).map((u) => (
+                      {(assigneeQuery.data ?? []).map((u) => (
                         <SelectItem key={u.id} value={u.id}>
                           {u.name} ({u.email})
                         </SelectItem>

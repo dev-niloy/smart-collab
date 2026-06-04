@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useProject } from '@/hooks/useProjects';
+import { useProjectMembers } from '@/hooks/useProjectMembers';
 import { useRole } from '@/hooks/useUser';
 import { DeleteProjectButton } from '@/components/projects/delete-project-button';
 import { STATUS_LABEL, STATUS_VARIANT, fmtDate, fmtDateTime } from '@/lib/project-format';
@@ -23,6 +24,8 @@ export default function ProjectDetailPage() {
   const { role } = useRole();
   const canMutate = role === 'admin' || role === 'project_manager';
   const { data: project, isLoading, isError, refetch } = useProject(id);
+  const { data: members } = useProjectMembers(id);
+  const memberCount = members?.length;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -91,9 +94,14 @@ export default function ProjectDetailPage() {
                 </div>
               </dl>
 
-              <div className="pt-2">
+              <div className="flex flex-wrap gap-2 pt-2">
                 <Link href={`/projects/${project.id}/tasks`}>
                   <Button variant="secondary">View tasks →</Button>
+                </Link>
+                <Link href={`/projects/${project.id}/members`}>
+                  <Button variant="secondary">
+                    Members{typeof memberCount === 'number' ? ` (${memberCount})` : ''} →
+                  </Button>
                 </Link>
               </div>
 

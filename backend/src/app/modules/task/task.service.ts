@@ -1,10 +1,11 @@
-import type { Task, TaskStatus, TaskPriority, Prisma } from '@prisma/client';
+import { Role, type Task, type TaskStatus, type TaskPriority, type Prisma } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
 import {
   PAST_DEADLINE_MESSAGE,
   DUPLICATE_TASK_TITLE_MESSAGE,
   REASSIGN_COMPLETED_MESSAGE,
+  ASSIGNEE_NOT_PROJECT_MEMBER_MESSAGE,
   DEFAULT_LIMIT,
   DEFAULT_PAGE,
   UNASSIGNED,
@@ -38,6 +39,28 @@ export type TaskWithRelations = Task & {
   assignee: { id: string; email: string; name: string; role: string } | null;
 };
 
+const ensureAssigneeIsProjectMember = async (
+  projectId: string,
+  assignedTo: string | null | undefined,
+) => {
+  if (!assignedTo) return; // null/undefined always allowed (unassigned)
+  const candidate = await prisma.user.findUnique({
+    where: { id: assignedTo },
+    select: { role: true },
+  });
+  if (!candidate) {
+    throw ApiError.unprocessable(ASSIGNEE_NOT_PROJECT_MEMBER_MESSAGE, 'ASSIGNEE_NOT_PROJECT_MEMBER');
+  }
+  if (candidate.role === Role.admin) return; // system admin bypass — enum-safe vs string drift
+  const member = await prisma.projectMember.findFirst({
+    where: { projectId, userId: assignedTo },
+    select: { id: true },
+  });
+  if (!member) {
+    throw ApiError.unprocessable(ASSIGNEE_NOT_PROJECT_MEMBER_MESSAGE, 'ASSIGNEE_NOT_PROJECT_MEMBER');
+  }
+};
+
 const ensureProjectExists = async (projectId: string) => {
   const p = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true } });
   if (!p) throw ApiError.notFound('Project not found', 'PROJECT_NOT_FOUND');
@@ -61,6 +84,7 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
   ensureFutureDeadline(input.dueDate);
   await ensureProjectExists(input.projectId);
   await ensureTitleUnique(input.projectId, input.title);
+  await ensureAssigneeIsProjectMember(input.projectId, input.assignedTo ?? null);
   try {
     return await prisma.task.create({
       data: {
@@ -108,6 +132,7 @@ const update = async (id: string, input: UpdateTaskInput): Promise<TaskWithRelat
     if (finalStatus === 'completed') {
       throw ApiError.unprocessable(REASSIGN_COMPLETED_MESSAGE, 'REASSIGN_COMPLETED');
     }
+    await ensureAssigneeIsProjectMember(current.projectId, input.assignedTo);
   }
 
   try {

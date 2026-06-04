@@ -26,3 +26,4 @@ export const UNASSIGNED = 'unassigned' as const;
 export const PAST_DEADLINE_MESSAGE = 'Please select a valid deadline.';
 export const DUPLICATE_TASK_TITLE_MESSAGE = 'Task title already exists in this project.';
 export const REASSIGN_COMPLETED_MESSAGE = 'Cannot reassign a completed task.';
+export const ASSIGNEE_NOT_PROJECT_MEMBER_MESSAGE = 'Assignee must be a member of this project.';

@@ -114,7 +114,18 @@ Tracking the assessment scope. Each section ships as its own subgoal (`docs/goal
 ### Users — `/api/v1/users`
 | Method | Path | Auth | Description                                                                              |
 |--------|------|------|------------------------------------------------------------------------------------------|
-| GET    | `/`  | ✓    | List users (minimal shape: `id`, `email`, `name`, `role`) — powers task assignee picker  |
+| GET    | `/`  | ✓    | List users (minimal shape: `id`, `email`, `name`, `role`) — used by admin tooling        |
+
+### Project members — `/api/v1/projects/:id/members`
+| Method | Path                | Roles                                  | Description                                                                                            |
+|--------|---------------------|----------------------------------------|--------------------------------------------------------------------------------------------------------|
+| GET    | `/`                 | system admin OR project pm/member      | List members with workload counts `{todo, in_progress, completed, due_soon}` per user                  |
+| GET    | `/assignable`       | system admin OR project pm/member      | Members + system admins for task assignee picker (id, email, name, role, projectRole)                  |
+| POST   | `/`                 | system admin OR project pm             | Add member by email + role (`pm`/`member`). 404 USER_NOT_FOUND if email unknown; 422 ALREADY_MEMBER on dup |
+| PATCH  | `/:memberId`        | system admin OR project pm             | Update role only                                                                                       |
+| DELETE | `/:memberId`        | system admin OR project pm             | Remove member. Auto-unassigns tasks in same tx. 422 CANNOT_REMOVE_LAST_PM when removing lone pm w/ tasks |
+
+Project creator is auto-inserted as `pm` member at project create time. Task assignees must be members of the project (system admins bypass). `GET /api/v1/users` is retained for admin tooling but is no longer consumed by task forms.
 
 ### Frontend pages
 - `/login`, `/signup` — auth
@@ -127,6 +138,7 @@ Tracking the assessment scope. Each section ships as its own subgoal (`docs/goal
 - `/projects/[id]/tasks/new` — create task form (all authed)
 - `/projects/[id]/tasks/[taskId]` — task detail (RBAC Edit: admin/PM/owner; Delete: admin/PM)
 - `/projects/[id]/tasks/[taskId]/edit` — update task form
+- `/projects/[id]/members` — team list with workload counts; add/remove/role-change (admin or project pm)
 - `/forbidden` — 403 fallback
 
 ---

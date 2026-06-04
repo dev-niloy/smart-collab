@@ -88,6 +88,20 @@ maybe('project routes /api/v1/projects', () => {
     expect(res.status).toBe(201);
   });
 
+  it('create → auto-pm member visible via GET /:id/members (e2e auto-PM verification)', async () => {
+    const agent = await loginAs('project_manager');
+    const create = await agent
+      .post('/api/v1/projects')
+      .send({ name: 'Auto-PM E2E', deadline: future() });
+    expect(create.status).toBe(201);
+    const projectId = create.body.project.id;
+    const members = await agent.get(`/api/v1/projects/${projectId}/members`);
+    expect(members.status).toBe(200);
+    expect(members.body.data.length).toBe(1);
+    expect(members.body.data[0].role).toBe('pm');
+    expect(members.body.data[0].user.email).toBe('pm@demo.local');
+  });
+
   it('member create → 403 FORBIDDEN_ROLE', async () => {
     const agent = await loginAs('team_member');
     const res = await agent
