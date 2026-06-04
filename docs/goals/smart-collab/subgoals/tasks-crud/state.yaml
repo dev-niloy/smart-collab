@@ -101,8 +101,8 @@ tasks:
   - id: t15
     desc: "/projects/[id]/tasks/page.tsx: list with cards/rows (title, status badge, priority badge, assignee chip, due date), inline status Select that fires PATCH, toolbar (search, status filter, priority filter, assignee filter, sort), pagination prev/next, 'New Task' button for all authed (members can create), loading/empty/error states. Page interaction tests"
     files: [frontend/src/app/projects/[id]/tasks/page.tsx, frontend/src/app/projects/[id]/tasks/__tests__/page.test.tsx]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "URL-state source-of-truth for q/status/priority/assignedTo/sort/page; router.replace on changes resets page. Debounced search (300ms) via render-time setState sync (no effect setState). useProjectTasks hits nested route. useUsers loads assignee dropdown options (Any + Unassigned + named users). Inline status Select per card uses useUpdateTask(task.id) -> PATCH; toast.error on ApiError. Card layout: title link + priority Badge top right, status Badge + inline Select, due date + assignee chip (name or 'Unassigned' italics). Skeleton loading, two empty states (no tasks vs no matches w/ clear-filters), error -> Retry. Pagination prev/next w/ disabled boundaries. Tests 8/8: cards render, member sees New Task btn, debounced search pushes q=, two empty states (clear -> bare /projects/p-1/tasks), error retry, pagination Next advances page=2 / Prev disabled, inline status Select fires updateTask(id, {status}). FRONTEND TOTAL 123/123 (+8)."
 
   - id: t16
     desc: "/projects/[id]/tasks/new/page.tsx: create form (title, description, priority Select, status Select default Todo, assignedTo Select loaded from useUsers, dueDate). RHF+Zod. All authed can create. Success -> push to task detail. Test happy + validation"
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t15
+next_task: t16
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user

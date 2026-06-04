@@ -3,6 +3,7 @@
 Thin log. Board (`state.yaml`) holds task status + receipts.
 
 ## Session log
+- 2026-06-04: Phase 3 — t15 done (Phase D start). /projects/[id]/tasks list page: URL-state filters (q + status + priority + assignee + sort), debounced search, inline status Select per card (PATCH via useUpdateTask), assignee filter populated from useUsers, RBAC-open New Task button. 8 page tests; frontend 123/123. PR #9 (Phases A-C) merged to develop. Next: t16 /projects/[id]/tasks/new create form.
 - 2026-06-04: Phase 3 — t14 done. Phase C complete. hooks/useTasks (+ useProjectTasks nested), hooks/useUsers; cache invalidation on parent ['tasks'] key invalidates all derived lists. 11 hook tests; frontend 115/115. Next: Phase D — t15 /projects/[id]/tasks list page.
 - 2026-06-04: Phase 3 — t13 done. lib/task-format.ts (status + priority label/variant maps, fmtDate + fmtDateTime). 8 tests. Extracted from start (Ralph lesson). Next: t14 TanStack hooks useTasks + useUsers.
 - 2026-06-04: Phase 3 — t12 done. Frontend lib: schemas/task.ts (Zod v4 mirror), tasks.ts (CRUD + nested listTasksForProject, URLSearchParams query, Date->ISO), users.ts (listUsers minimal). 22 tests added; frontend 96/96 vitest. Zod v4 UUID strict — test fixtures use real v4 uuid. Next: t13 lib/task-format.ts (status + priority label/variant maps + tests).
