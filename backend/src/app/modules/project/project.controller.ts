@@ -20,7 +20,7 @@ export const projectController = {
   list: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const query = req.query as unknown as ListProjectsQuery;
-      const result = await projectService.list(query);
+      const result = await projectService.list({ ...query, actorId: req.user?.id });
       res.status(200).json(result);
     } catch (err) {
       next(err);

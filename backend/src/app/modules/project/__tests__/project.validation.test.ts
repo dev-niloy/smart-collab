@@ -105,10 +105,61 @@ describe('listProjectsQuerySchema', () => {
     if (r.success) expect(r.data.status).toBeUndefined();
   });
 
-  it('keeps known status', () => {
+  it('keeps known status (single value as 1-element array)', () => {
     const r = listProjectsQuerySchema.safeParse({ status: 'completed' });
     expect(r.success).toBe(true);
-    if (r.success) expect(r.data.status).toBe('completed');
+    if (r.success) expect(r.data.status).toEqual(['completed']);
+  });
+
+  it('accepts status csv → array', () => {
+    const r = listProjectsQuerySchema.safeParse({ status: 'active,on_hold' });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.status).toEqual(['active', 'on_hold']);
+  });
+
+  it('drops unknown tokens inside csv silently', () => {
+    const r = listProjectsQuerySchema.safeParse({ status: 'active,bogus,completed' });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.status).toEqual(['active', 'completed']);
+  });
+
+  it('parses deadlineFrom + deadlineTo ISO dates', () => {
+    const r = listProjectsQuerySchema.safeParse({
+      deadlineFrom: '2026-06-04',
+      deadlineTo: '2026-12-31',
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.deadlineFrom).toBeInstanceOf(Date);
+      expect(r.data.deadlineTo).toBeInstanceOf(Date);
+    }
+  });
+
+  it('rejects bad deadlineFrom date', () => {
+    const r = listProjectsQuerySchema.safeParse({ deadlineFrom: 'not-a-date' });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects deadlineFrom > deadlineTo', () => {
+    const r = listProjectsQuerySchema.safeParse({
+      deadlineFrom: '2026-12-01',
+      deadlineTo: '2026-06-01',
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('accepts createdBy=me literal', () => {
+    const r = listProjectsQuerySchema.safeParse({ createdBy: 'me' });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.createdBy).toBe('me');
+  });
+
+  it('accepts createdBy=uuid', () => {
+    const r = listProjectsQuerySchema.safeParse({
+      createdBy: '123e4567-e89b-12d3-a456-426614174000',
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.createdBy).toBe('123e4567-e89b-12d3-a456-426614174000');
   });
 });
 

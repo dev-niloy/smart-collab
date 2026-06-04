@@ -8,6 +8,7 @@ import {
   DEFAULT_PAGE,
   DEFAULT_SORT,
 } from './project.constant';
+import { csvOfEnum, isoDateField, meOrUuid } from '../../lib/queryFields';
 
 const nameField = z.string().trim().min(1, 'Name is required').max(200);
 const descriptionField = z.string().trim().max(5000).optional();
@@ -39,27 +40,28 @@ export const updateProjectSchema = z
     { message: 'At least one field must be provided' },
   );
 
-export const listProjectsQuerySchema = z.object({
-  q: z.string().trim().min(1).max(200).optional(),
-  status: z
-    .string()
-    .optional()
-    .transform((v) => (v && (STATUSES as string[]).includes(v) ? (v as ProjectStatus) : undefined)),
-  sort: z
-    .enum(SORT_KEYS)
-    .default(DEFAULT_SORT),
-  page: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(DEFAULT_PAGE),
-  limit: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(DEFAULT_LIMIT)
-    .transform((v) => Math.min(v, MAX_LIMIT)),
-});
+export const listProjectsQuerySchema = z
+  .object({
+    q: z.string().trim().min(1).max(200).optional(),
+    status: csvOfEnum(STATUSES),
+    createdBy: meOrUuid,
+    deadlineFrom: isoDateField,
+    deadlineTo: isoDateField,
+    sort: z.enum(SORT_KEYS).default(DEFAULT_SORT),
+    page: z.coerce.number().int().positive().default(DEFAULT_PAGE),
+    limit: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(DEFAULT_LIMIT)
+      .transform((v) => Math.min(v, MAX_LIMIT)),
+  })
+  .refine(
+    (v) =>
+      !(v.deadlineFrom && v.deadlineTo) ||
+      v.deadlineFrom.getTime() <= v.deadlineTo.getTime(),
+    { message: 'deadlineFrom must be on or before deadlineTo', path: ['deadlineFrom'] },
+  );
 
 export const projectIdParamSchema = z.object({
   id: z.string().uuid('Invalid project id'),
