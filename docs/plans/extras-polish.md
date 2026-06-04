@@ -147,7 +147,7 @@ Steps:
 - 2. GREEN: standard controller + auth + cursor codec
 - 3. REFACTOR: shared toDTO
 - 4. Commit `[D11] notification: list/read/count + controller + routes + 8/8`
-Status: [ ]
+Status: [x]
 
 ## Phase E — Frontend
 

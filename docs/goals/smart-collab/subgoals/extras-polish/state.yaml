@@ -53,7 +53,7 @@ tasks:
   - id: t11
     desc: "notification.controller + routes (list/read/count) + 8 tests"
     files: [backend/src/app/modules/notification/, backend/src/app/routes/index.ts]
-    status: pending
+    status: done
   - id: t12
     desc: "frontend: extras schemas + clients (comments + attachments + notifications) + 12 tests"
     files: [frontend/src/lib/]
@@ -89,7 +89,7 @@ tasks:
 
 blockers: []
 
-next_task: t11
+next_task: t12
 
 phase_completion:
   gstack: true
