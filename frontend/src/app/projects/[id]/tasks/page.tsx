@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useProjectTasks } from '@/hooks/useTasks';
-import { useUsers } from '@/hooks/useUsers';
+import { useAssignableMembers } from '@/hooks/useProjectMembers';
 import {
   STATUS_LABEL,
   STATUS_VARIANT,
@@ -116,7 +116,7 @@ export default function ProjectTasksPage() {
   );
 
   const { data, isLoading, isError, refetch } = useProjectTasks(projectId, queryParams);
-  const usersQuery = useUsers();
+  const usersQuery = useAssignableMembers(projectId);
 
   const total = data?.total ?? 0;
   const limit = data?.limit ?? TASK_DEFAULT_LIMIT;
