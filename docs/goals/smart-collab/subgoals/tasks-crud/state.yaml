@@ -63,8 +63,8 @@ tasks:
   - id: t9
     desc: "validation rules end-to-end: POST + PATCH past deadline -> 422 PAST_DEADLINE assessment-verbatim; POST duplicate title in same project -> 422 DUPLICATE_TASK_TITLE; PATCH assignedTo while status=completed -> 422 REASSIGN_COMPLETED. Same title in DIFFERENT project allowed"
     files: [backend/src/app/modules/task/__tests__/task.routes.test.ts]
-    status: todo
-    receipt: null
+    status: done
+    receipt: "+8 e2e validation tests (total 28/28 task.routes). POST past dueDate -> 422 PAST_DEADLINE 'Please select a valid deadline.'; PATCH past dueDate -> same. POST dup title same project (case-insensitive) -> 422 DUPLICATE_TASK_TITLE 'Task title already exists in this project.'; PATCH title to existing -> same. Same title in DIFFERENT project allowed (201). PATCH assignedTo while status=completed -> 422 REASSIGN_COMPLETED 'Cannot reassign a completed task.'; PATCH transitioning to completed + reassign in same call -> 422 same code. PATCH status -> completed (no reassign) allowed -> 200. All 3 assessment §4 verbatim messages verified end-to-end. BACKEND TOTAL 209/209 (+8)."
 
   - id: t10
     desc: "user.controller.ts list + user.routes.ts: GET /api/v1/users -> [{id,email,name,role}] all authed; mount under /api/v1/users; integration tests for shape + auth gate (401 unauth)"
@@ -143,7 +143,7 @@ tasks:
 
 blockers: []
 
-next_task: t9
+next_task: t10
 
 phase_completion:
   gstack: true            # locked 2026-06-03 by user
