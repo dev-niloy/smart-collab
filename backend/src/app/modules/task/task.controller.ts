@@ -45,7 +45,7 @@ export const taskController = {
   update: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const actorId = req.user?.id ?? null;
-      const task = await taskService.update(req.params.id, req.body, actorId);
+      const task = await taskService.update(req.params.id, req.body, actorId, getActor(req));
       res.status(200).json({ task });
     } catch (err) {
       next(err);

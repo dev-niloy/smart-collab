@@ -211,14 +211,40 @@ const update = async (
   id: string,
   input: UpdateTaskInput,
   actorId: string | null = null,
+  actor?: Actor,
 ): Promise<TaskWithRelations> => {
   if (input.dueDate) ensureFutureDeadline(input.dueDate);
 
   const current = await prisma.task.findUnique({
     where: { id },
-    select: { projectId: true, status: true, assignedTo: true, title: true, priority: true },
+    select: {
+      projectId: true,
+      status: true,
+      assignedTo: true,
+      createdBy: true,
+      title: true,
+      priority: true,
+    },
   });
   if (!current) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+
+  const projectRole = await getProjectRoleFor(actor, current.projectId);
+
+  if (!canWriteTask({ actor, task: current, projectRole })) {
+    throw ApiError.forbidden(
+      'You do not have permission to update this task.',
+      'TASK_WRITE_FORBIDDEN',
+    );
+  }
+
+  if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo) {
+    if (!canReassignTask({ actor, projectRole })) {
+      throw ApiError.forbidden(
+        'Only project managers can reassign tasks.',
+        'CANNOT_REASSIGN',
+      );
+    }
+  }
 
   if (input.title !== undefined && input.title.toLowerCase() !== current.title.toLowerCase()) {
     await ensureTitleUnique(current.projectId, input.title, id);

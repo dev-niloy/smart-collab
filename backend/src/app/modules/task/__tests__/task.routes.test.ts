@@ -132,17 +132,30 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     }
   });
 
-  it('member edits own task (createdBy=self) -> 200', async () => {
+  it('member edits own task when also self-assigned at create -> 200', async () => {
     const agent = await loginAs('team_member');
     const created = await agent
       .post('/api/v1/tasks')
-      .send({ projectId, title: 'Own Task', dueDate: future() });
+      .send({ projectId, title: 'Own Task', dueDate: future(), assignedTo: memberId });
     expect(created.status).toBe(201);
     const res = await agent
       .patch(`/api/v1/tasks/${created.body.task.id}`)
       .send({ status: 'in_progress' });
     expect(res.status).toBe(200);
     expect(res.body.task.status).toBe('in_progress');
+  });
+
+  it('member creates UNASSIGNED task → cannot edit status (PM/admin only on unassigned)', async () => {
+    const agent = await loginAs('team_member');
+    const created = await agent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'Unassigned Own Task', dueDate: future() });
+    expect(created.status).toBe(201);
+    const res = await agent
+      .patch(`/api/v1/tasks/${created.body.task.id}`)
+      .send({ status: 'in_progress' });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('TASK_WRITE_FORBIDDEN');
   });
 
   it('member edits task assigned to them (assignedTo=self) -> 200', async () => {
