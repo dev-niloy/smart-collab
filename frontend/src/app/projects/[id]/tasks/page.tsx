@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/header';
@@ -66,6 +66,14 @@ const parsePage = (v: string | null): number => {
 };
 
 export default function ProjectTasksPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProjectTasksPageInner />
+    </Suspense>
+  );
+}
+
+function ProjectTasksPageInner() {
   const router = useRouter();
   const routeParams = useParams<{ id: string }>();
   const projectId = routeParams?.id ?? '';
