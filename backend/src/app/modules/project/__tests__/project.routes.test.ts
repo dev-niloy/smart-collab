@@ -128,21 +128,39 @@ maybe('project routes /api/v1/projects', () => {
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
   });
 
-  it('all roles can list', async () => {
+  it('admin sees all projects; non-member pm/member see filtered list (RBAC)', async () => {
     const adminAgent = await loginAs('admin');
     await adminAgent
       .post('/api/v1/projects')
       .send({ name: 'Shared', deadline: future() })
       .expect(201);
 
-    for (const role of ['admin', 'project_manager', 'team_member'] as const) {
+    const adminRes = await adminAgent.get('/api/v1/projects');
+    expect(adminRes.status).toBe(200);
+    expect(adminRes.body.data.length).toBe(1);
+    expect(adminRes.body.data[0].creator).toMatchObject({ email: 'admin@demo.local' });
+
+    for (const role of ['project_manager', 'team_member'] as const) {
       const agent = await loginAs(role);
       const res = await agent.get('/api/v1/projects');
       expect(res.status).toBe(200);
-      expect(res.body.data.length).toBe(1);
-      expect(res.body.total).toBe(1);
-      expect(res.body.data[0].creator).toMatchObject({ email: 'admin@demo.local' });
+      expect(res.body.data.length).toBe(0);
+      expect(res.body.total).toBe(0);
     }
+  });
+
+  it('pm can list their own freshly-created project (creator-auto-pm invariant)', async () => {
+    const agent = await loginAs('project_manager');
+    const created = await agent
+      .post('/api/v1/projects')
+      .send({ name: 'PM-Created', deadline: future() })
+      .expect(201);
+    expect(created.body.project.id).toBeDefined();
+
+    const res = await agent.get('/api/v1/projects');
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBe(1);
+    expect(res.body.data[0].name).toBe('PM-Created');
   });
 
   it('admin updates → 200', async () => {
