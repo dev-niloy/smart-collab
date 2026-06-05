@@ -1,6 +1,7 @@
 import { Role, type Task, type TaskStatus, type TaskPriority, type Prisma } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
+import { type Actor, isAdmin, assertProjectAccess } from '../project/project.service';
 import {
   PAST_DEADLINE_MESSAGE,
   DUPLICATE_TASK_TITLE_MESSAGE,
@@ -133,9 +134,10 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
   }
 };
 
-const findById = async (id: string): Promise<TaskWithRelations> => {
+const findById = async (id: string, actor?: Actor): Promise<TaskWithRelations> => {
   const t = await prisma.task.findUnique({ where: { id }, include: taskInclude });
   if (!t) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  await assertProjectAccess(actor, t.projectId);
   return t;
 };
 
@@ -286,6 +288,7 @@ type ListArgs = {
   dueFrom?: Date;
   dueTo?: Date;
   actorId?: string; // used to resolve 'me' shorthands
+  actor?: Actor;
   sort: SortKey;
   page: number;
   limit: number;
@@ -344,6 +347,11 @@ const list = async (args: ListArgs): Promise<ListResult> => {
           ...(args.dueTo ? { lte: args.dueTo } : {}),
         }
       : undefined;
+  if (args.projectId) await assertProjectAccess(args.actor, args.projectId);
+  const rbacFilter: Prisma.TaskWhereInput | undefined =
+    args.projectId || isAdmin(args.actor)
+      ? undefined
+      : { project: { members: { some: { userId: args.actor!.id } } } };
   const where: Prisma.TaskWhereInput = {
     ...(args.projectId ? { projectId: args.projectId } : {}),
     ...(args.q ? { title: { contains: args.q, mode: 'insensitive' } } : {}),
@@ -352,6 +360,7 @@ const list = async (args: ListArgs): Promise<ListResult> => {
     ...(dueDate ? { dueDate } : {}),
     ...buildAssignedToWhere(args.assignedTo, args.actorId),
     ...buildCreatedByWhere(args.createdBy, args.actorId),
+    ...(rbacFilter ?? {}),
   };
   const [data, total] = await prisma.$transaction([
     prisma.task.findMany({
