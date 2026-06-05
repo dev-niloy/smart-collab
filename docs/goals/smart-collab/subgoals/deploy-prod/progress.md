@@ -57,10 +57,10 @@ Phase 3 Superpowers in progress — t1 done, next t2
 - CORS allowlist: single Vercel origin, no wildcards
 
 ## Last Completed Task
-t8 — CORS wired. Vercel origin allowed, others denied. Backend + frontend talking.
+t9–t12 — incognito smoke passed across 3 demo roles on https://smart-collab-liard.vercel.app. README + parent log updated. Subgoal Phase 3 complete.
 
 ## Next Task
-t9 — MANUAL: incognito smoke flow across 3 demo roles on live URLs.
+t13 — USER PERMISSION: open PR develop → main (or merge develop into main directly per ship preference).
 
 ## Session Log
 - 2026-06-04: docs/plans/deploy-prod.md written — 13 tasks across A code prep / B provision / C wire+smoke / D docs+close. Discovery: backend cookies already flip samesite=none+secure when NODE_ENV=production (no fix needed), CORS already env-driven. Seed already idempotent via upsert. Smallest possible diff for actual deploy.
@@ -73,6 +73,10 @@ t9 — MANUAL: incognito smoke flow across 3 demo roles on live URLs.
 - 2026-06-05: t6 — Render service `smart-collab-api` (srv-d8h3jat8nd3s73bpuv30) provisioned via blueprint. Three deploys: 4b5173d update_failed (MODULE_NOT_FOUND on dist/server.js), e7accc2 update_failed (CORS_ORIGINS Required), 0b15ac9 LIVE. URL https://smart-collab-api.onrender.com; /healthz returns 200. Two follow-up PRs landed (#18 path fix, #19 CORS default).
 - 2026-06-05: t7 — Vercel project `smart-collab` (prj_AjqpWRhOG0M5HYITk7v8lbuGLVMj) linked + deployed via CLI. First prod deploy failed: useSearchParams pages need Suspense (commit 04439ed). Also dropped redundant frontend/vercel.json (vercel.ts owns config; commit 9a96081). Deployment Protection toggled OFF by user. Stable prod URL https://smart-collab-niloy-roys-projects-2defd7be.vercel.app.
 - 2026-06-05: t8 — `CORS_ORIGINS` set in Render via MCP to Vercel URL. Auto-redeploy `dep-d8h4inb7uimc73ci0hd0` live in 58s. Origin echo verified positive (Vercel) and negative (evil.test).
+- 2026-06-05: post-t8 follow-ups: (a) CORS_ORIGINS expanded to include `smart-collab-liard.vercel.app` (public alias) alongside team-scoped alias. (b) PR #21 trim COOKIE_DOMAIN whitespace + relax schema default — fix "option domain is invalid" cookie crash. (c) PR #22 Next.js rewrite `/api/:path*` → backend, frontend api base relative — makes auth cookies first-party so modern browsers stop dropping them. (d) Vercel project Production Branch flipped to `develop`; auto-promote now works.
+- 2026-06-05: t9 — incognito smoke PASS across 3 demo roles on https://smart-collab-liard.vercel.app. Cookies first-party w/ Secure+HttpOnly+SameSite=None. No CORS blocks. Same-origin /api/* proxy via Next rewrite confirmed working.
+- 2026-06-05: t10 — README expanded w/ live URLs, demo table, deployment table (Vercel/Render/Neon), required env var tables.
+- 2026-06-05: t11–t12 — Phase 3 marked complete in state.yaml; subgoal ready for t13 (main promotion gate).
 
 ## Blockers
 none

@@ -112,7 +112,7 @@ Steps:
 - 6. Open Network tab: confirm cookies set w/ `samesite=none; secure; httponly`; confirm `Access-Control-Allow-Origin` matches Vercel URL exactly
 - 7. Record smoke results in progress.md w/ pass/fail per check
 - 8. Commit `[C9] smoke: incognito flow verified across 3 roles`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ## Phase D — Documentation + close
 
@@ -123,7 +123,7 @@ Steps:
 - 1. Add §Deployment section: live URLs (frontend + backend), demo creds (admin/pm/member emails + note "password environment-injected, see hosted dashboards"), backend deploy steps (Render config), frontend deploy steps (Vercel config), DB (Neon), env-var table
 - 2. Add §Demo section near top w/ live URL + click-this-to-try copy
 - 3. Commit `[D10] readme: append deployment + demo sections`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 11: parent goal.md — flip "Live URL" criterion to met
 Files:
@@ -133,7 +133,7 @@ Steps:
 - 1. Append session log line to parent progress.md w/ live URLs + completion date
 - 2. No edit to parent goal.md done-criteria list itself (still describes target); mark in parent progress.md
 - 3. Commit `[D11] parent: log smart-collab assessment complete via deploy-prod`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 12: final CI green + state.yaml + progress.md close
 Files:
@@ -144,7 +144,7 @@ Steps:
 - 2. Flip state.yaml `phase: 3`, `superpowers: true`
 - 3. Update progress.md Last Completed Task + Next Task (Phase 4 Ralph)
 - 4. Commit `[D12] deploy-prod: phase 3 superpowers complete`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 13: open PR feature/deploy-prod → develop
 Files: none (PR description in GitHub)
@@ -153,7 +153,7 @@ Steps:
 - 2. (USER PERMISSION) open PR via gh w/ template body
 - 3. CI must pass
 - 4. Decide: merge to develop only? Or develop → main next?
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 

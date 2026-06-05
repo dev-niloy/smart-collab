@@ -3,7 +3,63 @@
 Full-stack team collaboration app for projects, tasks, members, and progress tracking.
 Built for the EAP 4.0 Assessment.
 
-> Status: foundation in progress. Public live URLs land in a later subgoal.
+> Status: live.
+>
+> **Live demo:** https://smart-collab-liard.vercel.app
+> **API:** https://smart-collab-api.onrender.com (healthz at `/healthz`)
+>
+> Click any of the three Demo buttons on the login page — no signup needed.
+
+---
+
+## Demo
+
+| Role | Login button | What you can do |
+|---|---|---|
+| Admin | Demo Admin | full read/write across all projects, members, tasks |
+| Project Manager | Demo Project Manager | create projects, manage members, assign tasks |
+| Team Member | Demo Team Member | view + comment + complete own tasks |
+
+Demo passwords live in Render env (`DEMO_ADMIN_PW`, `DEMO_PM_PW`, `DEMO_MEMBER_PW`) and are not exposed in source.
+
+---
+
+## Deployment
+
+| Layer | Host | URL | Auto-deploy from |
+|---|---|---|---|
+| Frontend | Vercel | https://smart-collab-liard.vercel.app | `develop` (auto-promoted) |
+| Backend | Render | https://smart-collab-api.onrender.com | `develop` |
+| Postgres | Neon | (us-east-1, pooled) | n/a |
+
+**Backend (Render):** see [`backend/docs/deploy-render.md`](backend/docs/deploy-render.md). One-click via `render.yaml` blueprint; paste `DATABASE_URL` from Neon + `CORS_ORIGINS` in dashboard.
+
+**Frontend (Vercel):** see [`frontend/docs/deploy-vercel.md`](frontend/docs/deploy-vercel.md). Root dir = `frontend/`, single env var `NEXT_PUBLIC_API_URL` pointing at Render.
+
+**Database (Neon):** create project `smart-collab-prod`, copy pooled connection string into Render env. Schema applied via `prisma migrate deploy` on every Render boot; demo users idempotently seeded.
+
+### Required Render env vars
+
+| Key | Notes |
+|---|---|
+| `NODE_ENV` | `production` — flips cookie samesite + CORS hardening |
+| `DATABASE_URL` | Neon pooled connection string |
+| `JWT_ACCESS_SECRET` | 40+ random chars (Render `generateValue: true`) |
+| `JWT_REFRESH_SECRET` | 40+ random, different from access |
+| `ACCESS_TOKEN_TTL` | `15m` |
+| `REFRESH_TOKEN_TTL` | `7d` |
+| `CORS_ORIGINS` | exact Vercel origin(s), comma-separated; wildcard stripped in prod |
+| `DEMO_ADMIN_PW` / `DEMO_PM_PW` / `DEMO_MEMBER_PW` | seeded demo credentials |
+| `ENABLE_DEMO_LOGIN` | `true` for the Demo Login buttons to work |
+| `UPLOAD_DIR` | `/tmp/uploads` (Render free disk is ephemeral) |
+
+### Required Vercel env var
+
+| Key | Value |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | `https://smart-collab-api.onrender.com` |
+
+Browser calls go through a Next.js rewrite (`/api/:path*` → backend) so cookies stay first-party.
 
 ---
 
