@@ -24,6 +24,22 @@ Phase 3 Superpowers in progress — t1 done, next t2
 - Connection string: stored OUT-OF-REPO. Goes into Render env `DATABASE_URL` only.
 - SECURITY NOTE: initial password was pasted in chat on 2026-06-05 — MUST rotate via Neon → Roles before public traffic. Update Render env after rotation.
 
+## Vercel project (t7 — provisioned 2026-06-05)
+- Project id: `prj_AjqpWRhOG0M5HYITk7v8lbuGLVMj`
+- Name: `smart-collab`
+- Team: `niloy-roys-projects-2defd7be`
+- Root dir: `frontend`
+- Production URL (stable): https://smart-collab-niloy-roys-projects-2defd7be.vercel.app
+- Env: `NEXT_PUBLIC_API_URL=https://smart-collab-api.onrender.com` (production + preview)
+- Build fix landed: Suspense wrap on `useSearchParams` pages (commit 04439ed) + drop redundant vercel.json (9a96081)
+- Deployment Protection: disabled by user after first prod deploy
+- Deployed via Vercel CLI (`vercel deploy --prod`) from local; project linked to GitHub for future auto-deploys from develop
+
+## CORS wiring (t8 — 2026-06-05)
+- `CORS_ORIGINS` set in Render via MCP `update_environment_variables` to Vercel stable URL
+- Auto-redeploy `dep-d8h4inb7uimc73ci0hd0` (live in 58s)
+- Verified: `curl -H "Origin: <vercel>" /healthz` echoes ACAO; `curl -H "Origin: https://evil.test"` omits ACAO
+
 ## Render service (t6 — provisioned 2026-06-05)
 - Service id: `srv-d8h3jat8nd3s73bpuv30`
 - Name: `smart-collab-api`
@@ -41,10 +57,10 @@ Phase 3 Superpowers in progress — t1 done, next t2
 - CORS allowlist: single Vercel origin, no wildcards
 
 ## Last Completed Task
-t6 — Render web service `smart-collab-api` LIVE at https://smart-collab-api.onrender.com (commit 0b15ac9). Two fix loops in flight: 14b6f36 (dist path) + 17857a3 (CORS_ORIGINS default). `/healthz` returns 200.
+t8 — CORS wired. Vercel origin allowed, others denied. Backend + frontend talking.
 
 ## Next Task
-t7 — MANUAL: Vercel provision project + env var + first deploy.
+t9 — MANUAL: incognito smoke flow across 3 demo roles on live URLs.
 
 ## Session Log
 - 2026-06-04: docs/plans/deploy-prod.md written — 13 tasks across A code prep / B provision / C wire+smoke / D docs+close. Discovery: backend cookies already flip samesite=none+secure when NODE_ENV=production (no fix needed), CORS already env-driven. Seed already idempotent via upsert. Smallest possible diff for actual deploy.
@@ -55,6 +71,8 @@ t7 — MANUAL: Vercel provision project + env var + first deploy.
 - 2026-06-05: t4 — frontend/.env.example expanded w/ dev vs Vercel-prod comments; frontend/docs/deploy-vercel.md added (root=frontend/, framework auto-detected, single env var NEXT_PUBLIC_API_URL, smoke + rollback steps). Commit 52da637. PHASE A CODE PREP COMPLETE — pausing per plan; t5/t6/t7/t8/t9 are user dashboard work.
 - 2026-06-05: t5 — Neon project `smart-collab-prod` provisioned, AWS us-east-1, branch main, pooled. Endpoint id `ep-silent-rice-apip84iz` (non-secret). Connection string held by user, will be set as Render `DATABASE_URL` only. SECURITY: initial password pasted in chat → must rotate via Neon Roles before any public traffic, then update Render env.
 - 2026-06-05: t6 — Render service `smart-collab-api` (srv-d8h3jat8nd3s73bpuv30) provisioned via blueprint. Three deploys: 4b5173d update_failed (MODULE_NOT_FOUND on dist/server.js), e7accc2 update_failed (CORS_ORIGINS Required), 0b15ac9 LIVE. URL https://smart-collab-api.onrender.com; /healthz returns 200. Two follow-up PRs landed (#18 path fix, #19 CORS default).
+- 2026-06-05: t7 — Vercel project `smart-collab` (prj_AjqpWRhOG0M5HYITk7v8lbuGLVMj) linked + deployed via CLI. First prod deploy failed: useSearchParams pages need Suspense (commit 04439ed). Also dropped redundant frontend/vercel.json (vercel.ts owns config; commit 9a96081). Deployment Protection toggled OFF by user. Stable prod URL https://smart-collab-niloy-roys-projects-2defd7be.vercel.app.
+- 2026-06-05: t8 — `CORS_ORIGINS` set in Render via MCP to Vercel URL. Auto-redeploy `dep-d8h4inb7uimc73ci0hd0` live in 58s. Origin echo verified positive (Vercel) and negative (evil.test).
 
 ## Blockers
 none

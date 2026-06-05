@@ -40,12 +40,12 @@ tasks:
     desc: "MANUAL: vercel provision project + env var + first deploy"
     files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
     manual: true
-    status: pending
+    status: done
   - id: t8
     desc: "MANUAL: set CORS_ORIGINS to vercel url + redeploy + curl healthz"
     files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
     manual: true
-    status: pending
+    status: done
   - id: t9
     desc: "MANUAL: smoke incognito flow across 3 roles + log results"
     files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
@@ -71,7 +71,7 @@ tasks:
 
 blockers: []
 
-next_task: t7
+next_task: t9
 
 phase_completion:
   gstack: true

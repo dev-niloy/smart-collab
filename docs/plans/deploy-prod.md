@@ -85,7 +85,7 @@ Steps:
 - 3. You: deploy. Wait for green.
 - 4. Record Vercel URL in progress.md
 - 5. Commit `[B7] vercel: project provisioned + first deploy URL captured`
-Status: [ ]
+Status: [x] 2026-06-05 — project `smart-collab` linked via CLI under team niloy-roys-projects-2defd7be, root=frontend, NEXT_PUBLIC_API_URL set. Two build fixes: 04439ed (Suspense) + 9a96081 (drop vercel.json). Deployment Protection disabled. Stable URL: https://smart-collab-niloy-roys-projects-2defd7be.vercel.app
 
 ## Phase C — Wire up CORS + smoke
 
@@ -98,7 +98,7 @@ Steps:
 - 3. Verify `curl -i https://<vercel-url>` returns 200 from frontend
 - 4. Verify `curl -i https://<render-url>/healthz` returns 200
 - 5. Commit `[C8] cors: prod CORS_ORIGINS wired to vercel origin`
-Status: [ ]
+Status: [x] 2026-06-05 — CORS_ORIGINS set in Render via Render MCP `update_environment_variables`. Auto-redeploy `dep-d8h4inb7uimc73ci0hd0` LIVE in 58s. Verified: Vercel origin → ACAO echoed; evil.test → ACAO omitted.
 
 ### Task 9: smoke verification — Demo Login flow end-to-end (incognito)
 Files:
