@@ -2,7 +2,6 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useProjectMembers } from '@/hooks/useProjectMembers';
@@ -24,7 +23,6 @@ export default function ProjectMembersPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <Header />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         <Link
           href={`/projects/${projectId}`}

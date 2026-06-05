@@ -1,6 +1,5 @@
 'use client';
 
-import { Header } from '@/components/header';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { StatusDonut } from '@/components/dashboard/StatusDonut';
 import { PriorityBar } from '@/components/dashboard/PriorityBar';
@@ -33,7 +32,6 @@ export function DashboardGrid({ projectId }: DashboardGridProps) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <h1 className="text-2xl font-semibold tracking-tight">
           {projectId ? 'Project dashboard' : 'Dashboard'}

@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Header } from '@/components/header';
 import { ActivityFeed } from '@/components/activity/ActivityFeed';
 import { useProjectActivity } from '@/hooks/useActivity';
 
@@ -13,7 +12,6 @@ export default function ProjectActivityPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <Header />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         <Link
           href={`/projects/${id}`}
