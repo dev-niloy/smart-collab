@@ -9,10 +9,17 @@ import { errorHandler, notFoundHandler } from './app/middlewares/errorHandler';
 
 const parseOrigins = (raw: string | undefined): string[] => {
   if (!raw) return [];
-  return raw
+  const list = raw
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
+  // Hard rule: wildcard origin is forbidden in production. Any '*' entry is
+  // dropped so a misconfigured env can never expose credentialed CORS to the
+  // open internet. Dev/test may still pass through whatever was set.
+  if (process.env.NODE_ENV === 'production') {
+    return list.filter((o) => o !== '*');
+  }
+  return list;
 };
 
 const buildApp = (): Express => {
