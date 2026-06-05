@@ -16,8 +16,8 @@ tasks:
     status: done
   - id: t2
     desc: "backend CORS prod allowlist hardening + 2 tests"
-    files: [backend/src/app/app.ts, backend/src/config/env.ts, backend/src/__tests__/cors.prod.test.ts]
-    status: pending
+    files: [backend/src/app.ts, backend/src/__tests__/cors.prod.test.ts]
+    status: done
   - id: t3
     desc: "backend build:prod + start:prod scripts + deploy-render doc"
     files: [backend/package.json, backend/docs/deploy-render.md]
@@ -71,7 +71,7 @@ tasks:
 
 blockers: []
 
-next_task: t2
+next_task: t3
 
 phase_completion:
   gstack: true

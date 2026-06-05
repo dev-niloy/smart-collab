@@ -21,14 +21,15 @@ Phase 3 Superpowers in progress — t1 done, next t2
 - CORS allowlist: single Vercel origin, no wildcards
 
 ## Last Completed Task
-t1 — baseline suites green (backend 521/521, frontend 364/364), empty commit 3007665
+t2 — CORS prod hardening: `*` stripped when NODE_ENV=production + 2 tests (cors.prod.test.ts); backend suite 523/523 (88e6d2f)
 
 ## Next Task
-t2 — backend CORS prod allowlist hardening + 2 tests
+t3 — backend build:prod + start:prod scripts + deploy-render doc
 
 ## Session Log
 - 2026-06-04: docs/plans/deploy-prod.md written — 13 tasks across A code prep / B provision / C wire+smoke / D docs+close. Discovery: backend cookies already flip samesite=none+secure when NODE_ENV=production (no fix needed), CORS already env-driven. Seed already idempotent via upsert. Smallest possible diff for actual deploy.
 - 2026-06-05: phase 3 start — t1 baseline confirmed green (backend 521/521 in 31.6s, frontend 364/364 in 65.4s). Empty commit 3007665 marks pre-work baseline.
+- 2026-06-05: t2 — added prod-only wildcard filter in `parseOrigins` (backend/src/app.ts) + `cors.prod.test.ts` w/ 2 tests. Full backend suite 523/523 (delta +2). Commit 88e6d2f.
 
 ## Blockers
 none

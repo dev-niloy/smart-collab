@@ -27,7 +27,7 @@ Steps:
 - 2. Spot-check `auth.cookies.ts` already flips `samesite=none + secure=true` when NODE_ENV=production (it does — locked in progress.md)
 - 3. Add 2 tests: CORS rejects request from non-allowlisted origin; CORS allowlist parses comma list correctly
 - 4. Commit `[A2] cors: prod allowlist hardening + 2/2`
-Status: [ ]
+Status: [x] 2026-06-05 — app.ts strips `*` when NODE_ENV=production; cors.prod.test.ts adds 2 tests (wildcard stripped, multi-origin comma list); full suite 523/523 (88e6d2f). env.ts untouched — already comma-parsed via zod.
 
 ### Task 3: backend Render start/build command wrapper
 Files:
