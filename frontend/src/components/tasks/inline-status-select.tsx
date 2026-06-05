@@ -1,6 +1,7 @@
 'use client';
 
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -10,15 +11,27 @@ import {
 } from '@/components/ui/select';
 import { useUpdateTask } from '@/hooks/useTasks';
 import { TASK_STATUSES, type Task, type TaskStatus } from '@/lib/schemas/task';
-import { STATUS_LABEL } from '@/lib/task-format';
+import { STATUS_LABEL, STATUS_VARIANT } from '@/lib/task-format';
 import { ApiError } from '@/lib/api';
 
 type Props = {
   task: Task;
+  canWrite?: boolean;
 };
 
-export function InlineStatusSelect({ task }: Props) {
+export function InlineStatusSelect({ task, canWrite = true }: Props) {
   const mutation = useUpdateTask(task.id);
+
+  if (!canWrite) {
+    return (
+      <Badge
+        variant={STATUS_VARIANT[task.status]}
+        aria-label={`Status: ${STATUS_LABEL[task.status]} (read-only)`}
+      >
+        {STATUS_LABEL[task.status]}
+      </Badge>
+    );
+  }
   return (
     <Select
       value={task.status}

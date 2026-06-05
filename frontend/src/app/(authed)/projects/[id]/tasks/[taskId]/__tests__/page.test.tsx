@@ -2,9 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { Providers } from '@/components/providers';
 
-const { meSpy, getTaskSpy } = vi.hoisted(() => ({
+const { meSpy, getTaskSpy, membersSpy } = vi.hoisted(() => ({
   meSpy: vi.fn(),
   getTaskSpy: vi.fn(),
+  membersSpy: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -24,6 +25,14 @@ vi.mock('@/lib/tasks', () => ({
   createTask: vi.fn(),
   updateTask: vi.fn(),
   deleteTask: vi.fn(),
+}));
+
+vi.mock('@/lib/project-members', () => ({
+  listProjectMembers: () => membersSpy(),
+  listAssignableMembers: vi.fn(),
+  addProjectMember: vi.fn(),
+  updateProjectMemberRole: vi.fn(),
+  removeProjectMember: vi.fn(),
 }));
 
 vi.mock('@/lib/comments', () => ({
@@ -113,9 +122,12 @@ describe('TaskDetailPage', () => {
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
   });
 
-  it('PM: shows Edit link + Delete button', async () => {
-    setUser({ role: 'project_manager' });
-    getTaskSpy.mockResolvedValue(sampleTask());
+  it('project PM (member.role=pm): shows Edit link + Delete button', async () => {
+    setUser({ id: 'pm-id', role: 'project_manager' });
+    membersSpy.mockResolvedValueOnce([
+      { id: 'm1', userId: 'pm-id', role: 'pm', user: { id: 'pm-id', email: 'p@x', name: 'P' } },
+    ]);
+    getTaskSpy.mockResolvedValue(sampleTask({ assignedTo: 'pm-id' }));
     renderPage();
     await waitFor(() =>
       expect(screen.getByRole('link', { name: /edit/i })).toBeInTheDocument(),
@@ -132,12 +144,14 @@ describe('TaskDetailPage', () => {
     expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
   });
 
-  it('member who is creator: shows Edit, hides Delete', async () => {
+  it('member who is creator but NOT assignee: hides Edit, shows Delete', async () => {
     setUser({ id: 'creator-7', role: 'team_member' });
     getTaskSpy.mockResolvedValue(sampleTask());
     renderPage();
-    await waitFor(() => expect(screen.getByRole('link', { name: /edit/i })).toBeInTheDocument());
-    expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Launch site')).toBeInTheDocument());
+    // New rules: creator can DELETE own task but cannot EDIT fields unless also assignee.
+    expect(screen.queryByRole('link', { name: /edit/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
   });
 
   it('member who is assignee: shows Edit, hides Delete', async () => {

@@ -15,7 +15,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useProjectTasks } from '@/hooks/useTasks';
-import { useAssignableMembers } from '@/hooks/useProjectMembers';
+import { useAssignableMembers, useProjectMembers } from '@/hooks/useProjectMembers';
+import { useUser } from '@/hooks/useUser';
+import { useRestoreTask } from '@/hooks/useTasks';
 import {
   STATUS_LABEL,
   STATUS_VARIANT,
@@ -77,6 +79,14 @@ function ProjectTasksPageInner() {
   const routeParams = useParams<{ id: string }>();
   const projectId = routeParams?.id ?? '';
   const params = useSearchParams();
+  const { user } = useUser();
+  const { data: members } = useProjectMembers(projectId);
+  const isAdmin = user?.role === 'admin';
+  const isProjectPm =
+    !!user && !!members?.some((m) => m.userId === user.id && m.role === 'pm');
+  const isPrivileged = isAdmin || isProjectPm;
+  const canWriteFor = (t: { assignedTo: string | null }): boolean =>
+    isPrivileged || (!!user && !!t.assignedTo && t.assignedTo === user.id);
 
   const q = params.get('q') ?? '';
   const statusList = parseStatusList(params.get('status'));
@@ -129,6 +139,7 @@ function ProjectTasksPageInner() {
 
   const statusCsv = useMemo(() => toCsv(statusList), [statusList]);
   const priorityCsv = useMemo(() => toCsv(priorityList), [priorityList]);
+  const showDeleted = isPrivileged && params.get('tab') === 'deleted';
   const queryParams = useMemo(
     () => ({
       q: q || undefined,
@@ -141,11 +152,13 @@ function ProjectTasksPageInner() {
       sort,
       page,
       limit: TASK_DEFAULT_LIMIT,
+      includeDeleted: showDeleted,
     }),
-    [q, statusCsv, priorityCsv, assignedToRaw, createdByMe, dueFrom, dueTo, sort, page],
+    [q, statusCsv, priorityCsv, assignedToRaw, createdByMe, dueFrom, dueTo, sort, page, showDeleted],
   );
 
   const { data, isLoading, isError, refetch } = useProjectTasks(projectId, queryParams);
+  const restoreMutation = useRestoreTask();
   const usersQuery = useAssignableMembers(projectId);
 
   const total = data?.total ?? 0;
@@ -195,12 +208,42 @@ function ProjectTasksPageInner() {
             <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {total === 0 ? 'No results' : `${total} task${total === 1 ? '' : 's'}`}
+              {showDeleted ? ' (showing deleted)' : ''}
             </p>
           </div>
           <Button onClick={() => router.push(`/projects/${projectId}/tasks/new`)}>
             New Task
           </Button>
         </div>
+
+        {isPrivileged ? (
+          <div className="mt-4 inline-flex rounded-md border border-border p-0.5" role="tablist" aria-label="Task view">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!showDeleted}
+              onClick={() => setParam({ tab: null, page: null })}
+              className={
+                'rounded px-3 py-1 text-xs ' +
+                (!showDeleted ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground')
+              }
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={showDeleted}
+              onClick={() => setParam({ tab: 'deleted', page: null })}
+              className={
+                'rounded px-3 py-1 text-xs ' +
+                (showDeleted ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground')
+              }
+            >
+              Deleted
+            </button>
+          </div>
+        ) : null}
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Input
@@ -436,7 +479,7 @@ function ProjectTasksPageInner() {
                       </div>
                       <div className="relative z-10 flex items-center gap-2">
                         <Badge variant={STATUS_VARIANT[t.status]}>{STATUS_LABEL[t.status]}</Badge>
-                        <InlineStatusSelect task={t} />
+                        <InlineStatusSelect task={t} canWrite={canWriteFor(t)} />
                       </div>
                     </CardHeader>
                     <CardContent className="mt-auto space-y-1 text-xs text-muted-foreground">
@@ -445,6 +488,23 @@ function ProjectTasksPageInner() {
                         Assigned:{' '}
                         {assignee ? assignee.name : <span className="italic">Unassigned</span>}
                       </p>
+                      {showDeleted ? (
+                        <div className="relative z-10 pt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={restoreMutation.isPending}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              restoreMutation.mutate(t.id);
+                            }}
+                          >
+                            Restore
+                          </Button>
+                        </div>
+                      ) : null}
                     </CardContent>
                   </Card>
                 );

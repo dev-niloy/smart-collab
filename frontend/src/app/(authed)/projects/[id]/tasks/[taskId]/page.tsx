@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useTask } from '@/hooks/useTasks';
+import { useProjectMembers } from '@/hooks/useProjectMembers';
 import { useUser } from '@/hooks/useUser';
 import { DeleteTaskButton } from '@/components/tasks/delete-task-button';
 import { TaskCommentsPanel } from '@/components/tasks/TaskCommentsPanel';
@@ -31,13 +32,20 @@ export default function TaskDetailPage() {
   const taskId = routeParams?.taskId ?? '';
   const { user } = useUser();
   const { data: task, isLoading, isError, refetch } = useTask(taskId);
+  const { data: members } = useProjectMembers(projectId);
 
   const role = user?.role;
-  const isPrivileged = role === 'admin' || role === 'project_manager';
-  const isOwner =
-    !!user && !!task && (task.createdBy === user.id || task.assignedTo === user.id);
-  const canEdit = isPrivileged || isOwner;
-  const canDelete = isPrivileged;
+  const isAdmin = role === 'admin';
+  const isProjectPm =
+    !!user && !!members?.some((m) => m.userId === user.id && m.role === 'pm');
+  const isPrivileged = isAdmin || isProjectPm;
+  const isAssignee = !!user && !!task && task.assignedTo === user.id;
+  const isCreator = !!user && !!task && task.createdBy === user.id;
+  // Field write: PM/admin always; assignee only when task IS assigned to them.
+  // Unassigned tasks → PM/admin only.
+  const canEdit = isPrivileged || (isAssignee && !!task?.assignedTo);
+  // Delete: PM/admin or creator (any role).
+  const canDelete = isPrivileged || isCreator;
 
   return (
     <div className="flex flex-1 flex-col">
