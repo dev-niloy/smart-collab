@@ -62,6 +62,12 @@ export type ProjectCreator = {
   name: string;
 };
 
+export type ProjectProgress = {
+  done: number;
+  total: number;
+  percent: number;
+};
+
 export type Project = {
   id: string;
   name: string;
@@ -70,6 +76,7 @@ export type Project = {
   status: ProjectStatus;
   createdBy: string;
   creator: ProjectCreator;
+  progress: ProjectProgress;
   createdAt: string;
   updatedAt: string;
 };

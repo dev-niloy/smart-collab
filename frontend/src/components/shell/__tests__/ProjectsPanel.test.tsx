@@ -17,6 +17,7 @@ const project = (over: Partial<Project> = {}): Project => ({
   status: 'active',
   createdBy: 'u1',
   creator: { id: 'u1', email: 'pm@demo.local', name: 'PM' },
+  progress: { done: 0, total: 0, percent: 0 },
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   ...over,
