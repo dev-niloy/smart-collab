@@ -21,7 +21,7 @@ tasks:
   - id: t3
     desc: "Rail top nav (logo + Search/Dashboard/Projects/Inbox + active)"
     files: [frontend/src/components/shell/Rail.tsx]
-    status: pending
+    status: done
   - id: t4
     desc: "Rail bottom (Help / Theme / Avatar+Logout)"
     files: [frontend/src/components/shell/Rail.tsx]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t3
+next_task: t4
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user

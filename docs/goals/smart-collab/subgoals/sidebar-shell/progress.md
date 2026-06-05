@@ -25,10 +25,10 @@ Phase 3 Superpowers — t1 baseline done; next t2 (shell scaffolding + shadcn pr
   - `shell-v2-icons.html` — locked direction (lucide outline)
 
 ## Last Completed Task
-t2 — 4 shell components scaffolded + ShellLayout.test.tsx (3 tests); shadcn command/sheet installed; frontend 367/367
+t3 — Rail top nav (workspace logo + Search button + 3 nav links) + prefix-match active state + 6 tests; frontend 373/373
 
 ## Next Task
-t3 — Rail top nav (logo + Search/Dashboard/Projects/Inbox + active route highlight)
+t4 — Rail bottom (Help / Theme / Avatar+Logout dropdown)
 
 ## Session Log
 - 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints.
@@ -36,6 +36,7 @@ t3 — Rail top nav (logo + Search/Dashboard/Projects/Inbox + active route highl
 - 2026-06-05: global GoalBuddy CLI built at ~/.claude/goalbuddy/ (gb init/status/next/verify). Plan patched w/ 6 gap fixes after goal-backward audit.
 - 2026-06-05: phase 3 t1 — baseline suites confirmed green; backend 523/523, frontend 364/364. Empty commit 228912f.
 - 2026-06-05: t2 — Rail/Panel/Topbar/ShellLayout scaffolded with placeholder markup + test-ids + a11y landmarks. ShellLayout.test.tsx covers slot rendering, panelCollapsed state, aside landmarks. shadcn `command` + `sheet` (and transitive `dialog`, `input-group`) installed. Frontend 367/367.
+- 2026-06-05: t3 — Rail.tsx now renders workspace logo + Search button + Dashboard/Projects/Inbox links from a NAV_ITEMS table. usePathname() drives prefix-match active state (data-active true/false). Rail.test.tsx adds 6 tests covering nav rendering, active swap, nested-route prefix match, Search not a link. ShellLayout API updated: `rail` prop → `railBottom` (Rail is self-contained). dark-mode-audit caught text-white literal in logo → switched to bg-primary/text-primary-foreground theme tokens. Frontend 373/373.
 
 ## Blockers
 none

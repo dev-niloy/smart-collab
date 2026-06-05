@@ -46,6 +46,7 @@ Steps:
 - 2. GREEN: implement using `lucide-react` (Search, LayoutDashboard, FolderKanban, Inbox), `next/navigation` `usePathname` to derive active state. Icons stroke 1.75, 20px
 - 3. Active key uses **prefix match** — `/projects/123/tasks/456` still highlights Projects. Add a test for the nested case.
 - 4. Commit `feat(shell): Rail top nav with active route highlight`
+Status: [x] 2026-06-05 — Rail.tsx renders workspace logo + Search button + Dashboard/Projects/Inbox links. usePathname() drives prefix-match active state. Rail.test.tsx adds 6 tests incl. nested-route case. dark-mode-audit caught text-white → switched to bg-primary/text-primary-foreground tokens. Frontend 373/373.
 Status: [ ]
 
 ### Task 4: Rail bottom (Help link, Theme toggle, Avatar dropdown with Logout)
