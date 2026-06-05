@@ -25,10 +25,10 @@ Phase 3 Superpowers — t1 baseline done; next t2 (shell scaffolding + shadcn pr
   - `shell-v2-icons.html` — locked direction (lucide outline)
 
 ## Last Completed Task
-t6 — Panel collapse + `usePanelCollapsed` hook with localStorage persistence; 8 new tests; frontend 389/389
+t7 — ProjectsPanel w/ header + +New + 4 filter chips + Pinned (localStorage) + All; deviation: Completed chip replaces planned Archived (no archive status in backend); 7 tests; frontend 396/396
 
 ## Next Task
-t7 — ProjectsPanel content (header, filter chips, Pinned + All groups, +New CTA)
+t8 — DashboardPanel + InboxPanel (minimal)
 
 ## Session Log
 - 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints.
@@ -40,6 +40,7 @@ t7 — ProjectsPanel content (header, filter chips, Pinned + All groups, +New CT
 - 2026-06-05: t4 — RailBottom.tsx adds Help link (external README, target=_blank+noopener), Theme button (sun/moon icon, next-themes toggle), Avatar dropdown via shadcn DropdownMenu showing email + role + Log out item. Hooks: useTheme (next-themes), useUser+useLogout (existing). RailBottom.test.tsx adds 5 tests. DropdownMenuLabel had to be wrapped in DropdownMenuGroup (base-ui group context requirement). Frontend 378/378.
 - 2026-06-05: t5 — discovery: `useUnreadCount` already exists in @/hooks/useNotifications, consumed by NotificationBell. No extraction needed — already a single truth. Rail now reuses `useUnreadCount`, renders an absolute-positioned dot beside Inbox icon when count>0, and injects count into the link's aria-label. Rail.test +3 tests (zero / non-zero / undefined-data). ShellLayout.test mock updated to stub useNotifications. Frontend 381/381.
 - 2026-06-05: t6 — usePanelCollapsed hook (collapsed/setCollapsed/toggle) returns SSR-safe state, hydrates from localStorage key `sc:panel:collapsed` on mount, persists on every change, ignores garbage values. Hook test 6 cases (default / hydrate true / hydrate false / setCollapsed / toggle / garbage). Panel.test.tsx 2 cases (renders w/ name + children, collapsed → w-0 + children hidden). Frontend 389/389.
+- 2026-06-05: t7 — ProjectsPanel.tsx reuses `useProjects` hook; chips are local state (no URL sync in v1 — simpler, can lift to URL in a follow-up). 4 chips: All / Active / Mine (createdBy=me) / Completed. Deviation noted: plan called for "Archived" chip; backend has no archive status, so Completed substitutes. Pinned section reads `sc:projects:pinned` (JSON string array) from localStorage; shows "No pinned projects yet" placeholder when empty; garbage values ignored. ProjectsPanel.test.tsx 7 tests. Frontend 396/396.
 
 ## Blockers
 none

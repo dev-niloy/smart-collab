@@ -37,7 +37,7 @@ tasks:
   - id: t7
     desc: "ProjectsPanel content (filter chips, Pinned, All, +New)"
     files: [frontend/src/components/shell/ProjectsPanel.tsx]
-    status: pending
+    status: done
   - id: t8
     desc: "DashboardPanel + InboxPanel (minimal)"
     files: [frontend/src/components/shell/DashboardPanel.tsx, frontend/src/components/shell/InboxPanel.tsx]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t7
+next_task: t8
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user

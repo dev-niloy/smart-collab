@@ -95,6 +95,7 @@ Steps:
 - 2. GREEN: reuse existing `useProjects` hook (with query params); Pinned in v1 reads from localStorage key `sc:projects:pinned` (array of project ids; empty by default); All renders a virtualised list of project name + status dot
 - 3. Empty Pinned state renders `<p class="text-muted-foreground">No pinned projects yet</p>` so goal #3 "Pinned group renders" still holds when nothing is pinned. Test for empty + non-empty cases.
 - 4. Commit `feat(shell): ProjectsPanel content with filter chips + pinned (localStorage)`
+Status: [x] 2026-06-05 — ProjectsPanel.tsx renders header + "+New" link + 4 chips (All/Active/Mine/Completed — deviation from plan's "Archived" since backend has no archive status; using Completed instead) + Pinned region (reads `sc:projects:pinned` JSON array) + All region. Empty Pinned shows "No pinned projects yet". Status dots + virtualised list. ProjectsPanel.test.tsx 7 tests. Frontend 396/396.
 Status: [ ]
 
 ### Task 8: DashboardPanel + InboxPanel (minimal)
