@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, Pin, PinOff } from 'lucide-react';
 import { useProjects } from '@/hooks/useProjects';
 import type { Project } from '@/lib/schemas/project';
 
@@ -41,15 +41,42 @@ function readPinnedIds(): string[] {
   }
 }
 
-function ProjectRow({ project }: { project: Project }) {
+function ProjectRow({
+  project,
+  pinned,
+  onTogglePin,
+}: {
+  project: Project;
+  pinned: boolean;
+  onTogglePin: (id: string) => void;
+}) {
   return (
-    <Link
-      href={`/projects/${project.id}`}
-      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
-    >
-      <span aria-hidden className={`h-2 w-2 shrink-0 rounded-sm ${STATUS_DOT[project.status]}`} />
-      <span className="truncate">{project.name}</span>
-    </Link>
+    <div className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+      <Link href={`/projects/${project.id}`} className="flex min-w-0 flex-1 items-center gap-2">
+        <span aria-hidden className={`h-2 w-2 shrink-0 rounded-sm ${STATUS_DOT[project.status]}`} />
+        <span className="truncate">{project.name}</span>
+      </Link>
+      <button
+        type="button"
+        aria-label={pinned ? `Unpin ${project.name}` : `Pin ${project.name}`}
+        aria-pressed={pinned}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onTogglePin(project.id);
+        }}
+        className={
+          'shrink-0 rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground ' +
+          (pinned ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus:opacity-100')
+        }
+      >
+        {pinned ? (
+          <PinOff className="h-3.5 w-3.5" aria-hidden />
+        ) : (
+          <Pin className="h-3.5 w-3.5" aria-hidden />
+        )}
+      </button>
+    </div>
   );
 }
 
@@ -61,6 +88,18 @@ export function ProjectsPanel() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- mount hydration: SSR cannot read localStorage
     setPinnedIds(readPinnedIds());
   }, []);
+
+  const togglePin = (id: string) => {
+    setPinnedIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try {
+        window.localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // localStorage unavailable; in-memory state still updates
+      }
+      return next;
+    });
+  };
 
   const chip = CHIPS.find((c) => c.key === activeChip) ?? CHIPS[0];
   const { data, isLoading } = useProjects({ ...chip.params, limit: 50 });
@@ -120,7 +159,9 @@ export function ProjectsPanel() {
             {pinned.length === 0 ? (
               <p className="px-2 py-1.5 text-xs text-muted-foreground">No pinned projects yet</p>
             ) : (
-              pinned.map((p) => <ProjectRow key={p.id} project={p} />)
+              pinned.map((p) => (
+                <ProjectRow key={p.id} project={p} pinned onTogglePin={togglePin} />
+              ))
             )}
           </div>
         </section>
@@ -135,7 +176,9 @@ export function ProjectsPanel() {
             ) : rest.length === 0 ? (
               <p className="px-2 py-1.5 text-xs text-muted-foreground">No projects in this filter</p>
             ) : (
-              rest.map((p) => <ProjectRow key={p.id} project={p} />)
+              rest.map((p) => (
+                <ProjectRow key={p.id} project={p} pinned={false} onTogglePin={togglePin} />
+              ))
             )}
           </div>
         </section>
