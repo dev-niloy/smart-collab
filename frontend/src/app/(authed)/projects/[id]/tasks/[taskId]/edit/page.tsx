@@ -226,7 +226,16 @@ export default function EditTaskPage() {
                       onValueChange={(v) => setValue('assignedTo', v ?? UNASSIGNED)}
                     >
                       <SelectTrigger aria-label="Assignee">
-                        <SelectValue />
+                        <SelectValue placeholder="Unassigned">
+                          {assignedToValue === UNASSIGNED
+                            ? 'Unassigned'
+                            : (() => {
+                                const u = (assigneeQuery.data ?? []).find(
+                                  (m) => m.id === assignedToValue,
+                                );
+                                return u ? `${u.name} (${u.email})` : 'Unassigned';
+                              })()}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
