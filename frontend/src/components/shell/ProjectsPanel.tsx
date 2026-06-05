@@ -58,6 +58,7 @@ export function ProjectsPanel() {
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount hydration: SSR cannot read localStorage
     setPinnedIds(readPinnedIds());
   }, []);
 

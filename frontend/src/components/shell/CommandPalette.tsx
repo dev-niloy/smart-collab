@@ -36,6 +36,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   // Reset query when palette closes so the next open starts blank.
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reactive reset: when `open` flips off, clear both query mirrors
       setQuery('');
       setDebouncedQuery('');
     }

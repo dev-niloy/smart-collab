@@ -14,6 +14,7 @@ export function useMediaQuery(query: string): boolean {
       return;
     }
     const mql = window.matchMedia(query);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount hydration: SSR cannot know matchMedia, sync to browser on mount
     setMatches(mql.matches);
     const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
     if (typeof mql.addEventListener === 'function') {

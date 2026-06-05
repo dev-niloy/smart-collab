@@ -15,6 +15,7 @@ export function usePanelCollapsed(initial = false) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const raw = window.localStorage.getItem(STORAGE_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount hydration: SSR cannot read localStorage, sync on mount
     if (raw === 'true') setCollapsedState(true);
     else if (raw === 'false') setCollapsedState(false);
   }, []);
