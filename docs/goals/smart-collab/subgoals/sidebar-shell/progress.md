@@ -6,7 +6,7 @@
 - Last updated: 2026-06-05
 
 ## Current Phase
-Phase 1 GStack — goal.md written; awaiting user review before Phase 2
+Phase 2 GSD complete → Phase 3 Superpowers next (start at t1 baseline)
 
 ## Locked decisions
 - Layout: rail 52 + panel 260 (collapsible) + topbar 48 + main
@@ -25,13 +25,14 @@ Phase 1 GStack — goal.md written; awaiting user review before Phase 2
   - `shell-v2-icons.html` — locked direction (lucide outline)
 
 ## Session Log
-- 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints. Awaiting user review.
+- 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints.
+- 2026-06-05: phase 1 approved by user. Phase 2 GSD — docs/plans/sidebar-shell.md written, 17 tasks sliced across phases A scaffold / B rail / C panel / D topbar / E integrate / F palette+inbox / G mobile+polish / H verify+close. Branch off develop@bdda6e0.
 
 ## Blockers
 none
 
 ## Phase Completion
-- [ ] Phase 1 GStack — goal.md + progress.md written (awaiting user sign-off)
-- [ ] Phase 2 GSD — plan.md with task slices
+- [x] Phase 1 GStack — goal.md + progress.md written + user approved 2026-06-05
+- [x] Phase 2 GSD — docs/plans/sidebar-shell.md w/ 17 tasks
 - [ ] Phase 3 Superpowers — TDD execution
 - [ ] Phase 4 Ralph Wiggum — multi-persona review

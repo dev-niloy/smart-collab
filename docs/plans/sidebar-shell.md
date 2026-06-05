@@ -1,0 +1,223 @@
+# Plan — sidebar-shell (Phase 2 GSD)
+
+Parent SPEC: `docs/goals/smart-collab/subgoals/sidebar-shell/goal.md`
+Branch: `feature/sidebar-shell` off `develop@bdda6e0`
+Mode: brownfield · feature · new session
+
+Each task ends with a commit. RED → GREEN → REFACTOR → suite green → commit. Internal steps stay <5 min; tasks bigger than that auto-slice during execution.
+
+---
+
+## Phase A — Baseline + scaffolding
+
+### Task 1: baseline verification commit
+Files: none
+Steps:
+- 1. Run backend `npm test` (expect 523/523) + frontend `npm test -- --run` (expect 364/364)
+- 2. Empty commit `chore: baseline before sidebar-shell work begins`
+Status: [ ]
+
+### Task 2: shell component scaffolding (placeholder files + dirs)
+Files (NEW):
+- `frontend/src/components/shell/ShellLayout.tsx`
+- `frontend/src/components/shell/Rail.tsx`
+- `frontend/src/components/shell/Panel.tsx`
+- `frontend/src/components/shell/Topbar.tsx`
+- `frontend/src/components/shell/index.ts`
+- `frontend/src/components/shell/__tests__/ShellLayout.test.tsx`
+Steps:
+- 1. Create empty (named export) components that each render a `<div data-testid="…">` placeholder
+- 2. ShellLayout composes Rail + Panel + Topbar + children slot
+- 3. RED: write `ShellLayout.test.tsx` asserting all four test-ids render
+- 4. GREEN: implement minimal markup
+- 5. Run full frontend suite (expect 365/365 — +1 file, ≥+1 test)
+- 6. Commit `feat(shell): scaffold ShellLayout + Rail + Panel + Topbar shells`
+Status: [ ]
+
+## Phase B — Rail
+
+### Task 3: Rail top nav (logo + Search/Dashboard/Projects/Inbox + active state)
+Files:
+- `frontend/src/components/shell/Rail.tsx`
+- `frontend/src/components/shell/__tests__/Rail.test.tsx` (NEW)
+Steps:
+- 1. RED: tests assert (a) 4 nav buttons render with lucide icons + accessible names; (b) `activeRoute="projects"` adds `data-active=true` only to the Projects icon
+- 2. GREEN: implement using `lucide-react` (Search, LayoutDashboard, FolderKanban, Inbox), `next/navigation` `usePathname` to derive active state. Icons stroke 1.75, 20px
+- 3. Commit `feat(shell): Rail top nav with active route highlight`
+Status: [ ]
+
+### Task 4: Rail bottom (Help link, Theme toggle, Avatar dropdown with Logout)
+Files:
+- `frontend/src/components/shell/Rail.tsx`
+- `frontend/src/components/shell/__tests__/Rail.test.tsx`
+Steps:
+- 1. RED: test (a) Help icon renders w/ href to docs; (b) Theme button toggles class on `<html>`; (c) Avatar dropdown shows user email + Logout
+- 2. GREEN: wire Theme button to existing theme hook; Avatar dropdown uses shadcn `DropdownMenu`; Logout calls existing `useLogout()`
+- 3. Confirm existing Header's theme toggle + logout still work (or remove duplicate usage in t10)
+- 4. Commit `feat(shell): Rail bottom — help, theme, avatar+logout`
+Status: [ ]
+
+### Task 5: Inbox red-dot when unread > 0
+Files:
+- `frontend/src/components/shell/Rail.tsx`
+- `frontend/src/components/shell/__tests__/Rail.test.tsx`
+Steps:
+- 1. RED: stub `useUnreadNotifications()` hook to return 3, assert red-dot on Inbox icon
+- 2. GREEN: implement `useUnreadNotifications` that calls existing notifications endpoint and counts unread
+- 3. Commit `feat(shell): Inbox unread red-dot indicator on Rail`
+Status: [ ]
+
+## Phase C — Panel
+
+### Task 6: Panel shell + collapse toggle + localStorage persistence
+Files:
+- `frontend/src/components/shell/Panel.tsx`
+- `frontend/src/hooks/usePanelCollapsed.ts` (NEW)
+- `frontend/src/components/shell/__tests__/Panel.test.tsx` (NEW)
+- `frontend/src/hooks/__tests__/usePanelCollapsed.test.ts` (NEW)
+Steps:
+- 1. RED: hook test — initial value reads `localStorage["sc:panel:collapsed"]` (default false), `setCollapsed(true)` persists
+- 2. RED: Panel test — `collapsed=true` reduces width to 0 (or hides), `collapsed=false` shows children
+- 3. GREEN: implement hook + Panel
+- 4. Commit `feat(shell): Panel with collapse + localStorage persistence`
+Status: [ ]
+
+### Task 7: ProjectsPanel content
+Files:
+- `frontend/src/components/shell/ProjectsPanel.tsx` (NEW)
+- `frontend/src/components/shell/__tests__/ProjectsPanel.test.tsx` (NEW)
+Steps:
+- 1. RED: test — header "Projects" + "+ New" CTA + 4 filter chips (All / Active / Mine / Archived) + sections "Pinned" and "All"; clicking Active sets `?status=active`
+- 2. GREEN: reuse existing `useProjects` hook (with query params); Pinned is hard-coded empty for v1 + comment "TODO localStorage pinning"; All renders a virtualised list of project name + status dot
+- 3. Commit `feat(shell): ProjectsPanel content with filter chips`
+Status: [ ]
+
+### Task 8: DashboardPanel + InboxPanel (minimal)
+Files:
+- `frontend/src/components/shell/DashboardPanel.tsx` (NEW)
+- `frontend/src/components/shell/InboxPanel.tsx` (NEW)
+- `frontend/src/components/shell/__tests__/DashboardPanel.test.tsx` (NEW)
+- `frontend/src/components/shell/__tests__/InboxPanel.test.tsx` (NEW)
+Steps:
+- 1. DashboardPanel: header "Dashboard" + links (My Open Tasks, Today's deadlines) — both navigate to filtered project/task views
+- 2. InboxPanel: header "Inbox" + tabs (Unread / Mentions / Assigned to me) — tabs are visual only in v1, filter state lifted to InboxPage
+- 3. Tests assert the headers + links render
+- 4. Commit `feat(shell): Dashboard + Inbox panels (minimal)`
+Status: [ ]
+
+## Phase D — Topbar
+
+### Task 9: Topbar breadcrumbs + actions slot
+Files:
+- `frontend/src/components/shell/Topbar.tsx`
+- `frontend/src/components/shell/__tests__/Topbar.test.tsx` (NEW)
+Steps:
+- 1. RED: test — `<Topbar segments={['Projects', 'Q3 polish']} />` renders breadcrumbs w/ separator; `actions` prop slot renders custom React
+- 2. GREEN: implement using `next/link` for clickable segments
+- 3. Commit `feat(shell): Topbar with breadcrumbs + actions slot`
+Status: [ ]
+
+## Phase E — Integrate the shell
+
+### Task 10: Wire ShellLayout into the authenticated route group
+Files:
+- `frontend/src/app/(authed)/layout.tsx` (NEW or update)
+- Delete usage of `<Header />` from each authed page (search + remove)
+- All `frontend/src/app/(authed)/**/page.tsx` (sweep)
+Steps:
+- 1. Move authed pages under a route group `(authed)/` if not already; add `(authed)/layout.tsx` that mounts `<ShellLayout>` and renders `children`
+- 2. Inside ShellLayout, derive active rail key from `usePathname()` and render matching panel component
+- 3. Remove `<Header />` from every page that previously included it (login + signup stay header-less)
+- 4. Run full frontend suite — fix any existing page tests asserting on Header DOM (rewrite to assert on Rail/Topbar where appropriate)
+- 5. Commit `feat(shell): mount ShellLayout for all authed routes; drop old Header`
+Status: [ ]
+
+## Phase F — Cmd+K palette + Inbox page
+
+### Task 11: Cmd+K command palette
+Files:
+- `frontend/src/components/shell/CommandPalette.tsx` (NEW)
+- `frontend/src/components/shell/__tests__/CommandPalette.test.tsx` (NEW)
+- Wire into ShellLayout
+Steps:
+- 1. Use shadcn `Command` primitive (already in repo) for the modal
+- 2. RED: test — Cmd+K opens modal; typing `q` triggers debounced fetch of /projects?q + /tasks?q (mock); Enter on result navigates
+- 3. GREEN: implement with `useHotkeys` (or manual `keydown`), debounce 200ms, max 8 results, two sections (Projects / Tasks)
+- 4. Commit `feat(shell): Cmd+K command palette over projects + tasks`
+Status: [ ]
+
+### Task 12: /inbox route page
+Files:
+- `frontend/src/app/(authed)/inbox/page.tsx` (NEW)
+- `frontend/src/app/(authed)/inbox/__tests__/page.test.tsx` (NEW)
+Steps:
+- 1. RED: test — renders three tabs (Unread / Mentions / Assigned to me); Unread shows notifications list; Assigned shows tasks assigned to current user
+- 2. GREEN: reuse `useNotifications` hook + `useTasks({ assignedTo: 'me' })`; tabs are local state
+- 3. Commit `feat(inbox): /inbox page combining notifications + assigned tasks`
+Status: [ ]
+
+## Phase G — Mobile + polish
+
+### Task 13: Mobile drawer behavior
+Files:
+- `frontend/src/components/shell/ShellLayout.tsx`
+- `frontend/src/components/shell/MobileDrawer.tsx` (NEW)
+- `frontend/src/components/shell/__tests__/MobileDrawer.test.tsx` (NEW)
+- `frontend/src/hooks/useMediaQuery.ts` (NEW)
+Steps:
+- 1. RED: at <768px, ShellLayout hides Rail+Panel and shows a top hamburger; clicking opens drawer with Rail + Panel stacked
+- 2. GREEN: use shadcn `Sheet` for the drawer; `useMediaQuery('(max-width: 767px)')` to gate
+- 3. Commit `feat(shell): mobile drawer below 768px`
+Status: [ ]
+
+### Task 14: Theme parity audit
+Files:
+- `frontend/src/components/shell/*.tsx`
+- `frontend/src/app/globals.css` (touch only if needed)
+Steps:
+- 1. Visual pass: load every authed route under light + dark theme; ensure rail/panel/topbar use existing CSS variables (no hard-coded hex)
+- 2. Run a11y check: each rail icon has `aria-label`; panel section headings are landmarks
+- 3. Commit `style(shell): theme + a11y parity sweep`
+Status: [ ]
+
+## Phase H — Verify + docs + close
+
+### Task 15: full suite + e2e smoke (local)
+Files: none (verification only)
+Steps:
+- 1. `npm test --prefix backend` — expect 523/523 unchanged
+- 2. `npm test --prefix frontend -- --run` — expect 364 + N new (≥ +15)
+- 3. `npm run dev` — manual sanity: login → click each rail icon → Cmd+K → /inbox → mobile resize
+- 4. Commit `test: verify sidebar-shell suite green + local smoke`
+Status: [ ]
+
+### Task 16: docs + README screenshot + close phase 3
+Files:
+- `README.md` (one screenshot near top + brief shell mention)
+- `docs/goals/smart-collab/subgoals/sidebar-shell/state.yaml`
+- `docs/goals/smart-collab/subgoals/sidebar-shell/progress.md`
+- `docs/goals/smart-collab/progress.md` (parent log entry)
+Steps:
+- 1. Take a screenshot of the new shell, drop into `frontend/public/screens/shell.png`
+- 2. README: add a 2-line "Now using ClickUp-style shell" near the top w/ image link
+- 3. Flip `state.yaml` phase: 3, mark `superpowers: true`
+- 4. Update subgoal progress.md + parent progress.md
+- 5. Commit `docs(sidebar-shell): phase 3 superpowers complete + README screenshot`
+Status: [ ]
+
+### Task 17: USER PERMISSION — open PR feature/sidebar-shell → develop
+Files: none
+Steps:
+- 1. (USER PERMISSION) `git push -u origin feature/sidebar-shell`
+- 2. (USER PERMISSION) `gh pr create --base develop --title "feat(shell): clickup-style rail + panel + topbar (L1)"`
+- 3. CI must pass
+- 4. After merge, Vercel auto-deploys to https://smart-collab-liard.vercel.app
+- 5. Smoke on live URL
+Status: [ ]
+
+---
+
+## Notes on scope discipline
+- Every task scoped to a single concern. Anything that spreads across >2 files in the IN-scope list gets a follow-up task instead of bloating the current one.
+- No backend touches. If a task wants a backend change, it's out of scope for this subgoal.
+- "Pinned" projects, Search palette filters beyond projects+tasks, drag-reorder — all deferred.

@@ -7,17 +7,86 @@ mode:
   scope: feature
   session: new
 
-phase: 1 # GStack — goal.md written; awaiting user review before Phase 2
+phase: 2 # GSD — 17 tasks sliced; ready for Phase 3 Superpowers
 
-tasks: [] # populated after user signs off on goal.md and Phase 2 GSD runs
+tasks:
+  - id: t1
+    desc: "baseline verification commit (backend 523 + frontend 364)"
+    files: []
+    status: pending
+  - id: t2
+    desc: "shell component scaffolding (ShellLayout, Rail, Panel, Topbar)"
+    files: [frontend/src/components/shell/]
+    status: pending
+  - id: t3
+    desc: "Rail top nav (logo + Search/Dashboard/Projects/Inbox + active)"
+    files: [frontend/src/components/shell/Rail.tsx]
+    status: pending
+  - id: t4
+    desc: "Rail bottom (Help / Theme / Avatar+Logout)"
+    files: [frontend/src/components/shell/Rail.tsx]
+    status: pending
+  - id: t5
+    desc: "Inbox red-dot when unread > 0"
+    files: [frontend/src/components/shell/Rail.tsx]
+    status: pending
+  - id: t6
+    desc: "Panel shell + collapse + localStorage hook"
+    files: [frontend/src/components/shell/Panel.tsx, frontend/src/hooks/usePanelCollapsed.ts]
+    status: pending
+  - id: t7
+    desc: "ProjectsPanel content (filter chips, Pinned, All, +New)"
+    files: [frontend/src/components/shell/ProjectsPanel.tsx]
+    status: pending
+  - id: t8
+    desc: "DashboardPanel + InboxPanel (minimal)"
+    files: [frontend/src/components/shell/DashboardPanel.tsx, frontend/src/components/shell/InboxPanel.tsx]
+    status: pending
+  - id: t9
+    desc: "Topbar breadcrumbs + actions slot"
+    files: [frontend/src/components/shell/Topbar.tsx]
+    status: pending
+  - id: t10
+    desc: "wire ShellLayout into (authed) route group; drop Header"
+    files: [frontend/src/app/(authed)/layout.tsx]
+    status: pending
+  - id: t11
+    desc: "Cmd+K command palette over projects + tasks"
+    files: [frontend/src/components/shell/CommandPalette.tsx]
+    status: pending
+  - id: t12
+    desc: "/inbox route page (notifications + assigned tasks)"
+    files: [frontend/src/app/(authed)/inbox/page.tsx]
+    status: pending
+  - id: t13
+    desc: "mobile drawer below 768px"
+    files: [frontend/src/components/shell/MobileDrawer.tsx, frontend/src/hooks/useMediaQuery.ts]
+    status: pending
+  - id: t14
+    desc: "theme + a11y parity sweep"
+    files: [frontend/src/components/shell/]
+    status: pending
+  - id: t15
+    desc: "full suite green + local manual smoke"
+    files: []
+    status: pending
+  - id: t16
+    desc: "README screenshot + close phase 3"
+    files: [README.md, docs/goals/smart-collab/subgoals/sidebar-shell/state.yaml]
+    status: pending
+  - id: t17
+    desc: "USER PERMISSION: push branch + open PR feature/sidebar-shell -> develop"
+    files: []
+    manual: true
+    status: pending
 
 blockers: []
 
-next_task: user-review-goal-md
+next_task: t1
 
 phase_completion:
-  gstack: false # user must approve goal.md before flipping true
-  gsd: false
+  gstack: true # 2026-06-05 — goal.md approved by user
+  gsd: true # 2026-06-05 — 17 tasks sliced across phases A scaffold / B rail / C panel / D topbar / E integrate / F palette+inbox / G mobile+polish / H verify+close
   superpowers: false
   ralph_wiggum: false
 
