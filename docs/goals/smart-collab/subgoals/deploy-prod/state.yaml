@@ -21,7 +21,7 @@ tasks:
   - id: t3
     desc: "backend build:prod + start:prod scripts + deploy-render doc"
     files: [backend/package.json, backend/docs/deploy-render.md]
-    status: pending
+    status: done
   - id: t4
     desc: "frontend .env.example + deploy-vercel doc"
     files: [frontend/.env.example, frontend/docs/deploy-vercel.md]
@@ -71,7 +71,7 @@ tasks:
 
 blockers: []
 
-next_task: t3
+next_task: t4
 
 phase_completion:
   gstack: true

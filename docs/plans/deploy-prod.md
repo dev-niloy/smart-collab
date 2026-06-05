@@ -38,7 +38,7 @@ Steps:
 - 2. Add `build:prod` script: `prisma generate && tsc --project tsconfig.build.json`
 - 3. Write `backend/docs/deploy-render.md` capturing Render service config (Build Command, Start Command, Health Check Path, env vars list — values are placeholders)
 - 4. Commit `[A3] render: build:prod + start:prod scripts + deploy doc`
-Status: [ ]
+Status: [x] 2026-06-05 — scripts added (build:prod, start:prod); deploy-render.md captures service config + env var table (NODE_ENV, DATABASE_URL, JWT secrets, demo PWs, CORS_ORIGINS, UPLOAD_DIR=/tmp/uploads); tsc build verified. Commit 0981a24.
 
 ### Task 4: frontend prod env wiring + .env.example
 Files:
