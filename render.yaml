@@ -22,7 +22,7 @@ services:
     runtime: node
     plan: free
     region: virginia
-    branch: feature/deploy-prod
+    branch: develop
     rootDir: backend
     autoDeploy: true
     healthCheckPath: /healthz
