@@ -25,16 +25,17 @@ Phase 3 Superpowers — t1 baseline done; next t2 (shell scaffolding + shadcn pr
   - `shell-v2-icons.html` — locked direction (lucide outline)
 
 ## Last Completed Task
-t1 — baseline suites green (backend 523/523, frontend 364/364), empty commit 228912f
+t2 — 4 shell components scaffolded + ShellLayout.test.tsx (3 tests); shadcn command/sheet installed; frontend 367/367
 
 ## Next Task
-t2 — shell scaffolding (ShellLayout, Rail, Panel, Topbar) + shadcn pre-flight
+t3 — Rail top nav (logo + Search/Dashboard/Projects/Inbox + active route highlight)
 
 ## Session Log
 - 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints.
 - 2026-06-05: phase 1 approved by user. Phase 2 GSD — docs/plans/sidebar-shell.md written, 17 tasks sliced across phases A scaffold / B rail / C panel / D topbar / E integrate / F palette+inbox / G mobile+polish / H verify+close. Branch off develop@bdda6e0.
 - 2026-06-05: global GoalBuddy CLI built at ~/.claude/goalbuddy/ (gb init/status/next/verify). Plan patched w/ 6 gap fixes after goal-backward audit.
 - 2026-06-05: phase 3 t1 — baseline suites confirmed green; backend 523/523, frontend 364/364. Empty commit 228912f.
+- 2026-06-05: t2 — Rail/Panel/Topbar/ShellLayout scaffolded with placeholder markup + test-ids + a11y landmarks. ShellLayout.test.tsx covers slot rendering, panelCollapsed state, aside landmarks. shadcn `command` + `sheet` (and transitive `dialog`, `input-group`) installed. Frontend 367/367.
 
 ## Blockers
 none

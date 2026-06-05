@@ -33,7 +33,7 @@ Steps:
 - 5. Pre-flight shadcn check: `frontend/components.json` registry must include `dropdown-menu`, `command`, `sheet`. If any missing, `npx shadcn add <name>` from `frontend/` and commit the generated files in this same task.
 - 6. Run full frontend suite (expect 365/365 — +1 file, ≥+1 test)
 - 7. Commit `feat(shell): scaffold ShellLayout + Rail + Panel + Topbar shells + shadcn primitives`
-Status: [ ]
+Status: [x] 2026-06-05 — 4 shell components + index.ts + ShellLayout.test.tsx (3 tests); shadcn command + sheet + dialog + input-group installed; frontend suite 367/367 (+3 from baseline).
 
 ## Phase B — Rail
 
