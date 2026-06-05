@@ -84,7 +84,7 @@ Steps:
 - 2. RED: Panel test — `collapsed=true` reduces width to 0 (or hides), `collapsed=false` shows children
 - 3. GREEN: implement hook + Panel
 - 4. Commit `feat(shell): Panel with collapse + localStorage persistence`
-Status: [ ]
+Status: [x] 2026-06-05 — usePanelCollapsed hook (collapsed/setCollapsed/toggle) reads + writes key `sc:panel:collapsed`, SSR-safe, garbage-value resistant. usePanelCollapsed.test.ts 6 tests. Panel.test.tsx 2 tests (rendering + collapsed shrink). Frontend 389/389.
 
 ### Task 7: ProjectsPanel content
 Files:

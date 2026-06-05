@@ -25,10 +25,10 @@ Phase 3 Superpowers — t1 baseline done; next t2 (shell scaffolding + shadcn pr
   - `shell-v2-icons.html` — locked direction (lucide outline)
 
 ## Last Completed Task
-t5 — Inbox red-dot + unread count in aria-label; reuses existing `useUnreadCount` (already shared with NotificationBell); 3 tests; frontend 381/381
+t6 — Panel collapse + `usePanelCollapsed` hook with localStorage persistence; 8 new tests; frontend 389/389
 
 ## Next Task
-t6 — Panel shell + collapse + localStorage persistence (`usePanelCollapsed` hook)
+t7 — ProjectsPanel content (header, filter chips, Pinned + All groups, +New CTA)
 
 ## Session Log
 - 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints.
@@ -39,6 +39,7 @@ t6 — Panel shell + collapse + localStorage persistence (`usePanelCollapsed` ho
 - 2026-06-05: t3 — Rail.tsx now renders workspace logo + Search button + Dashboard/Projects/Inbox links from a NAV_ITEMS table. usePathname() drives prefix-match active state (data-active true/false). Rail.test.tsx adds 6 tests covering nav rendering, active swap, nested-route prefix match, Search not a link. ShellLayout API updated: `rail` prop → `railBottom` (Rail is self-contained). dark-mode-audit caught text-white literal in logo → switched to bg-primary/text-primary-foreground theme tokens. Frontend 373/373.
 - 2026-06-05: t4 — RailBottom.tsx adds Help link (external README, target=_blank+noopener), Theme button (sun/moon icon, next-themes toggle), Avatar dropdown via shadcn DropdownMenu showing email + role + Log out item. Hooks: useTheme (next-themes), useUser+useLogout (existing). RailBottom.test.tsx adds 5 tests. DropdownMenuLabel had to be wrapped in DropdownMenuGroup (base-ui group context requirement). Frontend 378/378.
 - 2026-06-05: t5 — discovery: `useUnreadCount` already exists in @/hooks/useNotifications, consumed by NotificationBell. No extraction needed — already a single truth. Rail now reuses `useUnreadCount`, renders an absolute-positioned dot beside Inbox icon when count>0, and injects count into the link's aria-label. Rail.test +3 tests (zero / non-zero / undefined-data). ShellLayout.test mock updated to stub useNotifications. Frontend 381/381.
+- 2026-06-05: t6 — usePanelCollapsed hook (collapsed/setCollapsed/toggle) returns SSR-safe state, hydrates from localStorage key `sc:panel:collapsed` on mount, persists on every change, ignores garbage values. Hook test 6 cases (default / hydrate true / hydrate false / setCollapsed / toggle / garbage). Panel.test.tsx 2 cases (renders w/ name + children, collapsed → w-0 + children hidden). Frontend 389/389.
 
 ## Blockers
 none

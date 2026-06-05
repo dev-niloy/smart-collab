@@ -33,7 +33,7 @@ tasks:
   - id: t6
     desc: "Panel shell + collapse + localStorage hook"
     files: [frontend/src/components/shell/Panel.tsx, frontend/src/hooks/usePanelCollapsed.ts]
-    status: pending
+    status: done
   - id: t7
     desc: "ProjectsPanel content (filter chips, Pinned, All, +New)"
     files: [frontend/src/components/shell/ProjectsPanel.tsx]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t6
+next_task: t7
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user
