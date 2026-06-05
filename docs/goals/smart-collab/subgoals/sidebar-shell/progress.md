@@ -25,10 +25,10 @@ Phase 3 Superpowers — t1 baseline done; next t2 (shell scaffolding + shadcn pr
   - `shell-v2-icons.html` — locked direction (lucide outline)
 
 ## Last Completed Task
-t10 — ShellLayout mounted across (authed) route group; old Header + theme-toggle + notification-bell + GlobalSearchBar deleted; routeToPanel helper + 5-case section-swap test (goal #9); next build green; frontend 395/395
+t11 — CommandPalette w/ shadcn CommandDialog, global Cmd+K toggle, 200ms debounced query over /projects?q + /tasks?q, capped at 8 each, wired into (authed)/layout via Rail.onSearchClick; 7 tests; frontend 402/402
 
 ## Next Task
-t11 — Cmd+K command palette over projects + tasks (shadcn Command primitive)
+t12 — /inbox route page (notifications + assigned tasks)
 
 ## Session Log
 - 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints.
@@ -44,6 +44,7 @@ t11 — Cmd+K command palette over projects + tasks (shadcn Command primitive)
 - 2026-06-05: t8 — DashboardPanel.tsx renders header + 2 lucide-icon shortcuts (`My Open Tasks` → /dashboard#my-open-tasks, `Today's Deadlines` → /dashboard#upcoming-deadlines). InboxPanel.tsx renders header + 3 vertical tabs (Unread default / Mentions / Assigned to me) using local state + optional `onTabChange` callback for later wiring from the /inbox page (t12). 5 new tests. Frontend 401/401.
 - 2026-06-05: t9 — Topbar `segments` prop now accepts `string | { label, href? }[]`. Intermediate segments with `href` render as next/link; the last segment is always plain text (current-location convention). Actions slot rendered in `ml-auto` container on the right. Topbar.test.tsx 5 cases. Frontend 406/406.
 - 2026-06-05: t10 — High-risk Header sweep. Pre-flight grep: 10 page files + 1 component (DashboardGrid) used `<Header />`; 16 page tests, none asserting on Header DOM (no test sweep needed). git mv dashboard/projects/forbidden into src/app/(authed)/ route group. Added `src/app/(authed)/layout.tsx` mounting ShellLayout + RailBottom + dynamically picked panel via `routeToPanel.ts` helper (`getPanelKey` + `pickPanel`). Section-swap test covers goal #9 with 5 cases (null, root, prefix-match, nested, unknown). Stripped `<Header />` import + JSX from 10 pages + DashboardGrid via sed. Deleted orphan files: header.tsx, theme-toggle.tsx, notifications/NotificationBell.tsx, search/GlobalSearchBar.tsx + 3 tests + 2 now-empty dirs. providers.test trimmed (lost the ThemeToggle assertion). Frontend 395/395 (net delta: −16 deleted assertions + 5 new routeToPanel tests). `next build` green; all routes still resolve to same URLs. Under 15-file threshold — no auto-slice.
+- 2026-06-05: t11 — CommandPalette.tsx wraps shadcn `CommandDialog`. Global window keydown listens for Cmd+K / Ctrl+K to toggle open. Query state is debounced 200ms; both `useProjects` + `useTasks` hooks are gated on `hasQuery` so blank-open does NOT fire the network. Results capped at 8 each in two `CommandGroup`s (Projects, Tasks); selecting an item routes via `next/navigation` `router.push`. Empty / loading / no-match states are explicit. Wired into (authed)/layout.tsx via local state + `onSearchClick` plumbed through ShellLayout → Rail. Tests: mocked `@/components/ui/command` surface (cmdk needs jsdom shims that aren't worth setting up for this skill) and asserted on the wiring directly; 7 cases (Cmd+K open / blank-open no-fetch / debounce / capped lists / project route / task route / no-match state). Frontend 402/402.
 
 ## Blockers
 none

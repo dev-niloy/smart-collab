@@ -53,7 +53,7 @@ tasks:
   - id: t11
     desc: "Cmd+K command palette over projects + tasks"
     files: [frontend/src/components/shell/CommandPalette.tsx]
-    status: pending
+    status: done
   - id: t12
     desc: "/inbox route page (notifications + assigned tasks)"
     files: [frontend/src/app/(authed)/inbox/page.tsx]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t11
+next_task: t12
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user

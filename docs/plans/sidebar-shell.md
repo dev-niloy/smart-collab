@@ -157,6 +157,7 @@ Steps:
 - 2. RED: test — Cmd+K opens modal; typing `q` triggers debounced fetch of /projects?q + /tasks?q (mock); Enter on result navigates
 - 3. GREEN: implement with `useHotkeys` (or manual `keydown`), debounce 200ms, max 8 results, two sections (Projects / Tasks)
 - 4. Commit `feat(shell): Cmd+K command palette over projects + tasks`
+Status: [x] 2026-06-05 — CommandPalette.tsx uses shadcn `CommandDialog`. Global keydown listens for Cmd+K/Ctrl+K to toggle. Query state debounced 200ms; both `useProjects` + `useTasks` hooks gated on `hasQuery`. Results capped at 8 each, two CommandGroups (Projects, Tasks). Empty / loading / no-match states handled. Wired into (authed)/layout.tsx via local state + `onSearchClick` from Rail. CommandPalette.test.tsx mocks ui/command surface (cmdk needs jsdom shims) and covers 7 cases. Frontend 402/402.
 Status: [ ]
 
 ### Task 12: /inbox route page
