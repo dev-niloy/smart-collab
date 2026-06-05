@@ -15,7 +15,7 @@ Files: none
 Steps:
 - 1. Run backend `npm test` (expect 523/523) + frontend `npm test -- --run` (expect 364/364)
 - 2. Empty commit `chore: baseline before sidebar-shell work begins`
-Status: [ ]
+Status: [x] 2026-06-05 — backend 523/523, frontend 364/364, empty commit 228912f
 
 ### Task 2: shell component scaffolding (placeholder files + dirs)
 Files (NEW):
