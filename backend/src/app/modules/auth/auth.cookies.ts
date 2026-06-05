@@ -8,7 +8,7 @@ const baseCookie = (): CookieOptions => ({
   httpOnly: true,
   secure: isProd(),
   sameSite: isProd() ? 'none' : 'lax',
-  domain: process.env.COOKIE_DOMAIN || undefined,
+  domain: process.env.COOKIE_DOMAIN?.trim() || undefined,
   path: '/',
 });
 
