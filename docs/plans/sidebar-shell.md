@@ -30,8 +30,9 @@ Steps:
 - 2. ShellLayout composes Rail + Panel + Topbar + children slot
 - 3. RED: write `ShellLayout.test.tsx` asserting all four test-ids render
 - 4. GREEN: implement minimal markup
-- 5. Run full frontend suite (expect 365/365 — +1 file, ≥+1 test)
-- 6. Commit `feat(shell): scaffold ShellLayout + Rail + Panel + Topbar shells`
+- 5. Pre-flight shadcn check: `frontend/components.json` registry must include `dropdown-menu`, `command`, `sheet`. If any missing, `npx shadcn add <name>` from `frontend/` and commit the generated files in this same task.
+- 6. Run full frontend suite (expect 365/365 — +1 file, ≥+1 test)
+- 7. Commit `feat(shell): scaffold ShellLayout + Rail + Panel + Topbar shells + shadcn primitives`
 Status: [ ]
 
 ## Phase B — Rail
@@ -43,7 +44,8 @@ Files:
 Steps:
 - 1. RED: tests assert (a) 4 nav buttons render with lucide icons + accessible names; (b) `activeRoute="projects"` adds `data-active=true` only to the Projects icon
 - 2. GREEN: implement using `lucide-react` (Search, LayoutDashboard, FolderKanban, Inbox), `next/navigation` `usePathname` to derive active state. Icons stroke 1.75, 20px
-- 3. Commit `feat(shell): Rail top nav with active route highlight`
+- 3. Active key uses **prefix match** — `/projects/123/tasks/456` still highlights Projects. Add a test for the nested case.
+- 4. Commit `feat(shell): Rail top nav with active route highlight`
 Status: [ ]
 
 ### Task 4: Rail bottom (Help link, Theme toggle, Avatar dropdown with Logout)
@@ -63,8 +65,8 @@ Files:
 - `frontend/src/components/shell/__tests__/Rail.test.tsx`
 Steps:
 - 1. RED: stub `useUnreadNotifications()` hook to return 3, assert red-dot on Inbox icon
-- 2. GREEN: implement `useUnreadNotifications` that calls existing notifications endpoint and counts unread
-- 3. Commit `feat(shell): Inbox unread red-dot indicator on Rail`
+- 2. GREEN: implement `useUnreadNotifications` that calls existing notifications endpoint and counts unread. Source it from the same logic the current `<NotificationBell>` uses (extract shared hook from `frontend/src/components/notification-bell.tsx` into `frontend/src/hooks/useUnreadNotifications.ts` so both consume one truth)
+- 3. Commit `feat(shell): Inbox unread red-dot indicator on Rail (shared hook with NotificationBell)`
 Status: [ ]
 
 ## Phase C — Panel
@@ -88,8 +90,9 @@ Files:
 - `frontend/src/components/shell/__tests__/ProjectsPanel.test.tsx` (NEW)
 Steps:
 - 1. RED: test — header "Projects" + "+ New" CTA + 4 filter chips (All / Active / Mine / Archived) + sections "Pinned" and "All"; clicking Active sets `?status=active`
-- 2. GREEN: reuse existing `useProjects` hook (with query params); Pinned is hard-coded empty for v1 + comment "TODO localStorage pinning"; All renders a virtualised list of project name + status dot
-- 3. Commit `feat(shell): ProjectsPanel content with filter chips`
+- 2. GREEN: reuse existing `useProjects` hook (with query params); Pinned in v1 reads from localStorage key `sc:projects:pinned` (array of project ids; empty by default); All renders a virtualised list of project name + status dot
+- 3. Empty Pinned state renders `<p class="text-muted-foreground">No pinned projects yet</p>` so goal #3 "Pinned group renders" still holds when nothing is pinned. Test for empty + non-empty cases.
+- 4. Commit `feat(shell): ProjectsPanel content with filter chips + pinned (localStorage)`
 Status: [ ]
 
 ### Task 8: DashboardPanel + InboxPanel (minimal)
@@ -122,14 +125,19 @@ Status: [ ]
 ### Task 10: Wire ShellLayout into the authenticated route group
 Files:
 - `frontend/src/app/(authed)/layout.tsx` (NEW or update)
-- Delete usage of `<Header />` from each authed page (search + remove)
-- All `frontend/src/app/(authed)/**/page.tsx` (sweep)
+- Delete `<Header />` import + usage from each authed page (sweep)
+- Delete `frontend/src/components/header.tsx` after last usage removed
+- Delete `frontend/src/components/notification-bell.tsx` if its only consumer was Header (move its content into InboxPanel / InboxPage during t8 / t12)
+- All `frontend/src/app/(authed)/**/page.tsx` + their `__tests__/` (sweep)
 Steps:
-- 1. Move authed pages under a route group `(authed)/` if not already; add `(authed)/layout.tsx` that mounts `<ShellLayout>` and renders `children`
-- 2. Inside ShellLayout, derive active rail key from `usePathname()` and render matching panel component
-- 3. Remove `<Header />` from every page that previously included it (login + signup stay header-less)
-- 4. Run full frontend suite — fix any existing page tests asserting on Header DOM (rewrite to assert on Rail/Topbar where appropriate)
-- 5. Commit `feat(shell): mount ShellLayout for all authed routes; drop old Header`
+- 1. Pre-flight scope sizing: `grep -rln "<Header" frontend/src/app` — record file count + test count to expect for churn. **Login + signup pages stay header-less + outside the (authed) group.**
+- 2. Move authed pages under a route group `(authed)/` if not already; add `(authed)/layout.tsx` that mounts `<ShellLayout>` and renders `children`
+- 3. Inside ShellLayout, derive active rail key from `usePathname()` and render matching panel component via a `routeToPanel` map
+- 4. RED: write `ShellLayout.section-swap.test.tsx` asserting `pathname=/projects` renders `ProjectsPanel`, `pathname=/dashboard` renders `DashboardPanel`, `pathname=/inbox` renders `InboxPanel`. Covers goal-criterion #9.
+- 5. Remove `<Header />` from every authed page that previously included it
+- 6. Delete the now-orphan files (`header.tsx`, plus any sub-component only used by it)
+- 7. Run full frontend suite — fix any existing page tests asserting on Header DOM (rewrite to assert on Rail/Topbar where appropriate). **If churn exceeds 15 test files, stop and slice this task into t10a (wiring) + t10b (test sweep).**
+- 8. Commit `feat(shell): mount ShellLayout for all authed routes; drop old Header`
 Status: [ ]
 
 ## Phase F — Cmd+K palette + Inbox page
@@ -175,9 +183,10 @@ Files:
 - `frontend/src/components/shell/*.tsx`
 - `frontend/src/app/globals.css` (touch only if needed)
 Steps:
-- 1. Visual pass: load every authed route under light + dark theme; ensure rail/panel/topbar use existing CSS variables (no hard-coded hex)
-- 2. Run a11y check: each rail icon has `aria-label`; panel section headings are landmarks
-- 3. Commit `style(shell): theme + a11y parity sweep`
+- 1. Visual pass: load every authed route under light + dark theme; ensure rail/panel/topbar use existing CSS variables (no hard-coded hex). Use `grep -rE "#[0-9a-fA-F]{3,6}\b" frontend/src/components/shell/` to surface any literal colors.
+- 2. a11y tooling: run `npx @axe-core/cli http://localhost:3000/dashboard` on a `npm run dev` instance. Capture violations. Fix critical + serious; document any minor deferrals in progress.md.
+- 3. Static lint: confirm `frontend/eslint.config.mjs` already enforces `jsx-a11y` rules (it does via Next.js defaults); add aria-label assertions to existing shell tests where icon-only buttons exist.
+- 4. Commit `style(shell): theme + a11y parity sweep`
 Status: [ ]
 
 ## Phase H — Verify + docs + close
@@ -187,7 +196,16 @@ Files: none (verification only)
 Steps:
 - 1. `npm test --prefix backend` — expect 523/523 unchanged
 - 2. `npm test --prefix frontend -- --run` — expect 364 + N new (≥ +15)
-- 3. `npm run dev` — manual sanity: login → click each rail icon → Cmd+K → /inbox → mobile resize
+- 3. `npm run dev` — manual smoke checklist (record PASS/FAIL per line in progress.md):
+   - 3a. Login renders w/o shell (header-less)
+   - 3b. Demo-login as admin → ShellLayout mounts, default panel = Projects panel
+   - 3c. Click rail icon Dashboard → URL `/dashboard`, panel swaps to DashboardPanel, active highlight moves
+   - 3d. Click rail icon Inbox → URL `/inbox`, panel swaps to InboxPanel; red-dot disappears if marked read
+   - 3e. Press Cmd+K (or Ctrl+K) → palette opens, type a project title → result appears, Enter navigates
+   - 3f. Click panel collapse footer → panel hides; reload → still hidden (localStorage works)
+   - 3g. DevTools → resize to 375px width → rail+panel hide, hamburger appears; click → drawer slides in w/ rail + panel stacked
+   - 3h. Theme icon toggles light/dark; reload preserves state
+   - 3i. Avatar dropdown → Logout → bounces to login
 - 4. Commit `test: verify sidebar-shell suite green + local smoke`
 Status: [ ]
 
@@ -220,4 +238,22 @@ Status: [ ]
 ## Notes on scope discipline
 - Every task scoped to a single concern. Anything that spreads across >2 files in the IN-scope list gets a follow-up task instead of bloating the current one.
 - No backend touches. If a task wants a backend change, it's out of scope for this subgoal.
-- "Pinned" projects, Search palette filters beyond projects+tasks, drag-reorder — all deferred.
+- Pinned project persistence is localStorage-only in v1; backend table is deferred. Search palette filters beyond projects+tasks deferred. Drag-reorder deferred.
+- Login + Signup pages stay **outside the (authed) route group** and have **no shell** — their existing minimal layout is kept untouched.
+- If t10 test-sweep churn exceeds 15 files, slice into t10a (wiring) + t10b (test fixes) — already noted in t10 step 7.
+
+## Goal-backward verification
+Each done-criterion → task mapping (verified 2026-06-05 after gap audit):
+
+| Done # | Criterion | Covered by |
+|---|---|---|
+| 1 | Authed pages render inside shell | t10 |
+| 2 | Rail: logo, Search, Dashboard, Projects (active), Inbox (red-dot), Help, Theme, Avatar | t3 (top) + t4 (bottom) + t5 (red-dot) |
+| 3 | Panel header swaps per section; Projects panel has filter chips + Pinned + All + +New + Collapse | t6 (collapse) + t7 (Projects content w/ empty-state Pinned) |
+| 4 | Panel collapses + persists across reloads (localStorage) | t6 |
+| 5 | Cmd+K palette over projects + tasks; max 8 results; Enter navigates | t11 |
+| 6 | /inbox route; notifications + assigned tasks; rail badged when unread > 0 | t12 + t5 |
+| 7 | Theme + Logout move into avatar/theme icons at rail bottom | t4 |
+| 8 | Mobile drawer below 768px | t13 |
+| 9 | Frontend tests stay green; new tests for rail + panel section swap + palette + inbox unread | t3 + t5 + **t10 step 4 (section-swap test)** + t11 + t12 |
+| 10 | Backend untouched; existing endpoints reused | t5 + t12 (verified by t15 backend suite 523/523) |
