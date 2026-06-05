@@ -4,7 +4,7 @@ const ACCESS_COOKIE = 'sc_at';
 const REFRESH_COOKIE = 'sc_rt';
 
 // Routes that require a logged-in user.
-const PROTECTED_PREFIXES = ['/dashboard', '/projects', '/tasks', '/team'];
+const PROTECTED_PREFIXES = ['/dashboard', '/projects', '/tasks', '/team', '/inbox'];
 
 // Routes that should redirect away when already logged in.
 const GUEST_PREFIXES = ['/login', '/signup'];
