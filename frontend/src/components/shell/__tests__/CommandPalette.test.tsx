@@ -104,6 +104,7 @@ const task = (over: Partial<Task> = {}): Task => ({
   createdBy: 'u1',
   creator: { id: 'u1', email: 'pm@demo.local', name: 'PM', role: 'project_manager' },
   assignee: null,
+  deletedAt: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   ...over,

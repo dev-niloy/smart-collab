@@ -96,6 +96,7 @@ export type Task = {
   createdBy: string;
   creator: TaskUser;
   assignee: TaskUser | null;
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

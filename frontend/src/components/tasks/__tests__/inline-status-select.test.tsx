@@ -45,6 +45,7 @@ const sampleTask = (over: Partial<Record<string, unknown>> = {}) => ({
   createdBy: 'u-1',
   creator: { id: 'u-1', email: 'a@x.y', name: 'Alice', role: 'admin' as const },
   assignee: null,
+  deletedAt: null,
   createdAt: '',
   updatedAt: '',
   ...over,
