@@ -25,7 +25,7 @@ tasks:
   - id: t4
     desc: "frontend .env.example + deploy-vercel doc"
     files: [frontend/.env.example, frontend/docs/deploy-vercel.md]
-    status: pending
+    status: done
   - id: t5
     desc: "MANUAL: neon provision project + capture connection string"
     files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
@@ -71,7 +71,7 @@ tasks:
 
 blockers: []
 
-next_task: t4
+next_task: t5
 
 phase_completion:
   gstack: true

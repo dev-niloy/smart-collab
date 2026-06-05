@@ -48,7 +48,7 @@ Steps:
 - 1. Document `NEXT_PUBLIC_API_URL` in `.env.example` w/ placeholder
 - 2. Write `frontend/docs/deploy-vercel.md` capturing Vercel project import + env var setup (root dir = `frontend/`, framework = Next.js, install/build/output detected automatically)
 - 3. Commit `[A4] vercel: .env.example + deploy doc`
-Status: [ ]
+Status: [x] 2026-06-05 — .env.example already had NEXT_PUBLIC_API_URL; added prod-vs-dev comment hint. deploy-vercel.md captures project import (root=frontend/, framework=Next.js auto), env var, smoke checklist, rollback. Commit 52da637. Phase A complete — pausing here, t5/t6/t7 are manual dashboard work.
 
 ## Phase B — External provisioning (MANUAL — you click; I document state)
 
