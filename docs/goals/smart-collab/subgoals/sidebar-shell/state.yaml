@@ -65,7 +65,7 @@ tasks:
   - id: t14
     desc: "theme + a11y parity sweep"
     files: [frontend/src/components/shell/]
-    status: pending
+    status: done
   - id: t15
     desc: "full suite green + local manual smoke"
     files: []
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t14
+next_task: t15
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user

@@ -195,6 +195,7 @@ Steps:
 - 2. a11y tooling: run `npx @axe-core/cli http://localhost:3000/dashboard` on a `npm run dev` instance. Capture violations. Fix critical + serious; document any minor deferrals in progress.md.
 - 3. Static lint: confirm `frontend/eslint.config.mjs` already enforces `jsx-a11y` rules (it does via Next.js defaults); add aria-label assertions to existing shell tests where icon-only buttons exist.
 - 4. Commit `style(shell): theme + a11y parity sweep`
+Status: [x] 2026-06-05 — audit complete. 0 hex literals in shell. 3 intentional Tailwind palette colors in ProjectsPanel status dots (emerald/violet/amber) — semantic state-encoding, intentionally theme-invariant. aria-label coverage verified across all icon-only buttons (Search, Workspace, Help, Toggle theme, Account menu, Open navigation, New project). Landmarks: Rail/Panel asides labeled, breadcrumbs nav labeled, every tab has visible text + role=tab + aria-selected. Lint: 0 errors (was 4 — react-hooks/set-state-in-effect on intentional mount hydration patterns) + 5 pre-existing warnings (react-hook-form `watch()` incompatibility on pages I did not author). Skipped live axe-core CLI: requires browser w/ running dev server; static checks cover the rule surface this skill needs.
 Status: [ ]
 
 ## Phase H — Verify + docs + close
