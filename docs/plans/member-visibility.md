@@ -174,7 +174,7 @@ Files: none
 Steps:
 - 1. (USER PERMISSION) `git push -u origin feature/member-visibility`
 - 2. (USER PERMISSION) `gh pr create --base develop --title "feat(rbac): scope project + task visibility by ProjectMember (closes #B1)"`
-Status: [ ]
+Status: [x] 2026-06-05 — PR #29 https://github.com/dev-niloy/smart-collab/pull/29 (all commits pushed)
 
 ---
 
