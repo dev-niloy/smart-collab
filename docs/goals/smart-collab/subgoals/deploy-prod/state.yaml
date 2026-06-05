@@ -1,0 +1,95 @@
+feature: deploy-prod
+created: 2026-06-04
+updated: 2026-06-04
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 2 # GSD — 13 tasks sliced; ready for Phase 3 Superpowers
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit"
+    files: []
+    status: done
+  - id: t2
+    desc: "backend CORS prod allowlist hardening + 2 tests"
+    files: [backend/src/app.ts, backend/src/__tests__/cors.prod.test.ts]
+    status: done
+  - id: t3
+    desc: "backend build:prod + start:prod scripts + deploy-render doc"
+    files: [backend/package.json, backend/docs/deploy-render.md]
+    status: done
+  - id: t4
+    desc: "frontend .env.example + deploy-vercel doc"
+    files: [frontend/.env.example, frontend/docs/deploy-vercel.md]
+    status: done
+  - id: t5
+    desc: "MANUAL: neon provision project + capture connection string"
+    files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
+    manual: true
+    status: done
+  - id: t6
+    desc: "MANUAL: render provision web service + env vars + first deploy"
+    files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
+    manual: true
+    status: pending
+  - id: t7
+    desc: "MANUAL: vercel provision project + env var + first deploy"
+    files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
+    manual: true
+    status: pending
+  - id: t8
+    desc: "MANUAL: set CORS_ORIGINS to vercel url + redeploy + curl healthz"
+    files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
+    manual: true
+    status: pending
+  - id: t9
+    desc: "MANUAL: smoke incognito flow across 3 roles + log results"
+    files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
+    manual: true
+    status: pending
+  - id: t10
+    desc: "README append deployment + demo sections w/ live URLs"
+    files: [README.md]
+    status: pending
+  - id: t11
+    desc: "parent progress.md log smart-collab assessment complete"
+    files: [docs/goals/smart-collab/progress.md]
+    status: pending
+  - id: t12
+    desc: "final CI green + state.yaml + progress.md close phase 3"
+    files: [docs/goals/smart-collab/subgoals/deploy-prod/state.yaml, docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
+    status: pending
+  - id: t13
+    desc: "USER PERMISSION: push branch + open PR feature/deploy-prod -> develop"
+    files: []
+    manual: true
+    status: pending
+
+blockers: []
+
+next_task: t6
+
+phase_completion:
+  gstack: true
+  gsd: true # 2026-06-04 — 13 tasks sliced across phases A (code prep) / B (provision) / C (wire+smoke) / D (docs+close)
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 521
+  frontend_tests: 364
+  branched_off: develop@27a116b
+
+decisions:
+  backend_host: render
+  db_host: neon
+  frontend_host: vercel
+  seed_strategy: auto-on-deploy
+  domain: free-subdomain
+  cookie_samesite_prod: none
+  cookie_secure_prod: true
+  cors_policy: single-origin-allowlist
