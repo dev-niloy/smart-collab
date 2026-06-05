@@ -93,6 +93,7 @@ model Task {
   createdBy   String       @db.Uuid
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
 
   project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   creator     User         @relation("TaskCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
@@ -102,6 +103,7 @@ model Task {
 
   @@unique([projectId, title], name: "tasks_projectId_title_unique")
   @@index([projectId, status])
+  @@index([projectId, deletedAt])
   @@index([assignedTo])
   @@index([dueDate])
   @@map("tasks")
