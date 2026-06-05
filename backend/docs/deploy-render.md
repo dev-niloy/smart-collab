@@ -20,7 +20,7 @@ Target: `https://<service>.onrender.com` — Free Web Service, auto-deploy on pu
 Notes
 - `--include=dev` keeps `typescript`, `prisma`, `tsx` available for build + seed. Render reuses the same image at start, so devDeps persist into runtime — `tsx prisma/seed.ts` works without moving tsx to `dependencies`.
 - `build:prod` = `prisma generate && tsc --project tsconfig.build.json` → emits `dist/`.
-- `start:prod` = `prisma migrate deploy && tsx prisma/seed.ts && node dist/server.js` → migrates, idempotently seeds the 3 demo accounts, then boots.
+- `start:prod` = `npm run db:migrate:deploy && npm run db:seed && node dist/server.js` → migrates, idempotently seeds the 3 demo accounts, then boots.
 - `/healthz` is the Render-pinged liveness endpoint — already implemented.
 
 ## Environment variables
