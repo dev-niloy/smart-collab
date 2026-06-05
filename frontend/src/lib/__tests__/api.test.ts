@@ -80,14 +80,48 @@ describe('api fetch wrapper', () => {
     expect(fetchSpy.mock.calls[1][0]).toEqual(expect.stringContaining('/api/v1/auth/refresh'));
   });
 
-  it('on 401 with failed refresh, throws and does NOT loop', async () => {
+  it('on 401 with failed refresh, throws and best-effort clears + redirects to /login', async () => {
+    const fetchSpy = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(mockResponse(401, { error: { code: 'MISSING_TOKEN' } }, false))
+      .mockResolvedValueOnce(mockResponse(401, { error: { code: 'INVALID_REFRESH' } }, false))
+      // logout call after refresh fails — accept whatever it gets
+      .mockResolvedValueOnce(mockResponse(204, {}));
+    vi.stubGlobal('fetch', fetchSpy);
+
+    // Spy on window.location.href without actually navigating jsdom.
+    const hrefSetter = vi.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { pathname: '/dashboard', get href() { return '/dashboard'; }, set href(v: string) { hrefSetter(v); } },
+    });
+
+    await expect(apiGet('/me')).rejects.toBeInstanceOf(ApiError);
+
+    // 3 calls now: original 401, refresh 401, then logout flush
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    expect(fetchSpy.mock.calls[2][0]).toEqual(expect.stringContaining('/api/v1/auth/logout'));
+    expect(hrefSetter).toHaveBeenCalledWith('/login');
+  });
+
+  it('does NOT redirect when refresh fails but pathname is already /login', async () => {
     const fetchSpy = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(mockResponse(401, { error: { code: 'MISSING_TOKEN' } }, false))
       .mockResolvedValueOnce(mockResponse(401, { error: { code: 'INVALID_REFRESH' } }, false));
     vi.stubGlobal('fetch', fetchSpy);
+
+    const hrefSetter = vi.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { pathname: '/login', get href() { return '/login'; }, set href(v: string) { hrefSetter(v); } },
+    });
+
     await expect(apiGet('/me')).rejects.toBeInstanceOf(ApiError);
+
+    // Only the two API calls — no logout, no redirect
     expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(hrefSetter).not.toHaveBeenCalled();
   });
 
   it('does NOT attempt refresh on auth endpoints (avoid loop)', async () => {

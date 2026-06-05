@@ -128,6 +128,22 @@ const send = async <T>(
     if (ok) {
       return send<T>(method, path, body, opts, false);
     }
+    // Refresh failed -> the cookies are stale/expired but the middleware will
+    // still see them and treat the user as authed, trapping them on a broken
+    // protected page. Best-effort clear via /auth/logout (which clears
+    // server-side and emits clearing Set-Cookie headers) then redirect to
+    // /login. Guard against loops by skipping when we're already there.
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      try {
+        await fetch(buildUrl('/api/v1/auth/logout'), {
+          method: 'POST',
+          credentials: 'include',
+        });
+      } catch {
+        // ignore — even if the server is unreachable, we still want the redirect
+      }
+      window.location.href = '/login';
+    }
   }
 
   if (!res.ok) throw await parseError(res);

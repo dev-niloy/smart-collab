@@ -7,6 +7,14 @@ Built for the EAP 4.0 Assessment.
 
 ---
 
+## App shell
+
+ClickUp-style L1 shell: 52px icon rail + 260px collapsible context panel + 48px topbar w/ breadcrumbs and Cmd+K palette.
+
+![Shell](frontend/public/screens/shell.png)
+
+---
+
 ## Stack
 
 - **Backend** — Node.js + TypeScript, Express, Prisma, PostgreSQL. Raw JWT + bcrypt auth (no auth library). Modular per-feature layout (`constant`/`controller`/`routes`/`service`/`validation`).
