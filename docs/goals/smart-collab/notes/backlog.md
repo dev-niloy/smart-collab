@@ -40,7 +40,27 @@
 
 ---
 
+## #B3 — Organization + Team model (MILESTONE-LEVEL / DEFERRED)
+
+**Idea (user, 2026-06-05):** introduce an `Organization` top-level entity with `Team`s under it, and assign PMs / team_members at the org or team level rather than project-by-project. Multi-tenant org switcher in the topbar.
+
+**Status:** captured but explicitly deferred — user chose to ship narrow `member-visibility` first (closes #B1 today using existing `ProjectMember`). Org/team is a separate milestone, NOT a follow-up subgoal.
+
+**Why deferred:**
+- Real schema migration: new `Organization`, `Team`, `OrgMember`, `TeamMember` tables.
+- Every read endpoint rescopes by `orgId`. 528 backend + 441 frontend tests need fixture updates.
+- Auth context expands: `req.user.orgId` + `req.user.teams[]`.
+- FE: org switcher, team CRUD UI, invite flow, demo reseed.
+- Estimate: 5-10× current `member-visibility`; ~30+ tasks.
+
+**Notes:**
+- The narrow `member-visibility` fix uses the existing `ProjectMember` table; nothing in it is wasted work — an `Organization` model can sit cleanly on top later.
+- Open design questions for the milestone: workspace switcher placement (topbar vs rail), cross-org users (one user / many orgs), billing scope, invite-by-email flow, team-vs-project-role precedence.
+- Recommended sequence post-merge: profile-settings → sidebar-v2 → org-teams milestone (own roadmap, not a subgoal).
+
+---
+
 ## Notes
-- Both issues surfaced 2026-06-05 during manual smoke of `progress-system` subgoal (PR not yet open).
-- #B1 is a real security gap and should be the next subgoal after `progress-system`, ahead of `sidebar-v2` and `profile-settings`.
-- #B2 can be a `chore/*` branch any time.
+- #B1 + #B2 surfaced 2026-06-05 during manual smoke of `progress-system` subgoal.
+- #B3 (org/team) captured 2026-06-05 in member-visibility Phase 1 brainstorm — deferred by user.
+- #B1 is the next subgoal (in progress). #B2 can be a `chore/*` branch any time. #B3 is a milestone-level conversation, not a subgoal.
