@@ -33,7 +33,9 @@ const envSchema = z.object({
   // known. Empty list = no origins allowed; same-origin endpoints like
   // /healthz still respond. Set to the real Vercel URL once it exists.
   CORS_ORIGINS: z.string().default('').transform(csv),
-  COOKIE_DOMAIN: z.string().min(1),
+  // Default empty so cross-site cookie scopes to the host. A whitespace-only
+  // value is treated the same; `auth.cookies.ts` trims before passing to express.
+  COOKIE_DOMAIN: z.string().default(''),
   DEMO_ADMIN_PW: z.string().min(1),
   DEMO_PM_PW: z.string().min(1),
   DEMO_MEMBER_PW: z.string().min(1),
