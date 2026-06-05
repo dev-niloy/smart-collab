@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ProjectProgress } from '@/components/projects/ProjectProgress';
 import {
   Select,
   SelectContent,
@@ -324,7 +325,8 @@ function ProjectsPageInner() {
                       <CardTitle className="text-base">{p.name}</CardTitle>
                       <Badge variant={STATUS_VARIANT[p.status]}>{STATUS_LABEL[p.status]}</Badge>
                     </CardHeader>
-                    <CardContent className="space-y-1 text-xs text-muted-foreground">
+                    <CardContent className="space-y-2 text-xs text-muted-foreground">
+                      <ProjectProgress progress={p.progress} variant="card" />
                       <p>Deadline {fmtDate(p.deadline)}</p>
                       <p>Created {fmtDate(p.createdAt)}</p>
                     </CardContent>
