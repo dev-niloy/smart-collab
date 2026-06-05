@@ -5,22 +5,24 @@ import { Topbar } from './Topbar';
 
 export interface ShellLayoutProps {
   children: ReactNode;
-  rail?: ReactNode;
+  railBottom?: ReactNode;
   panel?: ReactNode;
   topbar?: ReactNode;
   panelCollapsed?: boolean;
+  onSearchClick?: () => void;
 }
 
 export function ShellLayout({
   children,
-  rail,
+  railBottom,
   panel,
   topbar,
   panelCollapsed = false,
+  onSearchClick,
 }: ShellLayoutProps) {
   return (
     <div data-testid="shell-layout" className="flex h-screen overflow-hidden bg-background text-foreground">
-      <Rail>{rail}</Rail>
+      <Rail bottom={railBottom} onSearchClick={onSearchClick} />
       <Panel collapsed={panelCollapsed}>{panel}</Panel>
       <div className="flex flex-1 flex-col overflow-hidden">
         {topbar ?? <Topbar />}

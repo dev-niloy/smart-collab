@@ -1,12 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ShellLayout } from '../ShellLayout';
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/dashboard',
+}));
 
 describe('ShellLayout', () => {
   it('renders rail, panel, topbar, and main slots', () => {
     render(
       <ShellLayout
-        rail={<div data-testid="rail-slot">RAIL</div>}
+        railBottom={<div data-testid="rail-bottom-slot">RAIL-BOTTOM</div>}
         panel={<div data-testid="panel-slot">PANEL</div>}
       >
         <div data-testid="children-slot">CONTENT</div>
@@ -19,18 +23,14 @@ describe('ShellLayout', () => {
     expect(screen.getByTestId('shell-topbar')).toBeInTheDocument();
     expect(screen.getByTestId('shell-main')).toBeInTheDocument();
 
-    // slot contents render
-    expect(screen.getByTestId('rail-slot')).toHaveTextContent('RAIL');
+    expect(screen.getByTestId('rail-bottom-slot')).toHaveTextContent('RAIL-BOTTOM');
     expect(screen.getByTestId('panel-slot')).toHaveTextContent('PANEL');
     expect(screen.getByTestId('children-slot')).toHaveTextContent('CONTENT');
   });
 
   it('hides panel content when panelCollapsed is true', () => {
     render(
-      <ShellLayout
-        panel={<div data-testid="panel-slot">PANEL</div>}
-        panelCollapsed
-      >
+      <ShellLayout panel={<div data-testid="panel-slot">PANEL</div>} panelCollapsed>
         <div>main</div>
       </ShellLayout>,
     );
