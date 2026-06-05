@@ -38,6 +38,7 @@ const sampleProject = (over: Partial<Record<string, unknown>> = {}) => ({
   deadline: '2030-01-01T00:00:00.000Z',
   status: 'active',
   createdBy: 'u-1',
+  progress: { done: 0, total: 0, percent: 0 },
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   ...over,
@@ -76,6 +77,26 @@ describe('ProjectsPage', () => {
     await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
     expect(screen.getByText('Beta')).toBeInTheDocument();
     expect(screen.getByText('2 projects')).toBeInTheDocument();
+  });
+
+  it('shows progress bar + label on each card', async () => {
+    setUser('admin');
+    listSpy.mockResolvedValue({
+      data: [
+        sampleProject({ id: 'a', name: 'Alpha', progress: { done: 1, total: 3, percent: 33 } }),
+        sampleProject({ id: 'b', name: 'Beta', progress: { done: 0, total: 0, percent: 0 } }),
+      ],
+      total: 2,
+      page: 1,
+      limit: 10,
+    });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
+    expect(screen.getByText('1/3 · 33%')).toBeInTheDocument();
+    expect(screen.getByText('0 tasks')).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('progressbar').some((b) => b.getAttribute('aria-valuenow') === '33'),
+    ).toBe(true);
   });
 
   it('shows New Project button for admin', async () => {

@@ -16,10 +16,12 @@ import type {
   Task,
   TaskListResponse,
 } from '@/lib/schemas/task';
+import { PROJECTS_KEY, projectKey } from './useProjects';
 
 export const TASKS_KEY = ['tasks'] as const;
 export const projectTasksKey = (projectId: string) => ['tasks', 'project', projectId] as const;
 export const taskKey = (id: string) => ['task', id] as const;
+const DASHBOARD_KEY = ['dashboard'] as const;
 
 export const useTasks = (params?: ListTasksParams) =>
   useQuery<TaskListResponse>({
@@ -47,8 +49,12 @@ export const useTask = (id: string | undefined) =>
     staleTime: 10_000,
   });
 
-const invalidateLists = (qc: ReturnType<typeof useQueryClient>) =>
-  qc.invalidateQueries({ queryKey: TASKS_KEY });
+const invalidateLists = (qc: ReturnType<typeof useQueryClient>, projectId?: string) => {
+  void qc.invalidateQueries({ queryKey: TASKS_KEY });
+  void qc.invalidateQueries({ queryKey: PROJECTS_KEY });
+  if (projectId) void qc.invalidateQueries({ queryKey: projectKey(projectId) });
+  void qc.invalidateQueries({ queryKey: DASHBOARD_KEY });
+};
 
 export const useCreateTask = () => {
   const qc = useQueryClient();
@@ -56,7 +62,7 @@ export const useCreateTask = () => {
     mutationFn: (input: CreateTaskInput) => createTask(input),
     onSuccess: (task) => {
       qc.setQueryData(taskKey(task.id), task);
-      void invalidateLists(qc);
+      invalidateLists(qc, task.projectId);
     },
   });
 };
@@ -67,7 +73,7 @@ export const useUpdateTask = (id: string) => {
     mutationFn: (input: UpdateTaskInput) => updateTask(id, input),
     onSuccess: (task) => {
       qc.setQueryData(taskKey(task.id), task);
-      void invalidateLists(qc);
+      invalidateLists(qc, task.projectId);
     },
   });
 };
@@ -78,7 +84,7 @@ export const useDeleteTask = () => {
     mutationFn: (id: string) => deleteTask(id),
     onSuccess: (_v, id) => {
       qc.removeQueries({ queryKey: taskKey(id) });
-      void invalidateLists(qc);
+      invalidateLists(qc);
     },
   });
 };

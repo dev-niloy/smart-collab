@@ -1,11 +1,13 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 
 export interface KpiCardProps {
   title: string;
   value: number | string | undefined;
   sub?: string;
+  progressPercent?: number;
   loading?: boolean;
   error?: boolean;
 }
@@ -16,7 +18,7 @@ const fmtNum = (v: number | string | undefined): string => {
   return v;
 };
 
-export function KpiCard({ title, value, sub, loading, error }: KpiCardProps) {
+export function KpiCard({ title, value, sub, progressPercent, loading, error }: KpiCardProps) {
   return (
     <Card data-testid={`kpi-card-${title.replace(/\s+/g, '-').toLowerCase()}`}>
       <CardHeader className="pb-2">
@@ -32,6 +34,13 @@ export function KpiCard({ title, value, sub, loading, error }: KpiCardProps) {
         ) : (
           <>
             <div className="text-3xl font-semibold tabular-nums">{fmtNum(value)}</div>
+            {typeof progressPercent === 'number' ? (
+              <Progress
+                value={progressPercent}
+                aria-label={`${title} progress ${progressPercent} percent`}
+                className="mt-2 flex-row [&_[data-slot=progress-track]]:h-1"
+              />
+            ) : null}
             {sub ? <p className="text-xs text-muted-foreground">{sub}</p> : null}
           </>
         )}

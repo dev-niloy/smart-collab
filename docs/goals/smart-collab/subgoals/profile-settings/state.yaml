@@ -1,0 +1,29 @@
+feature: profile-settings
+created: 2026-06-05
+updated: 2026-06-05
+
+mode:
+  type: brownfield      # greenfield | brownfield
+  scope: feature        # full-project | feature
+  session: new          # new | resume
+
+phase: 1                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+
+tasks: []               # populated in Phase 2 GSD
+
+blockers: []
+
+next_task: user-review-goal-md
+
+phase_completion:
+  gstack: false
+  gsd: false
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 0      # fill in t1 baseline
+  frontend_tests: 0     # fill in t1 baseline
+  branched_off: develop@f66149f
+
+decisions: {}           # short k:v of locked design calls

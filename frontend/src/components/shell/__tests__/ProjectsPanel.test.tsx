@@ -17,6 +17,7 @@ const project = (over: Partial<Project> = {}): Project => ({
   status: 'active',
   createdBy: 'u1',
   creator: { id: 'u1', email: 'pm@demo.local', name: 'PM' },
+  progress: { done: 0, total: 0, percent: 0 },
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   ...over,
@@ -70,6 +71,42 @@ describe('ProjectsPanel', () => {
     expect(pinned).toHaveTextContent('Q3 polish');
     expect(all).not.toHaveTextContent('Q3 polish');
     expect(all).toHaveTextContent('Onboarding revamp');
+  });
+
+  it('renders inline progress bar under pinned rows when total > 0', () => {
+    useProjectsMock.mockReturnValue({
+      data: {
+        data: [
+          project({ id: 'p1', name: 'Empty', progress: { done: 0, total: 0, percent: 0 } }),
+          project({ id: 'p2', name: 'Partial', progress: { done: 1, total: 3, percent: 33 } }),
+        ],
+        total: 2,
+        page: 1,
+        limit: 50,
+      },
+      isLoading: false,
+    });
+    window.localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(['p1', 'p2']));
+    render(<ProjectsPanel />);
+
+    const bars = screen.getAllByRole('progressbar');
+    // p1 has total=0 → ProjectProgress returns null. Only p2 renders.
+    expect(bars).toHaveLength(1);
+    expect(bars[0]).toHaveAttribute('aria-valuenow', '33');
+  });
+
+  it('does not render inline progress for non-pinned rows', () => {
+    useProjectsMock.mockReturnValue({
+      data: {
+        data: [project({ id: 'p1', name: 'A', progress: { done: 1, total: 2, percent: 50 } })],
+        total: 1,
+        page: 1,
+        limit: 50,
+      },
+      isLoading: false,
+    });
+    render(<ProjectsPanel />);
+    expect(screen.queryAllByRole('progressbar')).toHaveLength(0);
   });
 
   it('clicking Active chip re-queries useProjects with status=active', () => {

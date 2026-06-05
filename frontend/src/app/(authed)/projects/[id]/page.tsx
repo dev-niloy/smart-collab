@@ -15,6 +15,7 @@ import { useProject } from '@/hooks/useProjects';
 import { useProjectMembers } from '@/hooks/useProjectMembers';
 import { useRole } from '@/hooks/useUser';
 import { DeleteProjectButton } from '@/components/projects/delete-project-button';
+import { ProjectProgress } from '@/components/projects/ProjectProgress';
 import { STATUS_LABEL, STATUS_VARIANT, fmtDate, fmtDateTime } from '@/lib/project-format';
 
 export default function ProjectDetailPage() {
@@ -72,6 +73,8 @@ export default function ProjectDetailPage() {
               ) : (
                 <p className="text-sm text-muted-foreground italic">No description.</p>
               )}
+
+              <ProjectProgress progress={project.progress} variant="detail" />
 
               <dl className="grid grid-cols-2 gap-3 text-sm">
                 <div>

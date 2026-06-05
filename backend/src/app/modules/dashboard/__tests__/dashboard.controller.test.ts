@@ -34,6 +34,8 @@ describe('dashboardController', () => {
       completedTasks: 1,
       completionPct: 50,
       myOpenTasks: 1,
+      myCompletedTasks: 0,
+      myCompletionPct: 0,
     });
     const res = mockRes();
     const next = jest.fn();

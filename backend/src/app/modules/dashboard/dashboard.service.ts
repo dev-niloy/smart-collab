@@ -9,6 +9,8 @@ export type Kpis = {
   completedTasks: number;
   completionPct: number;
   myOpenTasks: number;
+  myCompletedTasks: number;
+  myCompletionPct: number;
 };
 
 const taskWhere = (scope: Scope, extra: Prisma.TaskWhereInput = {}): Prisma.TaskWhereInput => ({
@@ -23,20 +25,27 @@ const pct = (numer: number, denom: number): number =>
   denom === 0 ? 0 : Math.round((numer / denom) * 100);
 
 const getKpis = async (scope: Scope): Promise<Kpis> => {
-  const [totalProjects, totalTasks, completedTasks, myOpenTasks] = await Promise.all([
-    prisma.project.count({ where: projectWhere(scope) }),
-    prisma.task.count({ where: taskWhere(scope) }),
-    prisma.task.count({ where: taskWhere(scope, { status: 'completed' }) }),
-    prisma.task.count({
-      where: taskWhere(scope, { assignedTo: scope.actorId, status: { not: 'completed' } }),
-    }),
-  ]);
+  const [totalProjects, totalTasks, completedTasks, myOpenTasks, myCompletedTasks] =
+    await Promise.all([
+      prisma.project.count({ where: projectWhere(scope) }),
+      prisma.task.count({ where: taskWhere(scope) }),
+      prisma.task.count({ where: taskWhere(scope, { status: 'completed' }) }),
+      prisma.task.count({
+        where: taskWhere(scope, { assignedTo: scope.actorId, status: { not: 'completed' } }),
+      }),
+      prisma.task.count({
+        where: taskWhere(scope, { assignedTo: scope.actorId, status: 'completed' }),
+      }),
+    ]);
+  const myTotal = myOpenTasks + myCompletedTasks;
   return {
     totalProjects,
     totalTasks,
     completedTasks,
     completionPct: pct(completedTasks, totalTasks),
     myOpenTasks,
+    myCompletedTasks,
+    myCompletionPct: pct(myCompletedTasks, myTotal),
   };
 };
 

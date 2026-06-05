@@ -135,6 +135,18 @@ describe('useTasks hooks', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: TASKS_KEY });
   });
 
+  it('useUpdateTask also invalidates projects + dashboard + scoped project for progress refresh', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse(200, { task: sampleTask })));
+    const qc = makeClient();
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+    const { result } = renderHook(() => useUpdateTask('t-1'), { wrapper: makeWrapper(qc) });
+    await result.current.mutateAsync({ status: 'completed' });
+    const keys = invalidateSpy.mock.calls.map((c) => c[0]?.queryKey);
+    expect(keys).toContainEqual(['projects']);
+    expect(keys).toContainEqual(['project', 'p-1']);
+    expect(keys).toContainEqual(['dashboard']);
+  });
+
   it('useDeleteTask removes detail cache + invalidates list', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse(204)));
     const qc = makeClient();

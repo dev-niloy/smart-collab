@@ -65,6 +65,8 @@ const seedHooks = () => {
     completedTasks: 4,
     completionPct: 40,
     myOpenTasks: 2,
+    myCompletedTasks: 1,
+    myCompletionPct: 33,
   });
   statusSpy.mockResolvedValue({ todo: 3, in_progress: 3, completed: 4 });
   prioritySpy.mockResolvedValue({ low: 3, medium: 4, high: 3 });
@@ -94,6 +96,24 @@ describe('DashboardPage (global)', () => {
     expect(screen.getByTestId('kpi-card-tasks')).toBeTruthy();
     expect(screen.getByTestId('kpi-card-completed')).toBeTruthy();
     expect(screen.getByTestId('kpi-card-my-open-tasks')).toBeTruthy();
+  });
+
+  it('My open tasks card shows aggregate progress bar + label', async () => {
+    render(
+      <Providers>
+        <DashboardPage />
+      </Providers>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('kpi-card-my-open-tasks')).toHaveTextContent(
+        '33% of your tasks done',
+      ),
+    );
+    expect(
+      screen
+        .getAllByRole('progressbar')
+        .some((b) => b.getAttribute('aria-valuenow') === '33'),
+    ).toBe(true);
   });
 
   it('renders all 6 widget containers', async () => {

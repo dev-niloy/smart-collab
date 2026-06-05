@@ -50,6 +50,7 @@ const sampleProject = {
   status: 'active' as const,
   createdBy: 'u-7',
   creator: { id: 'u-7', email: 'alice@x.y', name: 'Alice' },
+  progress: { done: 2, total: 5, percent: 40 },
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-02T00:00:00.000Z',
 };
@@ -74,6 +75,19 @@ describe('ProjectDetailPage', () => {
     expect(screen.getByText(/marketing site rebuild/i)).toBeInTheDocument();
     expect(screen.getByText(/alice@x\.y/)).toBeInTheDocument();
     expect(screen.getAllByText(/active/i).length).toBeGreaterThan(0);
+  });
+
+  it('renders progress bar + long label in detail header', async () => {
+    setUser('admin');
+    getSpy.mockResolvedValue(sampleProject);
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Launch Site')).toBeInTheDocument());
+    expect(screen.getByText('2 of 5 tasks · 40%')).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole('progressbar')
+        .some((b) => b.getAttribute('aria-valuenow') === '40'),
+    ).toBe(true);
   });
 
   it('renders View tasks link (all authed)', async () => {
