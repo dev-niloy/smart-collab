@@ -17,7 +17,7 @@ Steps:
 - 1. `cd backend && npm test --silent` → expect 523 passing
 - 2. `cd frontend && npm test -- --run` → expect 427 passing
 - 3. Empty commit `chore: baseline before progress-system work begins`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 2: project service aggregates progress on list + detail
 Files:
@@ -28,7 +28,7 @@ Steps:
 - 2. GREEN: extend Prisma queries — single SQL aggregate via `_count` w/ `where: {status: 'done'}` OR raw `groupBy` join. No N+1.
 - 3. REFACTOR: extract `computeProgress(done, total)` pure helper. Confirm round-half-even (or floor) behavior matches tests.
 - 4. Commit `feat(projects): aggregate task progress {done,total,percent} on list + detail`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 3: Zod schema + DTO type update
 Files:
@@ -40,7 +40,7 @@ Steps:
 - 2. GREEN: extend `projectResponseSchema` (backend) + `Project` Zod schema (frontend) w/ `progress` object.
 - 3. REFACTOR: re-export `ProjectProgress` type from one place.
 - 4. Commit `feat(projects): Project DTO includes progress field`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -55,7 +55,7 @@ Steps:
 - 2. RED: test renders w/ correct ARIA (`role="progressbar"`, `aria-valuenow`, `aria-valuemin=0`, `aria-valuemax=100`), correct width style.
 - 3. GREEN: confirm shadcn output passes; add minimal wrapper if needed for project-specific sizing variants.
 - 4. Commit `feat(ui): add Progress primitive`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 5: ProjectProgress helper component
 Files:
@@ -66,7 +66,7 @@ Steps:
 - 2. GREEN: implement variants using ProgressBar primitive.
 - 3. REFACTOR: extract label formatter pure helper.
 - 4. Commit `feat(projects): ProjectProgress component w/ card/detail/inline variants`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -81,7 +81,7 @@ Steps:
 - 2. GREEN: import + render under the project name/status row.
 - 3. REFACTOR: keep card spacing tight; no layout regression.
 - 4. Commit `feat(projects): show progress bar on list cards`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 7: detail header surface
 Files:
@@ -92,7 +92,7 @@ Steps:
 - 2. GREEN: add component above the metadata grid.
 - 3. REFACTOR: confirm dark-mode tokens, no hex.
 - 4. Commit `feat(projects): show progress bar on detail header`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 8: sidebar Pinned row inline bar
 Files:
@@ -103,7 +103,7 @@ Steps:
 - 2. GREEN: render `<ProjectProgress variant="inline" project={p} />` in pinned section only.
 - 3. REFACTOR: don't break the existing pin-toggle button hit area; verify hover affordance still works.
 - 4. Commit `feat(shell): inline progress bar under pinned project rows`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 9: Dashboard "My open tasks" widget aggregate
 Files:
@@ -115,7 +115,7 @@ Steps:
 - 3. GREEN: compute on client from existing `useTasks({assignedTo:'me'})` query result (already loaded by widget) — no new endpoint.
 - 4. REFACTOR: pure aggregate helper `aggregateProgress(tasks)`.
 - 5. Commit `feat(dashboard): aggregate progress bar in My Open Tasks widget`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -130,7 +130,7 @@ Steps:
 - 2. GREEN: extend mutation `onSettled` to invalidate both keys.
 - 3. REFACTOR: confirm no over-invalidation (e.g. don't invalidate sibling projects).
 - 4. Commit `feat(tasks): invalidate project queries on task mutation so progress refreshes`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -150,7 +150,7 @@ Steps:
   - 5d. Mark in_progress → done → all surfaces flip to 2/3 · 67% WITHOUT page refresh
   - 5e. Dashboard "My Open Tasks" widget reflects aggregate
 - 6. Commit `test: verify progress-system suite green + manual smoke`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 12: docs + screenshot + close phase 3
 Files:
@@ -162,7 +162,7 @@ Steps:
 - 2. Flip `state.yaml` phase: 3, mark `superpowers: true`, `next_task: t13`.
 - 3. Update progress.md.
 - 4. Commit `docs(progress-system): phase 3 superpowers complete`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 13: USER PERMISSION — push + open PR feature/progress-system → develop
 Files: none
