@@ -29,14 +29,18 @@ export class ApiError extends Error implements ApiErrorShape {
 
 const DEFAULT_DEV_API = 'http://localhost:4000';
 
+// In the browser we always use a relative base so requests hit the Next.js
+// rewrite (configured in next.config.ts) and stay first-party — required for
+// auth cookies to round-trip in modern browsers. On the server (SSR/tests) we
+// still need an absolute URL; fall back to NEXT_PUBLIC_API_URL or localhost.
 let warned = false;
 const apiBase = (): string => {
+  if (typeof window !== 'undefined') return '';
   const raw = process.env.NEXT_PUBLIC_API_URL;
   if (!raw) {
-    if (typeof window !== 'undefined' && !warned) {
+    if (!warned) {
       console.warn(
-        `[api] NEXT_PUBLIC_API_URL not set — falling back to ${DEFAULT_DEV_API}. ` +
-          `Set it in frontend/.env.local for prod.`,
+        `[api] NEXT_PUBLIC_API_URL not set — falling back to ${DEFAULT_DEV_API}.`,
       );
       warned = true;
     }
