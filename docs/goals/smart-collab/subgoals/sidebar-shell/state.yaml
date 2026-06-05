@@ -1,0 +1,36 @@
+feature: sidebar-shell
+created: 2026-06-05
+updated: 2026-06-05
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 1 # GStack — goal.md written; awaiting user review before Phase 2
+
+tasks: [] # populated after user signs off on goal.md and Phase 2 GSD runs
+
+blockers: []
+
+next_task: user-review-goal-md
+
+phase_completion:
+  gstack: false # user must approve goal.md before flipping true
+  gsd: false
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 523
+  frontend_tests: 364
+  branched_off: develop@bdda6e0
+
+decisions:
+  shell_layout: rail-plus-collapsible-panel
+  icon_lib: lucide-react
+  backend_changes: none
+  panel_state: localStorage
+  cmd_k_palette: client-only
+  inbox_route: new
+  mobile_breakpoint: 768
