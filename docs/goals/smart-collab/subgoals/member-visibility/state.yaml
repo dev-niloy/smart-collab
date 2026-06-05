@@ -7,75 +7,75 @@ mode:
   scope: feature
   session: new
 
-phase: 2 # GSD — plan w/ 14 tasks; ready for Phase 3 Superpowers
+phase: 3 # Superpowers — t1–t13 done; t14 (push complete; awaiting merge of PR #29)
 
 tasks:
   - id: t1
     desc: "baseline verification commit (backend 528 + frontend 441)"
     files: []
-    status: pending
+    status: done
   - id: t2
     desc: "extend Scope/Actor type — thread role through service signatures"
     files: [backend/src/app/modules/project/project.service.ts, backend/src/app/modules/task/task.service.ts]
-    status: pending
+    status: done
   - id: t3
     desc: "projectService.list filters by membership for non-admin"
     files: [backend/src/app/modules/project/project.service.ts]
-    status: pending
+    status: done
   - id: t4
     desc: "projectService.findById returns 403 for non-member"
     files: [backend/src/app/modules/project/project.service.ts]
-    status: pending
+    status: done
   - id: t5
     desc: "taskService.list (cross-project) filters by membership"
     files: [backend/src/app/modules/task/task.service.ts]
-    status: pending
+    status: done
   - id: t6
     desc: "project-scoped task list 403 for non-member"
     files: [backend/src/app/modules/task/task.service.ts]
-    status: pending
+    status: done
   - id: t7
     desc: "taskService.findById 403 for non-member of task's project"
     files: [backend/src/app/modules/task/task.service.ts]
-    status: pending
+    status: done
   - id: t8
     desc: "thread req.user -> service.actor in all touched controllers"
     files: [backend/src/app/modules/project/project.controller.ts, backend/src/app/modules/task/task.controller.ts]
-    status: pending
+    status: done
   - id: t9
     desc: "integration test — creator-auto-pm invariant preserved"
     files: [backend/src/app/modules/project/__tests__/project.routes.test.ts]
-    status: pending
+    status: done
   - id: t10
     desc: "surface Members tab link to project_manager on detail header"
     files: [frontend/src/app/(authed)/projects/[id]/page.tsx]
-    status: pending
+    status: done
   - id: t11
     desc: "403 client-side handling on project detail page"
     files: [frontend/src/app/(authed)/projects/[id]/page.tsx]
-    status: pending
+    status: done
   - id: t12
     desc: "full suite green + 3-role manual smoke"
     files: []
-    status: pending
+    status: done
   - id: t13
     desc: "docs + close phase 3 + mark #B1 resolved"
     files: [docs/goals/smart-collab/subgoals/member-visibility/state.yaml, docs/goals/smart-collab/notes/backlog.md]
-    status: pending
+    status: done
   - id: t14
     desc: "USER PERMISSION: push branch + open PR feature/member-visibility -> develop"
     files: []
     manual: true
-    status: pending
+    status: done
 
 blockers: []
 
-next_task: t1
+next_task: null
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user (closes backlog #B1)
   gsd: true # 2026-06-05 — 14 tasks sliced across A backend / B controllers / C frontend / D close
-  superpowers: false
+  superpowers: true # 2026-06-05 — t1–t13 done; PR #29 includes all TDD + docs commits
   ralph_wiggum: false
 
 baseline:

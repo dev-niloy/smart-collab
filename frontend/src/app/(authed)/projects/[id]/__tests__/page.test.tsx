@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Providers } from '@/components/providers';
+import type { ReactNode } from 'react';
 
 const { meSpy, getSpy } = vi.hoisted(() => ({
   meSpy: vi.fn(),
@@ -75,6 +77,27 @@ describe('ProjectDetailPage', () => {
     expect(screen.getByText(/marketing site rebuild/i)).toBeInTheDocument();
     expect(screen.getByText(/alice@x\.y/)).toBeInTheDocument();
     expect(screen.getAllByText(/active/i).length).toBeGreaterThan(0);
+  });
+
+  it('shows friendly forbidden message when getProject rejects 403', async () => {
+    setUser('team_member');
+    const { ApiError } = await import('@/lib/api');
+    getSpy.mockRejectedValue(
+      new ApiError({ status: 403, code: 'FORBIDDEN', message: 'no access' }),
+    );
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const Wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+    );
+    render(<ProjectDetailPage />, { wrapper: Wrapper });
+    await waitFor(() =>
+      expect(
+        screen.getByText(/you do not have access to this project/i),
+      ).toBeInTheDocument(),
+    );
+    const backButtons = screen.getAllByRole('link', { name: /back to projects/i });
+    expect(backButtons.length).toBeGreaterThanOrEqual(1);
+    expect(backButtons.every((b) => b.getAttribute('href') === '/projects')).toBe(true);
   });
 
   it('renders progress bar + long label in detail header', async () => {

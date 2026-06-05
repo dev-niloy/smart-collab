@@ -1,7 +1,29 @@
 import type { Project, ProjectStatus, Prisma } from '@prisma/client';
-import { TaskStatus } from '@prisma/client';
+import { Role, TaskStatus } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
+
+export type Actor = { id: string; role: Role };
+
+export const isAdmin = (actor: Actor | undefined): boolean =>
+  !actor || actor.role === Role.admin;
+
+export const memberFilter = (actor: Actor | undefined): Prisma.ProjectWhereInput | undefined =>
+  isAdmin(actor) ? undefined : { members: { some: { userId: actor!.id } } };
+
+export const assertProjectAccess = async (
+  actor: Actor | undefined,
+  projectId: string,
+): Promise<void> => {
+  if (isAdmin(actor)) return;
+  const member = await prisma.projectMember.findFirst({
+    where: { projectId, userId: actor!.id },
+    select: { id: true },
+  });
+  if (!member) {
+    throw ApiError.forbidden('You do not have access to this project.', 'FORBIDDEN');
+  }
+};
 import { PAST_DEADLINE_MESSAGE, DEFAULT_LIMIT, DEFAULT_PAGE, type SortKey } from './project.constant';
 import type { CreateProjectInput, UpdateProjectInput } from './project.validation';
 import { recordActivity } from '../activityLog/activityLog.service';
@@ -87,9 +109,10 @@ const create = async (input: CreateProjectInput, actorId: string): Promise<Proje
   });
 };
 
-const findById = async (id: string): Promise<ProjectWithCreator> => {
+const findById = async (id: string, actor?: Actor): Promise<ProjectWithCreator> => {
   const p = await prisma.project.findUnique({ where: { id }, include: creatorInclude });
   if (!p) throw ApiError.notFound('Project not found', 'PROJECT_NOT_FOUND');
+  await assertProjectAccess(actor, id);
   const progressMap = await fetchProgressMap([id]);
   return { ...p, progress: progressMap.get(id) ?? computeProgress(0, 0) };
 };
@@ -165,6 +188,7 @@ type ListArgs = {
   deadlineFrom?: Date;
   deadlineTo?: Date;
   actorId?: string;
+  actor?: Actor;
   sort: SortKey;
   page: number;
   limit: number;
@@ -202,11 +226,13 @@ const list = async (args: ListArgs): Promise<ListResult> => {
       : undefined;
   const createdByResolved =
     args.createdBy === 'me' ? args.actorId : args.createdBy;
+  const rbacFilter = memberFilter(args.actor);
   const where: Prisma.ProjectWhereInput = {
     ...(args.q ? { name: { contains: args.q, mode: 'insensitive' } } : {}),
     ...(statusFilter !== undefined ? { status: statusFilter } : {}),
     ...(deadline ? { deadline } : {}),
     ...(createdByResolved ? { createdBy: createdByResolved } : {}),
+    ...(rbacFilter ?? {}),
   };
   const [rows, total] = await prisma.$transaction([
     prisma.project.findMany({

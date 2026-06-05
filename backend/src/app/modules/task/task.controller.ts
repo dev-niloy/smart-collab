@@ -1,7 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../../errors/ApiError';
 import { taskService } from './task.service';
+import type { Actor } from '../project/project.service';
 import type { ListTasksQuery } from './task.validation';
+
+const getActor = (req: Request): Actor | undefined =>
+  req.user ? { id: req.user.id, role: req.user.role } : undefined;
 
 export const taskController = {
   create: async (req: Request, res: Response, next: NextFunction) => {
@@ -18,7 +22,11 @@ export const taskController = {
   list: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const query = req.query as unknown as ListTasksQuery;
-      const result = await taskService.list({ ...query, actorId: req.user?.id });
+      const result = await taskService.list({
+        ...query,
+        actorId: req.user?.id,
+        actor: getActor(req),
+      });
       res.status(200).json(result);
     } catch (err) {
       next(err);
@@ -27,7 +35,7 @@ export const taskController = {
 
   getById: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const task = await taskService.findById(req.params.id);
+      const task = await taskService.findById(req.params.id, getActor(req));
       res.status(200).json({ task });
     } catch (err) {
       next(err);

@@ -1,6 +1,6 @@
 # Backlog — captured during progress-system smoke (2026-06-05)
 
-## #B1 — Member visibility scoping (RBAC) — **HIGH PRIORITY / SECURITY**
+## #B1 — Member visibility scoping (RBAC) — **RESOLVED 2026-06-05 (PR #29 pending merge)**
 
 **Observed:** logged in as `member@demo.local` (role: team_member), all projects + tasks were visible — including projects the user is NOT a member of.
 
@@ -37,6 +37,48 @@
 **Affected:** `frontend/src/components/shell/DashboardPanel.tsx`.
 
 **Effort:** ~1h. Reuse `useKpis()` + count via existing dashboard hooks. Could ship as a small `chore/dashboard-panel-counts` branch.
+
+---
+
+## #B5 — Task assignee-write + soft-delete — **NEXT SUBGOAL after member-visibility merges**
+
+**User-locked decisions (2026-06-05):**
+- Only the **assignee** can update task status + edit fields (title/desc/priority/due).
+- Only **PM/admin** can reassign.
+- Delete: **PM/admin** can delete any; **creator** can delete their own task regardless of role.
+- Soft-delete: deleted tasks remain in DB; only **PM/admin** can view a "Deleted" tab and **restore**.
+- Unassigned tasks: only **PM/admin** can update status until someone claims (assignee gets set).
+- **Comments + attachments** stay open to every project member (including non-assignees).
+
+**Subgoal candidate:** `task-assignee-write`. Estimate ~14-18 tasks across:
+- Phase A — field-write enforcement (status/title/desc/priority/due gated on assignee || PM/admin).
+- Phase B — reassign gated on PM/admin only.
+- Phase C — soft-delete (`deletedAt: DateTime?` + index; service queries filter `deletedAt: null` for non-PM views; creator-own-delete bypass).
+- Phase D — Deleted tab on tasks page + Restore action (PM/admin only).
+- Phase E — FE buttons + UI gates per the table in goal.md.
+
+**Branch when started:** `feature/task-assignee-write` off whichever develop SHA member-visibility merges to.
+
+---
+
+## #B4 — Members count + assignable list mismatch — **MEDIUM / DATA CONSISTENCY**
+
+**Observed during member-visibility smoke (2026-06-05):**
+- (a) PM views project detail header showing `Members (2)` but the linked members page renders only 1 row (PM themselves). User added a member via the form but list does not reflect it consistently across views.
+- (b) Task-create page assignee dropdown on Daralmehrab shows only PM + Admin, missing Demo Member who was reportedly added to the project. Same project members page in another browser session shows Demo Member present.
+
+**Likely root cause (untriaged):**
+- React-query cache staleness across browser tabs (PM had stale entry from before t8 controller redeploy).
+- OR add-member mutation returning non-2xx so `onSuccess` never fires → no invalidation → display shows pre-add state.
+- OR the user mentally conflated projects (member added to Solvemeet but expected to appear in Daralmehrab task assignee dropdown).
+
+**To investigate:**
+- Hard-refresh PM session after t12 deploy and re-attempt smoke step #4 / #5.
+- Inspect Network tab on add-member POST → confirm 201 + payload.
+- Verify backend integration: `POST /projects/:id/members` then `GET /projects/:id/members/assignable` returns the new row.
+- If reproducible after refresh: add e2e test covering add-then-assignable refresh flow.
+
+**Status:** captured during member-visibility smoke but **not blocking** that subgoal — RBAC code is correct in isolation (verified by 23 unit + integration tests). Fix in a follow-up `fix/member-list-staleness` once reproduced cleanly.
 
 ---
 
