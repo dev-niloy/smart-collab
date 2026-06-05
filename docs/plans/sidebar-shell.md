@@ -183,6 +183,7 @@ Steps:
 - 1. RED: at <768px, ShellLayout hides Rail+Panel and shows a top hamburger; clicking opens drawer with Rail + Panel stacked
 - 2. GREEN: use shadcn `Sheet` for the drawer; `useMediaQuery('(max-width: 767px)')` to gate
 - 3. Commit `feat(shell): mobile drawer below 768px`
+Status: [x] 2026-06-05 — useMediaQuery hook (SSR-safe, listens for matchMedia changes); useMediaQuery.test 2 cases. MobileDrawer.tsx wraps shadcn Sheet w/ hamburger SheetTrigger + side="left" SheetContent containing rail + panel stacked. ShellLayout branches: when `MOBILE_MEDIA_QUERY` matches, renders a topbar w/ MobileDrawer hamburger + topbar inline, main below; otherwise current desktop layout. MobileDrawer.test 4 cases. ShellLayout.test +1 mobile-branch case. Frontend 415/415.
 Status: [ ]
 
 ### Task 14: Theme parity audit
