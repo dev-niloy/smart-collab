@@ -1,0 +1,108 @@
+feature: task-assignee-write
+created: 2026-06-05
+updated: 2026-06-05
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 2 # GSD — plan w/ 17 tasks; ready for Phase 3 Superpowers
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit (backend 552 + frontend 442)"
+    files: []
+    status: pending
+  - id: t2
+    desc: "add deletedAt column + migration"
+    files: [backend/prisma/schema.prisma]
+    status: pending
+  - id: t3
+    desc: "canWriteTask predicate helper"
+    files: [backend/src/app/modules/task/task.service.ts]
+    status: pending
+  - id: t4
+    desc: "taskService.update enforces canWriteTask"
+    files: [backend/src/app/modules/task/task.service.ts]
+    status: pending
+  - id: t5
+    desc: "assignedTo change restricted to PM/admin"
+    files: [backend/src/app/modules/task/task.service.ts]
+    status: pending
+  - id: t6
+    desc: "unassigned tasks status updates PM/admin only"
+    files: [backend/src/app/modules/task/task.service.ts]
+    status: pending
+  - id: t7
+    desc: "taskService.remove soft-delete + permission gate"
+    files: [backend/src/app/modules/task/task.service.ts]
+    status: pending
+  - id: t8
+    desc: "default queries filter deletedAt:null"
+    files: [backend/src/app/modules/task/task.service.ts]
+    status: pending
+  - id: t9
+    desc: "includeDeleted flag for PM/admin"
+    files: [backend/src/app/modules/task/task.service.ts, backend/src/app/modules/task/task.validation.ts]
+    status: pending
+  - id: t10
+    desc: "POST /tasks/:id/restore endpoint"
+    files: [backend/src/app/modules/task/task.routes.ts, backend/src/app/modules/task/task.controller.ts, backend/src/app/modules/task/task.service.ts]
+    status: pending
+  - id: t11
+    desc: "frontend Task DTO + Zod schema add deletedAt"
+    files: [frontend/src/lib/schemas/task.ts]
+    status: pending
+  - id: t12
+    desc: "permission-aware UI on task detail page"
+    files: [frontend/src/app/(authed)/projects/[id]/tasks/[taskId]/page.tsx]
+    status: pending
+  - id: t13
+    desc: "inline status select gated on canWrite prop"
+    files: [frontend/src/components/tasks/inline-status-select.tsx]
+    status: pending
+  - id: t14
+    desc: "Deleted tab + Restore action for PM/admin"
+    files: [frontend/src/app/(authed)/projects/[id]/tasks/page.tsx, frontend/src/hooks/useTasks.ts]
+    status: pending
+  - id: t15
+    desc: "full suite green + 4-role smoke"
+    files: []
+    status: pending
+  - id: t16
+    desc: "docs + close phase 3 + #B5 resolved"
+    files: [docs/goals/smart-collab/subgoals/task-assignee-write/state.yaml, docs/goals/smart-collab/notes/backlog.md]
+    status: pending
+  - id: t17
+    desc: "USER PERMISSION: push branch + open PR feature/task-assignee-write -> develop"
+    files: []
+    manual: true
+    status: pending
+
+blockers: []
+
+next_task: t1
+
+phase_completion:
+  gstack: true # 2026-06-05 — goal.md approved by user (decisions locked in backlog #B5)
+  gsd: true # 2026-06-05 — 17 tasks across A schema / B field-write / C soft-delete / D frontend / E close
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 552
+  frontend_tests: 442
+  branched_off: develop@7a13a49
+
+decisions:
+  field_write: assignee_plus_pm_admin
+  reassign: pm_admin_only
+  delete: pm_admin_or_creator
+  delete_model: soft_delete_deletedAt
+  view_deleted: pm_admin_only_silent_ignore
+  restore: pm_admin_only_new_endpoint
+  unassigned_status_update: pm_admin_only
+  comments_attachments: open_to_all_project_members
+  cascade: comments_attachments_stay
+  hard_delete: deferred
