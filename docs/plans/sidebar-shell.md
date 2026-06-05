@@ -58,7 +58,7 @@ Steps:
 - 2. GREEN: wire Theme button to existing theme hook; Avatar dropdown uses shadcn `DropdownMenu`; Logout calls existing `useLogout()`
 - 3. Confirm existing Header's theme toggle + logout still work (or remove duplicate usage in t10)
 - 4. Commit `feat(shell): Rail bottom — help, theme, avatar+logout`
-Status: [ ]
+Status: [x] 2026-06-05 — RailBottom.tsx w/ Help link (external GitHub README, target=_blank), Theme toggle (next-themes), Avatar dropdown showing email + role + Log out item; reuses existing useTheme + useUser/useLogout hooks. RailBottom.test.tsx 5 tests. Frontend 378/378.
 
 ### Task 5: Inbox red-dot when unread > 0
 Files:

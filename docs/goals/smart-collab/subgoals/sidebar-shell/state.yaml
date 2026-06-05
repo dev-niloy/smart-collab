@@ -24,8 +24,8 @@ tasks:
     status: done
   - id: t4
     desc: "Rail bottom (Help / Theme / Avatar+Logout)"
-    files: [frontend/src/components/shell/Rail.tsx]
-    status: pending
+    files: [frontend/src/components/shell/RailBottom.tsx]
+    status: done
   - id: t5
     desc: "Inbox red-dot when unread > 0"
     files: [frontend/src/components/shell/Rail.tsx]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t4
+next_task: t5
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user
