@@ -55,8 +55,18 @@ export const taskController = {
   remove: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const actorId = req.user?.id ?? null;
-      await taskService.remove(req.params.id, actorId);
+      await taskService.remove(req.params.id, actorId, getActor(req));
       res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  restore: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const actorId = req.user?.id ?? null;
+      const task = await taskService.restore(req.params.id, actorId, getActor(req));
+      res.status(200).json({ task });
     } catch (err) {
       next(err);
     }

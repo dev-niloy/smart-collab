@@ -301,7 +301,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     expect(res.status).toBe(401);
   });
 
-  it('member edits task NOT assigned to them and NOT created by them -> 403 FORBIDDEN_OWNERSHIP', async () => {
+  it('member edits task NOT assigned to them -> 403 TASK_WRITE_FORBIDDEN', async () => {
     const adminAgent = await loginAs('admin');
     const created = await adminAgent
       .post('/api/v1/tasks')
@@ -311,10 +311,10 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
       .patch(`/api/v1/tasks/${created.body.task.id}`)
       .send({ status: 'in_progress' });
     expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe('FORBIDDEN_OWNERSHIP');
+    expect(res.body.error.code).toBe('TASK_WRITE_FORBIDDEN');
   });
 
-  it('member tries DELETE -> 403 FORBIDDEN_ROLE', async () => {
+  it('member tries DELETE of admin-created task -> 403 TASK_DELETE_FORBIDDEN (not creator)', async () => {
     const adminAgent = await loginAs('admin');
     const created = await adminAgent
       .post('/api/v1/tasks')
@@ -322,7 +322,17 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     const memberAgent = await loginAs('team_member');
     const res = await memberAgent.delete(`/api/v1/tasks/${created.body.task.id}`);
     expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe('FORBIDDEN_ROLE');
+    expect(res.body.error.code).toBe('TASK_DELETE_FORBIDDEN');
+  });
+
+  it('member CAN delete their own (createdBy=self) task -> 204', async () => {
+    const memberAgent = await loginAs('team_member');
+    const created = await memberAgent
+      .post('/api/v1/tasks')
+      .send({ projectId, title: 'My own task', dueDate: future() });
+    expect(created.status).toBe(201);
+    const res = await memberAgent.delete(`/api/v1/tasks/${created.body.task.id}`);
+    expect(res.status).toBe(204);
   });
 
   it('GET unknown id -> 404 TASK_NOT_FOUND', async () => {

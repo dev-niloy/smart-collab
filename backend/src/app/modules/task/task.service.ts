@@ -202,7 +202,7 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
 
 const findById = async (id: string, actor?: Actor): Promise<TaskWithRelations> => {
   const t = await prisma.task.findUnique({ where: { id }, include: taskInclude });
-  if (!t) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  if (!t || t.deletedAt) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
   await assertProjectAccess(actor, t.projectId);
   return t;
 };
@@ -224,9 +224,12 @@ const update = async (
       createdBy: true,
       title: true,
       priority: true,
+      deletedAt: true,
     },
   });
-  if (!current) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  if (!current || current.deletedAt) {
+    throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  }
 
   const projectRole = await getProjectRoleFor(actor, current.projectId);
 
@@ -343,13 +346,26 @@ const update = async (
   }
 };
 
-const remove = async (id: string, actorId: string | null = null): Promise<void> => {
+const remove = async (
+  id: string,
+  actorId: string | null = null,
+  actor?: Actor,
+): Promise<void> => {
   try {
     const existing = await prisma.task.findUnique({
       where: { id },
-      select: { id: true, projectId: true, title: true },
+      select: { id: true, projectId: true, title: true, createdBy: true, assignedTo: true, deletedAt: true },
     });
-    if (!existing) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+    if (!existing || existing.deletedAt) {
+      throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+    }
+    const projectRole = await getProjectRoleFor(actor, existing.projectId);
+    if (!canDeleteTask({ actor, task: existing, projectRole })) {
+      throw ApiError.forbidden(
+        'You do not have permission to delete this task.',
+        'TASK_DELETE_FORBIDDEN',
+      );
+    }
     await prisma.$transaction(async (tx) => {
       await recordActivity(tx, {
         actorId,
@@ -359,7 +375,7 @@ const remove = async (id: string, actorId: string | null = null): Promise<void> 
         projectId: existing.projectId,
         meta: { title: existing.title },
       });
-      await tx.task.delete({ where: { id } });
+      await tx.task.update({ where: { id }, data: { deletedAt: new Date() } });
     });
   } catch (err) {
     if (err instanceof ApiError) throw err;
@@ -368,6 +384,44 @@ const remove = async (id: string, actorId: string | null = null): Promise<void> 
     }
     throw err;
   }
+};
+
+const restore = async (
+  id: string,
+  actorId: string | null = null,
+  actor?: Actor,
+): Promise<TaskWithRelations> => {
+  const existing = await prisma.task.findUnique({
+    where: { id },
+    select: { id: true, projectId: true, title: true, deletedAt: true },
+  });
+  if (!existing) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  if (!existing.deletedAt) {
+    throw ApiError.unprocessable('Task is not deleted.', 'NOT_DELETED');
+  }
+  const projectRole = await getProjectRoleFor(actor, existing.projectId);
+  if (!canSeeDeleted(actor, projectRole)) {
+    throw ApiError.forbidden(
+      'You do not have permission to restore this task.',
+      'TASK_RESTORE_FORBIDDEN',
+    );
+  }
+  return prisma.$transaction(async (tx) => {
+    const task = await tx.task.update({
+      where: { id },
+      data: { deletedAt: null },
+      include: taskInclude,
+    });
+    await recordActivity(tx, {
+      actorId,
+      action: 'task.restored',
+      entityType: 'task',
+      entityId: task.id,
+      projectId: task.projectId,
+      meta: { title: task.title },
+    });
+    return task;
+  });
 };
 
 type ListArgs = {
@@ -381,6 +435,7 @@ type ListArgs = {
   dueTo?: Date;
   actorId?: string; // used to resolve 'me' shorthands
   actor?: Actor;
+  includeDeleted?: boolean; // PM/admin only; silently ignored otherwise
   sort: SortKey;
   page: number;
   limit: number;
@@ -444,6 +499,18 @@ const list = async (args: ListArgs): Promise<ListResult> => {
     args.projectId || isAdmin(args.actor)
       ? undefined
       : { project: { members: { some: { userId: args.actor!.id } } } };
+
+  // Soft-delete: hide deleted by default; PM/admin can opt in via includeDeleted=true.
+  let projectRoleForDeleted: 'pm' | 'member' | null = null;
+  if (args.projectId && args.includeDeleted) {
+    projectRoleForDeleted = await getProjectRoleFor(args.actor, args.projectId);
+  }
+  const showDeleted =
+    args.includeDeleted === true && canSeeDeleted(args.actor, projectRoleForDeleted);
+  const deletedFilter: Prisma.TaskWhereInput = showDeleted
+    ? { deletedAt: { not: null } }
+    : { deletedAt: null };
+
   const where: Prisma.TaskWhereInput = {
     ...(args.projectId ? { projectId: args.projectId } : {}),
     ...(args.q ? { title: { contains: args.q, mode: 'insensitive' } } : {}),
@@ -453,6 +520,7 @@ const list = async (args: ListArgs): Promise<ListResult> => {
     ...buildAssignedToWhere(args.assignedTo, args.actorId),
     ...buildCreatedByWhere(args.createdBy, args.actorId),
     ...(rbacFilter ?? {}),
+    ...deletedFilter,
   };
   const [data, total] = await prisma.$transaction([
     prisma.task.findMany({
@@ -472,6 +540,7 @@ export const taskService = {
   findById,
   update,
   remove,
+  restore,
   list,
   ensureFutureDeadline,
 };
