@@ -69,7 +69,7 @@ tasks:
   - id: t15
     desc: "full suite green + local manual smoke"
     files: []
-    status: pending
+    status: done
   - id: t16
     desc: "README screenshot + close phase 3"
     files: [README.md, docs/goals/smart-collab/subgoals/sidebar-shell/state.yaml]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t15
+next_task: t16
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user

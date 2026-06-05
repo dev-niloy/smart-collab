@@ -216,7 +216,7 @@ Steps:
    - 3h. Theme icon toggles light/dark; reload preserves state
    - 3i. Avatar dropdown → Logout → bounces to login
 - 4. Commit `test: verify sidebar-shell suite green + local smoke`
-Status: [ ]
+Status: [x] 2026-06-05 — user-confirmed PASS on all 9 smoke steps. Mid-smoke fixes shipped: /inbox PROTECTED_PREFIXES (proxy.ts), api.ts session flush on refresh-fail + hard redirect, CommandPalette <Command> root (cmdk context), ProjectsPanel pin toggle UI (31ce2e2). Pre-existing task-card click-target bug flagged out of scope for separate fix branch.
 
 ### Task 16: docs + README screenshot + close phase 3
 Files:
