@@ -29,7 +29,7 @@ tasks:
   - id: t5
     desc: "Inbox red-dot when unread > 0"
     files: [frontend/src/components/shell/Rail.tsx]
-    status: pending
+    status: done
   - id: t6
     desc: "Panel shell + collapse + localStorage hook"
     files: [frontend/src/components/shell/Panel.tsx, frontend/src/hooks/usePanelCollapsed.ts]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t5
+next_task: t6
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user

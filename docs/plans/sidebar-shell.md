@@ -68,6 +68,7 @@ Steps:
 - 1. RED: stub `useUnreadNotifications()` hook to return 3, assert red-dot on Inbox icon
 - 2. GREEN: implement `useUnreadNotifications` that calls existing notifications endpoint and counts unread. Source it from the same logic the current `<NotificationBell>` uses (extract shared hook from `frontend/src/components/notification-bell.tsx` into `frontend/src/hooks/useUnreadNotifications.ts` so both consume one truth)
 - 3. Commit `feat(shell): Inbox unread red-dot indicator on Rail (shared hook with NotificationBell)`
+Status: [x] 2026-06-05 — discovery: `useUnreadCount` already exists in @/hooks/useNotifications (consumed by NotificationBell). Reused directly, no extraction needed — single source of truth already in place. Rail shows red dot + injects count into aria-label when unread>0. Rail.test.tsx +3 tests (zero, non-zero, undefined). ShellLayout.test mock updated. Frontend 381/381.
 Status: [ ]
 
 ## Phase C — Panel
