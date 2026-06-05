@@ -168,6 +168,7 @@ Steps:
 - 1. RED: test — renders three tabs (Unread / Mentions / Assigned to me); Unread shows notifications list; Assigned shows tasks assigned to current user
 - 2. GREEN: reuse `useNotifications` hook + `useTasks({ assignedTo: 'me' })`; tabs are local state
 - 3. Commit `feat(inbox): /inbox page combining notifications + assigned tasks`
+Status: [x] 2026-06-05 — page lives under (authed)/inbox/page.tsx. 3 tabs (Unread default / Mentions / Assigned). Unread + Mentions reuse `useNotifications`; Mentions is a client-side filter (no backend mention endpoint). Assigned tab reuses `useTasks({assignedTo:'me'})`. "Mark all read" action button visible only in Unread tab when items > 0. 6 tests. Frontend 408/408. Panel-to-page tab sync deferred (panel and page each manage local tab state in v1).
 Status: [ ]
 
 ## Phase G — Mobile + polish

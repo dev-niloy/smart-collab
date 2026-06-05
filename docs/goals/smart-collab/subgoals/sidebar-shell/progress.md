@@ -25,10 +25,10 @@ Phase 3 Superpowers — t1 baseline done; next t2 (shell scaffolding + shadcn pr
   - `shell-v2-icons.html` — locked direction (lucide outline)
 
 ## Last Completed Task
-t11 — CommandPalette w/ shadcn CommandDialog, global Cmd+K toggle, 200ms debounced query over /projects?q + /tasks?q, capped at 8 each, wired into (authed)/layout via Rail.onSearchClick; 7 tests; frontend 402/402
+t12 — /inbox page w/ 3 tabs (Unread / Mentions / Assigned), reuses useNotifications + useTasks(assignedTo=me); Mark all read action; 6 tests; frontend 408/408
 
 ## Next Task
-t12 — /inbox route page (notifications + assigned tasks)
+t13 — mobile drawer below 768px (shadcn Sheet + useMediaQuery)
 
 ## Session Log
 - 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints.
@@ -45,6 +45,7 @@ t12 — /inbox route page (notifications + assigned tasks)
 - 2026-06-05: t9 — Topbar `segments` prop now accepts `string | { label, href? }[]`. Intermediate segments with `href` render as next/link; the last segment is always plain text (current-location convention). Actions slot rendered in `ml-auto` container on the right. Topbar.test.tsx 5 cases. Frontend 406/406.
 - 2026-06-05: t10 — High-risk Header sweep. Pre-flight grep: 10 page files + 1 component (DashboardGrid) used `<Header />`; 16 page tests, none asserting on Header DOM (no test sweep needed). git mv dashboard/projects/forbidden into src/app/(authed)/ route group. Added `src/app/(authed)/layout.tsx` mounting ShellLayout + RailBottom + dynamically picked panel via `routeToPanel.ts` helper (`getPanelKey` + `pickPanel`). Section-swap test covers goal #9 with 5 cases (null, root, prefix-match, nested, unknown). Stripped `<Header />` import + JSX from 10 pages + DashboardGrid via sed. Deleted orphan files: header.tsx, theme-toggle.tsx, notifications/NotificationBell.tsx, search/GlobalSearchBar.tsx + 3 tests + 2 now-empty dirs. providers.test trimmed (lost the ThemeToggle assertion). Frontend 395/395 (net delta: −16 deleted assertions + 5 new routeToPanel tests). `next build` green; all routes still resolve to same URLs. Under 15-file threshold — no auto-slice.
 - 2026-06-05: t11 — CommandPalette.tsx wraps shadcn `CommandDialog`. Global window keydown listens for Cmd+K / Ctrl+K to toggle open. Query state is debounced 200ms; both `useProjects` + `useTasks` hooks are gated on `hasQuery` so blank-open does NOT fire the network. Results capped at 8 each in two `CommandGroup`s (Projects, Tasks); selecting an item routes via `next/navigation` `router.push`. Empty / loading / no-match states are explicit. Wired into (authed)/layout.tsx via local state + `onSearchClick` plumbed through ShellLayout → Rail. Tests: mocked `@/components/ui/command` surface (cmdk needs jsdom shims that aren't worth setting up for this skill) and asserted on the wiring directly; 7 cases (Cmd+K open / blank-open no-fetch / debounce / capped lists / project route / task route / no-match state). Frontend 402/402.
+- 2026-06-05: t12 — /inbox page at (authed)/inbox/page.tsx. Topbar w/ "Inbox" + conditional "Mark all read" action. 3 tabs (Unread default / Mentions / Assigned to me) controlling content area. Unread reuses `useNotifications({unread:true})`; Mentions reuses the same hook + client-side filter on mention-type entries (no separate mention endpoint exists); Assigned reuses `useTasks({assignedTo:'me'})`. NotificationList/TaskList components handle empty states. Page test mocks useNotifications/useMarkAllNotificationsRead + useTasks; 6 cases (3 tabs render + selection / unread fetch params / assigned fetch params / mention filter / mark-all-read flow + visibility / empty assigned). Frontend 408/408. Panel-to-page tab sync deferred — panel + page each manage local state in v1 (low-effort follow-up to add URL `?tab=`).
 
 ## Blockers
 none

@@ -57,7 +57,7 @@ tasks:
   - id: t12
     desc: "/inbox route page (notifications + assigned tasks)"
     files: [frontend/src/app/(authed)/inbox/page.tsx]
-    status: pending
+    status: done
   - id: t13
     desc: "mobile drawer below 768px"
     files: [frontend/src/components/shell/MobileDrawer.tsx, frontend/src/hooks/useMediaQuery.ts]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t12
+next_task: t13
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user
