@@ -5,11 +5,14 @@ import { RailBottom } from '../RailBottom';
 const setTheme = vi.fn();
 const mutateAsync = vi.fn().mockResolvedValue(undefined);
 const push = vi.fn();
-const useUserMock = vi.fn(() => ({
-  user: { email: 'demo@admin.local', role: 'admin' },
-  isLoading: false,
-  refetch: vi.fn(),
-}));
+type UserShape = { email: string; role: string } | null;
+const useUserMock = vi.fn<() => { user: UserShape; isLoading: boolean; refetch: () => void }>(
+  () => ({
+    user: { email: 'demo@admin.local', role: 'admin' },
+    isLoading: false,
+    refetch: vi.fn(),
+  }),
+);
 
 vi.mock('next-themes', () => ({
   useTheme: () => ({ theme: 'dark', resolvedTheme: 'dark', setTheme }),
