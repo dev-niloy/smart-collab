@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 2 # GSD — 17 tasks sliced; ready for Phase 3 Superpowers
+phase: 3 # Superpowers — t1–t16 done; t17 (push+PR) gated on user permission
 
 tasks:
   - id: t1
@@ -73,7 +73,7 @@ tasks:
   - id: t16
     desc: "README screenshot + close phase 3"
     files: [README.md, docs/goals/smart-collab/subgoals/sidebar-shell/state.yaml]
-    status: pending
+    status: done
   - id: t17
     desc: "USER PERMISSION: push branch + open PR feature/sidebar-shell -> develop"
     files: []
@@ -82,12 +82,12 @@ tasks:
 
 blockers: []
 
-next_task: t16
+next_task: t17
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user
   gsd: true # 2026-06-05 — 17 tasks sliced across phases A scaffold / B rail / C panel / D topbar / E integrate / F palette+inbox / G mobile+polish / H verify+close
-  superpowers: false
+  superpowers: true # 2026-06-05 — t1–t16 done; t17 gated on user push permission
   ralph_wiggum: false
 
 baseline:

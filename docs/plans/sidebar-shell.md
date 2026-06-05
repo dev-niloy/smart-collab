@@ -230,7 +230,7 @@ Steps:
 - 3. Flip `state.yaml` phase: 3, mark `superpowers: true`
 - 4. Update subgoal progress.md + parent progress.md
 - 5. Commit `docs(sidebar-shell): phase 3 superpowers complete + README screenshot`
-Status: [ ]
+Status: [x] 2026-06-05 — shell.png saved to frontend/public/screens/, README "App shell" section added, state.yaml phase→3 + superpowers:true.
 
 ### Task 17: USER PERMISSION — open PR feature/sidebar-shell → develop
 Files: none

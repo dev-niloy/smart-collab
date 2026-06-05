@@ -6,7 +6,7 @@
 - Last updated: 2026-06-05
 
 ## Current Phase
-Phase 3 Superpowers — t1 baseline done; next t2 (shell scaffolding + shadcn pre-flight)
+Phase 3 Superpowers — DONE (t1–t16). t17 (push + PR) gated on user permission.
 
 ## Locked decisions
 - Layout: rail 52 + panel 260 (collapsible) + topbar 48 + main
@@ -25,10 +25,10 @@ Phase 3 Superpowers — t1 baseline done; next t2 (shell scaffolding + shadcn pr
   - `shell-v2-icons.html` — locked direction (lucide outline)
 
 ## Last Completed Task
-t15 — full suite green + manual 9-point smoke PASS (user-confirmed 2026-06-05). Mid-smoke fixes shipped: /inbox added to PROTECTED_PREFIXES (proxy.ts), api.ts flushes session + hard-redirects on refresh fail, CommandPalette wraps in <Command> root (cmdk context), ProjectsPanel pin toggle UI + persist (31ce2e2).
+t16 — shell.png saved to frontend/public/screens/, README "App shell" section added, state.yaml phase→3 + superpowers:true. Phase 3 closed.
 
 ## Next Task
-t16 — README screenshot + close Phase 3
+t17 — USER PERMISSION: push branch + open PR feature/sidebar-shell → develop
 
 ## Session Log
 - 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints.
@@ -47,6 +47,7 @@ t16 — README screenshot + close Phase 3
 - 2026-06-05: t11 — CommandPalette.tsx wraps shadcn `CommandDialog`. Global window keydown listens for Cmd+K / Ctrl+K to toggle open. Query state is debounced 200ms; both `useProjects` + `useTasks` hooks are gated on `hasQuery` so blank-open does NOT fire the network. Results capped at 8 each in two `CommandGroup`s (Projects, Tasks); selecting an item routes via `next/navigation` `router.push`. Empty / loading / no-match states are explicit. Wired into (authed)/layout.tsx via local state + `onSearchClick` plumbed through ShellLayout → Rail. Tests: mocked `@/components/ui/command` surface (cmdk needs jsdom shims that aren't worth setting up for this skill) and asserted on the wiring directly; 7 cases (Cmd+K open / blank-open no-fetch / debounce / capped lists / project route / task route / no-match state). Frontend 402/402.
 - 2026-06-05: t12 — /inbox page at (authed)/inbox/page.tsx. Topbar w/ "Inbox" + conditional "Mark all read" action. 3 tabs (Unread default / Mentions / Assigned to me) controlling content area. Unread reuses `useNotifications({unread:true})`; Mentions reuses the same hook + client-side filter on mention-type entries (no separate mention endpoint exists); Assigned reuses `useTasks({assignedTo:'me'})`. NotificationList/TaskList components handle empty states. Page test mocks useNotifications/useMarkAllNotificationsRead + useTasks; 6 cases (3 tabs render + selection / unread fetch params / assigned fetch params / mention filter / mark-all-read flow + visibility / empty assigned). Frontend 408/408. Panel-to-page tab sync deferred — panel + page each manage local state in v1 (low-effort follow-up to add URL `?tab=`).
 - 2026-06-05: t13 — useMediaQuery hook: SSR-safe (returns false until mounted), subscribes to matchMedia change events, falls back to legacy addListener for Safari <14. Exports `MOBILE_MEDIA_QUERY = (max-width: 767px)` constant. Hook test 2 cases (initial match + change event). MobileDrawer.tsx wraps shadcn Sheet w/ Menu lucide trigger + side="left" SheetContent rendering rail + panel stacked horizontally. ShellLayout.tsx branches on useMediaQuery: mobile → topbar w/ hamburger inline + main below; desktop → current side-by-side. Tests mocked the sheet primitive surface (jsdom portal flakiness). MobileDrawer.test 4 cases, ShellLayout.test +1 mobile-branch case. Frontend 415/415.
+- 2026-06-05: t16 — shell screenshot saved to frontend/public/screens/shell.png; README "App shell" section added near top w/ image link; state.yaml phase→3, superpowers:true, next_task→t17. Phase 3 Superpowers complete.
 - 2026-06-05: t15 — manual smoke 9-point PASS confirmed by user. Mid-smoke: pin-toggle UI added to ProjectRow (Pin/PinOff lucide icon, hover-reveal, localStorage persist) — commit 31ce2e2. Known pre-existing bug flagged: task card only title-text is clickable for detail nav; tracked for separate `fix/task-card-clickable` after merge (out of scope here). All other steps green: rail/panel/topbar layout, filter chips, Cmd+K palette, /inbox, theme toggle, logout flow.
 - 2026-06-05: t14 — theme + a11y sweep. Grep: 0 hex literals in shell/. 3 intentional Tailwind palette colors in ProjectsPanel status dots (emerald/violet/amber — state encoding, theme-invariant by design). aria-label coverage verified across icon-only buttons (Search, Workspace, Help, Toggle theme, Account menu, Open navigation, New project). Tab roles + aria-selected on all chip/tab buttons. Landmarks: Rail/Panel asides labeled, Breadcrumbs nav labeled. Lint: 4 react-hooks/set-state-in-effect errors patched with inline eslint-disable + reason (intentional mount-hydration patterns in usePanelCollapsed / useMediaQuery / ProjectsPanel + reactive reset in CommandPalette). 5 pre-existing warnings remain (react-hook-form `watch()` incompatibility on legacy pages). Skipped live axe-core CLI: needs running dev server; static checks were sufficient for the rule surface this skill needed to verify. Frontend 415/415 (unchanged).
 
@@ -56,5 +57,5 @@ none
 ## Phase Completion
 - [x] Phase 1 GStack — goal.md + progress.md written + user approved 2026-06-05
 - [x] Phase 2 GSD — docs/plans/sidebar-shell.md w/ 17 tasks
-- [ ] Phase 3 Superpowers — TDD execution
+- [x] Phase 3 Superpowers — TDD execution complete (t1–t16); t17 push gated on user
 - [ ] Phase 4 Ralph Wiggum — multi-persona review
