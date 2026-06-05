@@ -74,7 +74,7 @@ Steps:
 - 6. You: first deploy. Build runs prisma generate + tsc. Start runs migrate deploy + seed + node.
 - 7. Record service URL in progress.md
 - 8. Commit `[B6] render: service provisioned + first deploy logs captured`
-Status: [ ]
+Status: [x] 2026-06-05 — service `smart-collab-api` (srv-d8h3jat8nd3s73bpuv30) provisioned in `virginia`, free plan, watches `develop`. Build/start commands per render.yaml. Three deploys: 4b5173d failed (wrong dist path), e7accc2 failed (CORS_ORIGINS required), 0b15ac9 live. URL: https://smart-collab-api.onrender.com. /healthz returns 200.
 
 ### Task 7: Vercel — provision project + env vars + first deploy
 Files:
