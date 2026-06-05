@@ -1,10 +1,43 @@
 import type { Project, ProjectStatus, Prisma } from '@prisma/client';
+import { TaskStatus } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
 import { PAST_DEADLINE_MESSAGE, DEFAULT_LIMIT, DEFAULT_PAGE, type SortKey } from './project.constant';
 import type { CreateProjectInput, UpdateProjectInput } from './project.validation';
 import { recordActivity } from '../activityLog/activityLog.service';
 import { arrayOrEq } from '../../lib/queryFields';
+
+export type Progress = { done: number; total: number; percent: number };
+
+export const computeProgress = (done: number, total: number): Progress => {
+  const safeDone = Math.max(0, done);
+  const safeTotal = Math.max(0, total);
+  const percent = safeTotal === 0 ? 0 : Math.round((safeDone / safeTotal) * 100);
+  return { done: safeDone, total: safeTotal, percent };
+};
+
+const fetchProgressMap = async (projectIds: string[]): Promise<Map<string, Progress>> => {
+  const map = new Map<string, Progress>();
+  if (projectIds.length === 0) return map;
+  const counts = await prisma.task.groupBy({
+    by: ['projectId', 'status'],
+    where: { projectId: { in: projectIds } },
+    _count: { _all: true },
+  });
+  const totals = new Map<string, number>();
+  const dones = new Map<string, number>();
+  for (const row of counts) {
+    const c = row._count._all;
+    totals.set(row.projectId, (totals.get(row.projectId) ?? 0) + c);
+    if (row.status === TaskStatus.completed) {
+      dones.set(row.projectId, (dones.get(row.projectId) ?? 0) + c);
+    }
+  }
+  for (const id of projectIds) {
+    map.set(id, computeProgress(dones.get(id) ?? 0, totals.get(id) ?? 0));
+  }
+  return map;
+};
 
 const ensureFutureDeadline = (deadline: Date) => {
   if (deadline.getTime() < Date.now()) {
@@ -22,6 +55,7 @@ const creatorInclude = {
 
 export type ProjectWithCreator = Project & {
   creator: { id: string; email: string; name: string };
+  progress: Progress;
 };
 
 const create = async (input: CreateProjectInput, actorId: string): Promise<ProjectWithCreator> => {
@@ -49,14 +83,15 @@ const create = async (input: CreateProjectInput, actorId: string): Promise<Proje
       projectId: project.id,
       meta: { name: project.name, status: project.status },
     });
-    return project;
+    return { ...project, progress: computeProgress(0, 0) };
   });
 };
 
 const findById = async (id: string): Promise<ProjectWithCreator> => {
   const p = await prisma.project.findUnique({ where: { id }, include: creatorInclude });
   if (!p) throw ApiError.notFound('Project not found', 'PROJECT_NOT_FOUND');
-  return p;
+  const progressMap = await fetchProgressMap([id]);
+  return { ...p, progress: progressMap.get(id) ?? computeProgress(0, 0) };
 };
 
 const update = async (
@@ -85,7 +120,8 @@ const update = async (
         projectId: project.id,
         meta: { name: project.name, status: project.status },
       });
-      return project;
+      const progressMap = await fetchProgressMap([project.id]);
+      return { ...project, progress: progressMap.get(project.id) ?? computeProgress(0, 0) };
     });
   } catch (err) {
     if (isRecordNotFound(err)) {
@@ -172,7 +208,7 @@ const list = async (args: ListArgs): Promise<ListResult> => {
     ...(deadline ? { deadline } : {}),
     ...(createdByResolved ? { createdBy: createdByResolved } : {}),
   };
-  const [data, total] = await prisma.$transaction([
+  const [rows, total] = await prisma.$transaction([
     prisma.project.findMany({
       where,
       orderBy: sortToOrderBy(args.sort),
@@ -182,6 +218,11 @@ const list = async (args: ListArgs): Promise<ListResult> => {
     }),
     prisma.project.count({ where }),
   ]);
+  const progressMap = await fetchProgressMap(rows.map((r) => r.id));
+  const data: ProjectWithCreator[] = rows.map((r) => ({
+    ...r,
+    progress: progressMap.get(r.id) ?? computeProgress(0, 0),
+  }));
   return { data, total, page, limit };
 };
 
