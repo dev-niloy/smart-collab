@@ -45,7 +45,7 @@ tasks:
   - id: t9
     desc: "Topbar breadcrumbs + actions slot"
     files: [frontend/src/components/shell/Topbar.tsx]
-    status: pending
+    status: done
   - id: t10
     desc: "wire ShellLayout into (authed) route group; drop Header"
     files: [frontend/src/app/(authed)/layout.tsx]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t9
+next_task: t10
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user

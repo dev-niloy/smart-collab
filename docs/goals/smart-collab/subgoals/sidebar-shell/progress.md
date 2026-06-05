@@ -25,10 +25,10 @@ Phase 3 Superpowers — t1 baseline done; next t2 (shell scaffolding + shadcn pr
   - `shell-v2-icons.html` — locked direction (lucide outline)
 
 ## Last Completed Task
-t8 — DashboardPanel (header + 2 anchored shortcuts) + InboxPanel (header + 3 tab buttons with onTabChange); 5 tests; frontend 401/401
+t9 — Topbar accepts string|{label,href?} segments; intermediate href segments become next/link; last segment stays text; actions slot on right; 5 tests; frontend 406/406
 
 ## Next Task
-t9 — Topbar breadcrumbs + actions slot
+t10 — wire ShellLayout into (authed) route group + drop old Header (high-risk sweep — pre-flight grep, auto-slice at 15-file churn)
 
 ## Session Log
 - 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints.
@@ -42,6 +42,7 @@ t9 — Topbar breadcrumbs + actions slot
 - 2026-06-05: t6 — usePanelCollapsed hook (collapsed/setCollapsed/toggle) returns SSR-safe state, hydrates from localStorage key `sc:panel:collapsed` on mount, persists on every change, ignores garbage values. Hook test 6 cases (default / hydrate true / hydrate false / setCollapsed / toggle / garbage). Panel.test.tsx 2 cases (renders w/ name + children, collapsed → w-0 + children hidden). Frontend 389/389.
 - 2026-06-05: t7 — ProjectsPanel.tsx reuses `useProjects` hook; chips are local state (no URL sync in v1 — simpler, can lift to URL in a follow-up). 4 chips: All / Active / Mine (createdBy=me) / Completed. Deviation noted: plan called for "Archived" chip; backend has no archive status, so Completed substitutes. Pinned section reads `sc:projects:pinned` (JSON string array) from localStorage; shows "No pinned projects yet" placeholder when empty; garbage values ignored. ProjectsPanel.test.tsx 7 tests. Frontend 396/396.
 - 2026-06-05: t8 — DashboardPanel.tsx renders header + 2 lucide-icon shortcuts (`My Open Tasks` → /dashboard#my-open-tasks, `Today's Deadlines` → /dashboard#upcoming-deadlines). InboxPanel.tsx renders header + 3 vertical tabs (Unread default / Mentions / Assigned to me) using local state + optional `onTabChange` callback for later wiring from the /inbox page (t12). 5 new tests. Frontend 401/401.
+- 2026-06-05: t9 — Topbar `segments` prop now accepts `string | { label, href? }[]`. Intermediate segments with `href` render as next/link; the last segment is always plain text (current-location convention). Actions slot rendered in `ml-auto` container on the right. Topbar.test.tsx 5 cases. Frontend 406/406.
 
 ## Blockers
 none

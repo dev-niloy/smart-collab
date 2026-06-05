@@ -122,6 +122,7 @@ Steps:
 - 1. RED: test — `<Topbar segments={['Projects', 'Q3 polish']} />` renders breadcrumbs w/ separator; `actions` prop slot renders custom React
 - 2. GREEN: implement using `next/link` for clickable segments
 - 3. Commit `feat(shell): Topbar with breadcrumbs + actions slot`
+Status: [x] 2026-06-05 — Topbar accepts segments as string OR {label,href?}. Intermediate segments with href render as next/link; last segment always renders as plain text (no click on current location). Actions slot renders on the right. Topbar.test.tsx 5 tests. Frontend 406/406.
 Status: [ ]
 
 ## Phase E — Integrate the shell
