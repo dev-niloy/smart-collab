@@ -78,11 +78,11 @@ tasks:
     desc: "USER PERMISSION: push branch + open PR feature/sidebar-shell -> develop"
     files: []
     manual: true
-    status: pending
+    status: done
 
 blockers: []
 
-next_task: t17
+next_task: null
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user

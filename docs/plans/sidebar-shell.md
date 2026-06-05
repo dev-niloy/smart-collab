@@ -237,6 +237,7 @@ Files: none
 Steps:
 - 1. (USER PERMISSION) `git push -u origin feature/sidebar-shell`
 - 2. (USER PERMISSION) `gh pr create --base develop --title "feat(shell): clickup-style rail + panel + topbar (L1)"`
+Status: [x] 2026-06-05 — pushed; PR #24 https://github.com/dev-niloy/smart-collab/pull/24
 - 3. CI must pass
 - 4. After merge, Vercel auto-deploys to https://smart-collab-liard.vercel.app
 - 5. Smoke on live URL
