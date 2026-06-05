@@ -29,7 +29,10 @@ const envSchema = z.object({
     .min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
   ACCESS_TOKEN_TTL: z.string().regex(ttlPattern, 'ACCESS_TOKEN_TTL must match e.g. 15m, 1h, 7d'),
   REFRESH_TOKEN_TTL: z.string().regex(ttlPattern, 'REFRESH_TOKEN_TTL must match e.g. 15m, 1h, 7d'),
-  CORS_ORIGINS: z.string().transform(csv),
+  // Defaults to empty so the service can boot before the frontend origin is
+  // known. Empty list = no origins allowed; same-origin endpoints like
+  // /healthz still respond. Set to the real Vercel URL once it exists.
+  CORS_ORIGINS: z.string().default('').transform(csv),
   COOKIE_DOMAIN: z.string().min(1),
   DEMO_ADMIN_PW: z.string().min(1),
   DEMO_PM_PW: z.string().min(1),
