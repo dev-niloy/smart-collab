@@ -60,6 +60,12 @@ export function DashboardGrid({ projectId }: DashboardGridProps) {
           <KpiCard
             title="My open tasks"
             value={kpis.data?.myOpenTasks}
+            sub={
+              kpis.data
+                ? `${kpis.data.myCompletionPct}% of your tasks done`
+                : undefined
+            }
+            progressPercent={kpis.data?.myCompletionPct}
             loading={kpis.isLoading}
             error={kpis.isError}
           />

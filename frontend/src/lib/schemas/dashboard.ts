@@ -4,6 +4,8 @@ export type Kpis = {
   completedTasks: number;
   completionPct: number;
   myOpenTasks: number;
+  myCompletedTasks: number;
+  myCompletionPct: number;
 };
 
 export type StatusCounts = { todo: number; in_progress: number; completed: number };
