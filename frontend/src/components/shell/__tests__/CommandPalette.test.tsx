@@ -26,6 +26,7 @@ vi.mock('@/hooks/useTasks', () => ({
 // the wiring without rendering the real cmdk store.
 vi.mock('@/components/ui/command', () => {
   return {
+    Command: ({ children }: { children: React.ReactNode }) => <div data-testid="palette-command">{children}</div>,
     CommandDialog: ({
       open,
       children,

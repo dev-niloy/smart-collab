@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -74,6 +75,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       title="Search"
       description="Search projects and tasks"
     >
+      <Command>
       <CommandInput
         placeholder="Search projects and tasks…"
         value={query}
@@ -119,6 +121,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           </CommandGroup>
         )}
       </CommandList>
+      </Command>
     </CommandDialog>
   );
 }
