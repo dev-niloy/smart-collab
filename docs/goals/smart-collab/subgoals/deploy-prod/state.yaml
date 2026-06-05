@@ -13,7 +13,7 @@ tasks:
   - id: t1
     desc: "baseline verification commit"
     files: []
-    status: pending
+    status: done
   - id: t2
     desc: "backend CORS prod allowlist hardening + 2 tests"
     files: [backend/src/app/app.ts, backend/src/config/env.ts, backend/src/__tests__/cors.prod.test.ts]
@@ -71,7 +71,7 @@ tasks:
 
 blockers: []
 
-next_task: t1
+next_task: t2
 
 phase_completion:
   gstack: true

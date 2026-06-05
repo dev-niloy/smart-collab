@@ -3,10 +3,10 @@
 ## Project
 - Subgoal: deploy-prod
 - Started: 2026-06-04
-- Last updated: 2026-06-04
+- Last updated: 2026-06-05
 
 ## Current Phase
-Phase 2 GSD complete → Phase 3 Superpowers next
+Phase 3 Superpowers in progress — t1 done, next t2
 
 ## Session Log
 - 2026-06-04: branched `feature/deploy-prod` off `develop@27a116b`. Clarifications gathered: Render backend, Neon Postgres, auto-seed on deploy, free subdomains. goal.md written w/ 10 done-criteria + brownfield constraints.
@@ -21,13 +21,14 @@ Phase 2 GSD complete → Phase 3 Superpowers next
 - CORS allowlist: single Vercel origin, no wildcards
 
 ## Last Completed Task
-Phase 2 GSD — 13 tasks sliced (4 code, 5 manual external, 4 docs/close)
+t1 — baseline suites green (backend 521/521, frontend 364/364), empty commit 3007665
 
 ## Next Task
-Phase 3 Superpowers — execute t1 (baseline) then run t2/t3/t4 (code prep). After t4, pause: t5/t6/t7 are manual dashboard work (Neon, Render, Vercel) that needs the user at a keyboard.
+t2 — backend CORS prod allowlist hardening + 2 tests
 
 ## Session Log
 - 2026-06-04: docs/plans/deploy-prod.md written — 13 tasks across A code prep / B provision / C wire+smoke / D docs+close. Discovery: backend cookies already flip samesite=none+secure when NODE_ENV=production (no fix needed), CORS already env-driven. Seed already idempotent via upsert. Smallest possible diff for actual deploy.
+- 2026-06-05: phase 3 start — t1 baseline confirmed green (backend 521/521 in 31.6s, frontend 364/364 in 65.4s). Empty commit 3007665 marks pre-work baseline.
 
 ## Blockers
 none

@@ -15,7 +15,7 @@ Files: none
 Steps:
 - 1. Run backend + frontend suites: confirm 521/364 green
 - 2. Commit `[Baseline] suites green before deploy-prod work begins`
-Status: [ ]
+Status: [x] 2026-06-05 — backend 521/521, frontend 364/364, empty commit 3007665
 
 ### Task 2: backend prod env audit — CORS allowlist + cookie samesite spot check
 Files:
