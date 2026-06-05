@@ -16,6 +16,7 @@ import { useProjectMembers } from '@/hooks/useProjectMembers';
 import { useRole } from '@/hooks/useUser';
 import { DeleteProjectButton } from '@/components/projects/delete-project-button';
 import { ProjectProgress } from '@/components/projects/ProjectProgress';
+import { ApiError } from '@/lib/api';
 import { STATUS_LABEL, STATUS_VARIANT, fmtDate, fmtDateTime } from '@/lib/project-format';
 
 export default function ProjectDetailPage() {
@@ -23,9 +24,10 @@ export default function ProjectDetailPage() {
   const id = params?.id ?? '';
   const { role } = useRole();
   const canMutate = role === 'admin' || role === 'project_manager';
-  const { data: project, isLoading, isError, refetch } = useProject(id);
+  const { data: project, isLoading, isError, error, refetch } = useProject(id);
   const { data: members } = useProjectMembers(id);
   const memberCount = members?.length;
+  const isForbidden = error instanceof ApiError && error.status === 403;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -41,6 +43,20 @@ export default function ProjectDetailPage() {
           <Card className="mt-4">
             <CardContent className="py-8">
               <p className="text-sm text-muted-foreground">Loading project…</p>
+            </CardContent>
+          </Card>
+        ) : isForbidden ? (
+          <Card className="mt-4">
+            <CardContent className="flex flex-col items-start gap-3 py-8">
+              <p className="text-sm font-medium" role="alert">
+                You do not have access to this project.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Ask an admin or project manager to add you as a member.
+              </p>
+              <Link href="/projects">
+                <Button variant="outline">Back to projects</Button>
+              </Link>
             </CardContent>
           </Card>
         ) : isError || !project ? (
