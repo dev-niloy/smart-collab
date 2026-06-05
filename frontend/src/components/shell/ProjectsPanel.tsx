@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Plus, Pin, PinOff } from 'lucide-react';
 import { useProjects } from '@/hooks/useProjects';
 import type { Project } from '@/lib/schemas/project';
+import { ProjectProgress } from '@/components/projects/ProjectProgress';
 
 export const PINNED_STORAGE_KEY = 'sc:projects:pinned';
 
@@ -51,12 +52,21 @@ function ProjectRow({
   onTogglePin: (id: string) => void;
 }) {
   return (
-    <div className="group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
-      <Link href={`/projects/${project.id}`} className="flex min-w-0 flex-1 items-center gap-2">
-        <span aria-hidden className={`h-2 w-2 shrink-0 rounded-sm ${STATUS_DOT[project.status]}`} />
-        <span className="truncate">{project.name}</span>
-      </Link>
-      <button
+    <div
+      className={
+        'group flex flex-col gap-1 rounded-md px-2 py-1.5 text-sm hover:bg-accent' +
+        (pinned && project.progress.total > 0 ? ' pb-2' : '')
+      }
+    >
+      <div className="flex items-center gap-2">
+        <Link href={`/projects/${project.id}`} className="flex min-w-0 flex-1 items-center gap-2">
+          <span
+            aria-hidden
+            className={`h-2 w-2 shrink-0 rounded-sm ${STATUS_DOT[project.status]}`}
+          />
+          <span className="truncate">{project.name}</span>
+        </Link>
+        <button
         type="button"
         aria-label={pinned ? `Unpin ${project.name}` : `Pin ${project.name}`}
         aria-pressed={pinned}
@@ -76,6 +86,14 @@ function ProjectRow({
           <Pin className="h-3.5 w-3.5" aria-hidden />
         )}
       </button>
+      </div>
+      {pinned ? (
+        <ProjectProgress
+          progress={project.progress}
+          variant="inline"
+          className="pl-4 pr-1"
+        />
+      ) : null}
     </div>
   );
 }
