@@ -1,0 +1,87 @@
+feature: progress-system
+created: 2026-06-05
+updated: 2026-06-05
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 2 # GSD — plan w/ 13 tasks; ready for Phase 3 Superpowers
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit (backend 523 + frontend 427)"
+    files: []
+    status: pending
+  - id: t2
+    desc: "project service aggregates progress on list + detail"
+    files: [backend/src/projects/service.ts, backend/src/projects/__tests__/service.test.ts]
+    status: pending
+  - id: t3
+    desc: "Zod schema + DTO type update for progress field"
+    files: [backend/src/projects/validation.ts, frontend/src/lib/schemas/project.ts]
+    status: pending
+  - id: t4
+    desc: "ProgressBar primitive (shadcn progress)"
+    files: [frontend/src/components/ui/progress.tsx]
+    status: pending
+  - id: t5
+    desc: "ProjectProgress helper component (card/detail/inline variants)"
+    files: [frontend/src/components/projects/ProjectProgress.tsx]
+    status: pending
+  - id: t6
+    desc: "list card surface"
+    files: [frontend/src/app/(authed)/projects/page.tsx]
+    status: pending
+  - id: t7
+    desc: "detail header surface"
+    files: [frontend/src/app/(authed)/projects/[id]/page.tsx]
+    status: pending
+  - id: t8
+    desc: "sidebar Pinned row inline bar"
+    files: [frontend/src/components/shell/ProjectsPanel.tsx]
+    status: pending
+  - id: t9
+    desc: "Dashboard My Open Tasks widget aggregate"
+    files: [frontend/src/components/dashboard/]
+    status: pending
+  - id: t10
+    desc: "task mutation invalidates project queries"
+    files: [frontend/src/hooks/useTasks.ts]
+    status: pending
+  - id: t11
+    desc: "full suite green + manual smoke"
+    files: []
+    status: pending
+  - id: t12
+    desc: "docs + screenshot + close phase 3"
+    files: [README.md, docs/goals/smart-collab/subgoals/progress-system/state.yaml]
+    status: pending
+  - id: t13
+    desc: "USER PERMISSION: push branch + open PR feature/progress-system -> develop"
+    files: []
+    manual: true
+    status: pending
+
+blockers: []
+
+next_task: t1
+
+phase_completion:
+  gstack: true # 2026-06-05 — goal.md approved by user
+  gsd: true # 2026-06-05 — 13 tasks sliced across phases A backend / B primitives / C surfaces / D invalidation / E close
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 523
+  frontend_tests: 427
+  branched_off: develop@25fb539
+
+decisions:
+  weighting: binary-done-only
+  surfaces: [list_card, detail_header, sidebar_pinned, dashboard_widget]
+  compute: server_side_aggregate
+  primitive: shadcn_progress
+  caching: react_query_invalidate
