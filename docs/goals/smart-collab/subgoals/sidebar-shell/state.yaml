@@ -41,7 +41,7 @@ tasks:
   - id: t8
     desc: "DashboardPanel + InboxPanel (minimal)"
     files: [frontend/src/components/shell/DashboardPanel.tsx, frontend/src/components/shell/InboxPanel.tsx]
-    status: pending
+    status: done
   - id: t9
     desc: "Topbar breadcrumbs + actions slot"
     files: [frontend/src/components/shell/Topbar.tsx]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t8
+next_task: t9
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user

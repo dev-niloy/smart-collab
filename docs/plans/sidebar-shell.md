@@ -109,6 +109,7 @@ Steps:
 - 2. InboxPanel: header "Inbox" + tabs (Unread / Mentions / Assigned to me) — tabs are visual only in v1, filter state lifted to InboxPage
 - 3. Tests assert the headers + links render
 - 4. Commit `feat(shell): Dashboard + Inbox panels (minimal)`
+Status: [x] 2026-06-05 — DashboardPanel.tsx renders header + 2 anchored links (#my-open-tasks, #upcoming-deadlines). InboxPanel.tsx renders header + 3 vertical tabs (Unread default / Mentions / Assigned to me) w/ onTabChange callback for t12 page wiring. 5 tests across both. Frontend 401/401.
 Status: [ ]
 
 ## Phase D — Topbar
