@@ -40,6 +40,27 @@
 
 ---
 
+## #B4 — Members count + assignable list mismatch — **MEDIUM / DATA CONSISTENCY**
+
+**Observed during member-visibility smoke (2026-06-05):**
+- (a) PM views project detail header showing `Members (2)` but the linked members page renders only 1 row (PM themselves). User added a member via the form but list does not reflect it consistently across views.
+- (b) Task-create page assignee dropdown on Daralmehrab shows only PM + Admin, missing Demo Member who was reportedly added to the project. Same project members page in another browser session shows Demo Member present.
+
+**Likely root cause (untriaged):**
+- React-query cache staleness across browser tabs (PM had stale entry from before t8 controller redeploy).
+- OR add-member mutation returning non-2xx so `onSuccess` never fires → no invalidation → display shows pre-add state.
+- OR the user mentally conflated projects (member added to Solvemeet but expected to appear in Daralmehrab task assignee dropdown).
+
+**To investigate:**
+- Hard-refresh PM session after t12 deploy and re-attempt smoke step #4 / #5.
+- Inspect Network tab on add-member POST → confirm 201 + payload.
+- Verify backend integration: `POST /projects/:id/members` then `GET /projects/:id/members/assignable` returns the new row.
+- If reproducible after refresh: add e2e test covering add-then-assignable refresh flow.
+
+**Status:** captured during member-visibility smoke but **not blocking** that subgoal — RBAC code is correct in isolation (verified by 23 unit + integration tests). Fix in a follow-up `fix/member-list-staleness` once reproduced cleanly.
+
+---
+
 ## #B3 — Organization + Team model (MILESTONE-LEVEL / DEFERRED)
 
 **Idea (user, 2026-06-05):** introduce an `Organization` top-level entity with `Team`s under it, and assign PMs / team_members at the org or team level rather than project-by-project. Multi-tenant org switcher in the topbar.
