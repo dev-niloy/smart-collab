@@ -43,6 +43,72 @@ export type TaskWithRelations = Task & {
   assignee: { id: string; email: string; name: string; role: string } | null;
 };
 
+// ──────────────────────────────────────────────────────────
+// Task write permission predicates (task-assignee-write)
+// ──────────────────────────────────────────────────────────
+
+type CanWriteArgs = {
+  actor: Actor | undefined;
+  task: Pick<Task, 'assignedTo' | 'createdBy'>;
+  projectRole?: 'pm' | 'member' | null; // resolved per-project; null = not a member
+};
+
+/**
+ * Returns true when the actor may edit task fields (status / title / desc / priority / due).
+ * Admin and project PM are always allowed. Assignee is allowed only when the task IS assigned to them.
+ * Unassigned tasks cannot be field-edited by anyone except admin / project PM.
+ */
+export const canWriteTask = ({ actor, task, projectRole }: CanWriteArgs): boolean => {
+  if (isAdmin(actor)) return true;
+  if (projectRole === 'pm') return true;
+  if (!task.assignedTo) return false; // unassigned → admin / PM only
+  return !!actor && task.assignedTo === actor.id;
+};
+
+/**
+ * Returns true when the actor may delete the task (soft delete).
+ * Admin, project PM, or the task creator (any role) can delete.
+ */
+export const canDeleteTask = ({ actor, task, projectRole }: CanWriteArgs): boolean => {
+  if (isAdmin(actor)) return true;
+  if (projectRole === 'pm') return true;
+  return !!actor && task.createdBy === actor.id;
+};
+
+/**
+ * Returns true when the actor may reassign the task (change assignedTo).
+ * PM/admin only — assignee CANNOT reassign out.
+ */
+export const canReassignTask = ({ actor, projectRole }: Omit<CanWriteArgs, 'task'>): boolean => {
+  if (isAdmin(actor)) return true;
+  return projectRole === 'pm';
+};
+
+/**
+ * Returns true when the actor may see soft-deleted tasks.
+ * PM/admin only — non-PM passing includeDeleted=true is silently ignored.
+ */
+export const canSeeDeleted = (actor: Actor | undefined, projectRole?: 'pm' | 'member' | null): boolean => {
+  if (isAdmin(actor)) return true;
+  return projectRole === 'pm';
+};
+
+/**
+ * Look up a single user's project role from ProjectMember. Returns null if not a member.
+ */
+export const getProjectRoleFor = async (
+  actor: Actor | undefined,
+  projectId: string,
+): Promise<'pm' | 'member' | null> => {
+  if (!actor) return null;
+  if (isAdmin(actor)) return null; // admin bypasses projectMember entirely
+  const row = await prisma.projectMember.findFirst({
+    where: { projectId, userId: actor.id },
+    select: { role: true },
+  });
+  return row?.role ?? null;
+};
+
 const ensureAssigneeIsProjectMember = async (
   projectId: string,
   assignedTo: string | null | undefined,
