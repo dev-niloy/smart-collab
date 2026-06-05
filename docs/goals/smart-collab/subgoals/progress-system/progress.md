@@ -16,10 +16,10 @@ Phase 3 Superpowers — DONE (t1–t12). t13 (push + PR) gated on user permissio
 - Caching: react-query invalidation on task mutations (no DB-side cache layer)
 
 ## Last Completed Task
-t12 — state.yaml flipped (phase 3, superpowers:true, next_task:t13). Plan tasks t1–t12 marked done.
+t13 — branch pushed; PR #28 open https://github.com/dev-niloy/smart-collab/pull/28
 
 ## Next Task
-t13 — USER PERMISSION: push branch + open PR feature/progress-system → develop
+none — awaiting Phase 4 Ralph Wiggum or merge approval
 
 ## Session Log
 - 2026-06-05: phase 1 — user brainstorm answered (binary weighting, 4 surfaces, server-side compute). goal.md drafted w/ 7 done-criteria + 6 brownfield constraints. User approved.

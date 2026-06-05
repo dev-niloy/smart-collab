@@ -169,7 +169,7 @@ Files: none
 Steps:
 - 1. (USER PERMISSION) `git push -u origin feature/progress-system`
 - 2. (USER PERMISSION) `gh pr create --base develop --title "feat(projects): task-completion progress on cards, detail, sidebar, dashboard"`
-Status: [ ]
+Status: [x] 2026-06-05 — pushed; PR #28 https://github.com/dev-niloy/smart-collab/pull/28
 
 ---
 
