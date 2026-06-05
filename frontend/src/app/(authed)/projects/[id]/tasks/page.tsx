@@ -418,20 +418,23 @@ function ProjectTasksPageInner() {
                 const assignee =
                   t.assignee ?? (t.assignedTo ? assigneeMap.get(t.assignedTo) ?? null : null);
                 return (
-                  <Card key={t.id} className="flex h-full flex-col">
+                  <Card
+                    key={t.id}
+                    className="relative flex h-full flex-col transition-colors hover:bg-accent/40 focus-within:ring-2 focus-within:ring-ring"
+                  >
+                    <Link
+                      href={`/projects/${projectId}/tasks/${t.id}`}
+                      aria-label={`Open task ${t.title}`}
+                      className="absolute inset-0 z-0 rounded-lg focus:outline-none"
+                    />
                     <CardHeader className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
-                        <Link
-                          href={`/projects/${projectId}/tasks/${t.id}`}
-                          className="rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          <CardTitle className="text-base hover:underline">{t.title}</CardTitle>
-                        </Link>
+                        <CardTitle className="text-base">{t.title}</CardTitle>
                         <Badge variant={PRIORITY_VARIANT[t.priority]}>
                           {PRIORITY_LABEL[t.priority]}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="relative z-10 flex items-center gap-2">
                         <Badge variant={STATUS_VARIANT[t.status]}>{STATUS_LABEL[t.status]}</Badge>
                         <InlineStatusSelect task={t} />
                       </div>
