@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc --project tsconfig.build.json",
+    "build:prod": "prisma generate && tsc --project tsconfig.build.json",
     "start": "node dist/server.js",
+    "start:prod": "prisma migrate deploy && tsx prisma/seed.ts && node dist/server.js",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
