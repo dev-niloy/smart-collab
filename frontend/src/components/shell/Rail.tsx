@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Inbox, LayoutDashboard, FolderKanban, Search } from 'lucide-react';
@@ -45,9 +46,16 @@ export function Rail({ bottom, onSearchClick }: RailProps) {
       {/* Workspace logo */}
       <div
         aria-label="Workspace"
-        className="mb-2 grid h-8 w-8 place-items-center rounded-md bg-primary text-sm font-semibold text-primary-foreground"
+        className="mb-2 grid h-8 w-8 place-items-center overflow-hidden rounded-md bg-primary"
       >
-        S
+        <Image
+          src="/logo.jpg"
+          alt="Smart Collab"
+          width={32}
+          height={32}
+          className="h-8 w-8 object-cover"
+          priority
+        />
       </div>
 
       {/* Top nav */}

@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Smart Collab",
   description: "Project and task collaboration",
+  icons: { icon: "/logo.jpg" },
 };
 
 export default function RootLayout({
