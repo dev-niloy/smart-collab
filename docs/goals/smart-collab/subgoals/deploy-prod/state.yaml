@@ -30,7 +30,7 @@ tasks:
     desc: "MANUAL: neon provision project + capture connection string"
     files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
     manual: true
-    status: pending
+    status: done
   - id: t6
     desc: "MANUAL: render provision web service + env vars + first deploy"
     files: [docs/goals/smart-collab/subgoals/deploy-prod/progress.md]
@@ -71,7 +71,7 @@ tasks:
 
 blockers: []
 
-next_task: t5
+next_task: t6
 
 phase_completion:
   gstack: true

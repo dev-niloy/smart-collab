@@ -14,6 +14,15 @@ Phase 3 Superpowers in progress — t1 done, next t2
 ## Locked decisions
 - Backend host: Render (free web service, ~30s cold start accepted)
 - Postgres host: Neon (decoupled, 10GB free tier, branching usable for future)
+
+## Neon project (t5 — provisioned 2026-06-05)
+- Project name: `smart-collab-prod`
+- Region: AWS US East 1 (N. Virginia) — `us-east-1`
+- Branch: `main`
+- Pool: enabled (`-pooler` host)
+- Endpoint id: `ep-silent-rice-apip84iz` (host metadata only — non-secret)
+- Connection string: stored OUT-OF-REPO. Goes into Render env `DATABASE_URL` only.
+- SECURITY NOTE: initial password was pasted in chat on 2026-06-05 — MUST rotate via Neon → Roles before public traffic. Update Render env after rotation.
 - Frontend host: Vercel
 - Seed: postdeploy `prisma migrate deploy && tsx prisma/seed.ts` — idempotent
 - Domain: free subdomains, no custom DNS this round
@@ -21,10 +30,10 @@ Phase 3 Superpowers in progress — t1 done, next t2
 - CORS allowlist: single Vercel origin, no wildcards
 
 ## Last Completed Task
-t4 — frontend/.env.example prod hint + frontend/docs/deploy-vercel.md (project import + env var + smoke + rollback); commit 52da637. Phase A code prep complete.
+t5 — Neon `smart-collab-prod` provisioned, region us-east-1, branch main, pooled. Metadata logged; connection string out-of-repo.
 
 ## Next Task
-t5 — MANUAL: Neon provision project + capture connection string. Pause here — t5/t6/t7/t8/t9 are user-driven dashboard work (Neon, Render, Vercel, CORS wiring, smoke).
+t6 — MANUAL: Render provision web service + env vars + first deploy. Needs user account login on render.com.
 
 ## Session Log
 - 2026-06-04: docs/plans/deploy-prod.md written — 13 tasks across A code prep / B provision / C wire+smoke / D docs+close. Discovery: backend cookies already flip samesite=none+secure when NODE_ENV=production (no fix needed), CORS already env-driven. Seed already idempotent via upsert. Smallest possible diff for actual deploy.
@@ -33,6 +42,7 @@ t5 — MANUAL: Neon provision project + capture connection string. Pause here �
 - 2026-06-05: t3 — package.json scripts: `build:prod` = `prisma generate && tsc`, `start:prod` = `migrate deploy && seed && node dist/server.js`. deploy-render.md captures: root=backend/, build=`npm ci --include=dev && npm run build:prod`, start=`npm run start:prod`, health=/healthz, full env var table. tsx stays devDep — Render image keeps devDeps from build install into runtime. Commit 0981a24.
 - 2026-06-05: refactor — start:prod now reuses existing `db:migrate:deploy` + `db:seed` scripts (DRY). Commit 6efe516.
 - 2026-06-05: t4 — frontend/.env.example expanded w/ dev vs Vercel-prod comments; frontend/docs/deploy-vercel.md added (root=frontend/, framework auto-detected, single env var NEXT_PUBLIC_API_URL, smoke + rollback steps). Commit 52da637. PHASE A CODE PREP COMPLETE — pausing per plan; t5/t6/t7/t8/t9 are user dashboard work.
+- 2026-06-05: t5 — Neon project `smart-collab-prod` provisioned, AWS us-east-1, branch main, pooled. Endpoint id `ep-silent-rice-apip84iz` (non-secret). Connection string held by user, will be set as Render `DATABASE_URL` only. SECURITY: initial password pasted in chat → must rotate via Neon Roles before any public traffic, then update Render env.
 
 ## Blockers
 none

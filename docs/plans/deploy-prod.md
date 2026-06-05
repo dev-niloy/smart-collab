@@ -60,7 +60,7 @@ Steps:
 - 2. You: paste the connection string into a local scratch (DO NOT commit) — will go into Render env in Task 6
 - 3. Record in progress.md: Neon project name, region, branch=main, pool enabled
 - 4. Commit `[B5] neon: project provisioned (connection string in render env only)`
-Status: [ ]
+Status: [x] 2026-06-05 — `smart-collab-prod` provisioned, region us-east-1, pooled, branch main. Endpoint id logged; connection string held out-of-repo. ROTATE password before public traffic (pasted in chat on creation).
 
 ### Task 6: Render — provision web service + env vars + first deploy attempt
 Files:
