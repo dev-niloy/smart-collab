@@ -49,7 +49,7 @@ tasks:
   - id: t10
     desc: "wire ShellLayout into (authed) route group; drop Header"
     files: [frontend/src/app/(authed)/layout.tsx]
-    status: pending
+    status: done
   - id: t11
     desc: "Cmd+K command palette over projects + tasks"
     files: [frontend/src/components/shell/CommandPalette.tsx]
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t10
+next_task: t11
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user

@@ -25,10 +25,10 @@ Phase 3 Superpowers — t1 baseline done; next t2 (shell scaffolding + shadcn pr
   - `shell-v2-icons.html` — locked direction (lucide outline)
 
 ## Last Completed Task
-t9 — Topbar accepts string|{label,href?} segments; intermediate href segments become next/link; last segment stays text; actions slot on right; 5 tests; frontend 406/406
+t10 — ShellLayout mounted across (authed) route group; old Header + theme-toggle + notification-bell + GlobalSearchBar deleted; routeToPanel helper + 5-case section-swap test (goal #9); next build green; frontend 395/395
 
 ## Next Task
-t10 — wire ShellLayout into (authed) route group + drop old Header (high-risk sweep — pre-flight grep, auto-slice at 15-file churn)
+t11 — Cmd+K command palette over projects + tasks (shadcn Command primitive)
 
 ## Session Log
 - 2026-06-05: phase 1 — brainstorming session done w/ user, locked layout B + lucide icons. goal.md drafted with done-criteria + brownfield constraints.
@@ -43,6 +43,7 @@ t10 — wire ShellLayout into (authed) route group + drop old Header (high-risk 
 - 2026-06-05: t7 — ProjectsPanel.tsx reuses `useProjects` hook; chips are local state (no URL sync in v1 — simpler, can lift to URL in a follow-up). 4 chips: All / Active / Mine (createdBy=me) / Completed. Deviation noted: plan called for "Archived" chip; backend has no archive status, so Completed substitutes. Pinned section reads `sc:projects:pinned` (JSON string array) from localStorage; shows "No pinned projects yet" placeholder when empty; garbage values ignored. ProjectsPanel.test.tsx 7 tests. Frontend 396/396.
 - 2026-06-05: t8 — DashboardPanel.tsx renders header + 2 lucide-icon shortcuts (`My Open Tasks` → /dashboard#my-open-tasks, `Today's Deadlines` → /dashboard#upcoming-deadlines). InboxPanel.tsx renders header + 3 vertical tabs (Unread default / Mentions / Assigned to me) using local state + optional `onTabChange` callback for later wiring from the /inbox page (t12). 5 new tests. Frontend 401/401.
 - 2026-06-05: t9 — Topbar `segments` prop now accepts `string | { label, href? }[]`. Intermediate segments with `href` render as next/link; the last segment is always plain text (current-location convention). Actions slot rendered in `ml-auto` container on the right. Topbar.test.tsx 5 cases. Frontend 406/406.
+- 2026-06-05: t10 — High-risk Header sweep. Pre-flight grep: 10 page files + 1 component (DashboardGrid) used `<Header />`; 16 page tests, none asserting on Header DOM (no test sweep needed). git mv dashboard/projects/forbidden into src/app/(authed)/ route group. Added `src/app/(authed)/layout.tsx` mounting ShellLayout + RailBottom + dynamically picked panel via `routeToPanel.ts` helper (`getPanelKey` + `pickPanel`). Section-swap test covers goal #9 with 5 cases (null, root, prefix-match, nested, unknown). Stripped `<Header />` import + JSX from 10 pages + DashboardGrid via sed. Deleted orphan files: header.tsx, theme-toggle.tsx, notifications/NotificationBell.tsx, search/GlobalSearchBar.tsx + 3 tests + 2 now-empty dirs. providers.test trimmed (lost the ThemeToggle assertion). Frontend 395/395 (net delta: −16 deleted assertions + 5 new routeToPanel tests). `next build` green; all routes still resolve to same URLs. Under 15-file threshold — no auto-slice.
 
 ## Blockers
 none

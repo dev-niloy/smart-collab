@@ -143,7 +143,7 @@ Steps:
 - 6. Delete the now-orphan files (`header.tsx`, plus any sub-component only used by it)
 - 7. Run full frontend suite — fix any existing page tests asserting on Header DOM (rewrite to assert on Rail/Topbar where appropriate). **If churn exceeds 15 test files, stop and slice this task into t10a (wiring) + t10b (test sweep).**
 - 8. Commit `feat(shell): mount ShellLayout for all authed routes; drop old Header`
-Status: [ ]
+Status: [x] 2026-06-05 — moved dashboard/projects/forbidden into (authed) route group (file moves only). Added (authed)/layout.tsx + routeToPanel helper + 5-case section-swap test (goal #9 covered). Stripped <Header /> from 10 project pages + DashboardGrid. Deleted header.tsx, theme-toggle.tsx, notification-bell.tsx, GlobalSearchBar.tsx + their tests. providers.test trimmed. Frontend 395/395 (delta from 406: -16 deleted Header/bell/search/theme-toggle tests + 5 new routeToPanel tests). Next build green. No auto-slice needed.
 
 ## Phase F — Cmd+K palette + Inbox page
 
