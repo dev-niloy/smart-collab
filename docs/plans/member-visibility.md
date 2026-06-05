@@ -17,7 +17,7 @@ Steps:
 - 1. `cd backend && npm test --silent` → expect 528 passing
 - 2. `cd frontend && npm test -- --run` → expect 441 passing
 - 3. Empty commit `chore: baseline before member-visibility work begins`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 2: extend Scope/Actor type — thread role through service signatures
 Files:
@@ -28,7 +28,7 @@ Steps:
 - 2. GREEN: add `actor: { id: string; role: Role }` to `ListArgs` for both services. Backward-compat default: missing actor = admin (preserve existing callsites during refactor).
 - 3. REFACTOR: `isAdmin(actor)` helper + `memberFilter(actor)` returning `Prisma.ProjectWhereInput | undefined`.
 - 4. Commit `refactor(rbac): thread actor + role through project/task service signatures`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 3: projectService.list filters by membership for non-admin
 Files:
@@ -39,7 +39,7 @@ Steps:
 - 2. GREEN: when `!isAdmin(actor)`, add `members: { some: { userId: actor.id } }` to `where`.
 - 3. REFACTOR: confirm single SQL w/ EXISTS subquery — no N+1.
 - 4. Commit `feat(rbac): project list filters by membership for non-admin actors`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 4: projectService.findById returns 403 for non-member
 Files:
@@ -50,7 +50,7 @@ Steps:
 - 2. GREEN: after fetch, if `!isAdmin(actor)` AND no projectMember row → throw `ApiError.forbidden('FORBIDDEN')`.
 - 3. REFACTOR: single `findUnique` w/ filtered `_count.members` to avoid extra round trip.
 - 4. Commit `feat(rbac): project detail 403 for non-member actors`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 5: taskService.list (cross-project) filters by membership
 Files:
@@ -61,7 +61,7 @@ Steps:
 - 2. GREEN: add `project: { members: { some: { userId: actor.id } } }` to where when `!isAdmin(actor)`.
 - 3. REFACTOR: reuse filter helper from t3.
 - 4. Commit `feat(rbac): task list filters by project membership for non-admin`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 6: project-scoped task list 403 for non-member
 Files:
@@ -72,7 +72,7 @@ Steps:
 - 2. GREEN: pre-check via cheap EXISTS / COUNT before the actual list query.
 - 3. REFACTOR: extract `assertProjectAccess(actor, projectId)` reused by t4 + t6 + t7.
 - 4. Commit `feat(rbac): project-scoped task list 403 for non-member`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 7: taskService.findById 403 for non-member of task's project
 Files:
@@ -83,7 +83,7 @@ Steps:
 - 2. GREEN: after fetching task, call `assertProjectAccess(actor, task.projectId)`.
 - 3. REFACTOR: confirm one extra query OK; if hot, fold into the fetch via filtered include.
 - 4. Commit `feat(rbac): task detail 403 for non-member`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -98,7 +98,7 @@ Steps:
 - 2. GREEN: pass `{ id: req.user.id, role: req.user.role }` as `actor` to every service call.
 - 3. REFACTOR: `getActor(req)` helper to avoid duplication.
 - 4. Commit `feat(rbac): controllers thread req.user as actor into services`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 9: integration test — creator-auto-pm invariant preserved
 Files:
@@ -108,7 +108,7 @@ Steps:
 - 2. GREEN: no service change expected — confirms existing creator-auto-pm logic survives.
 - 3. REFACTOR: none.
 - 4. Commit `test(rbac): creator can see their freshly-created project (auto-pm invariant)`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -123,7 +123,7 @@ Steps:
 - 2. GREEN: relax `useRole` gate currently restricting to admin; widen to admin+pm for write actions, keep read for everyone.
 - 3. REFACTOR: keep members page route as-is.
 - 4. Commit `feat(rbac): surface Members tab to PM + read-only to team_member on project detail`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 11: 403 client-side handling on project detail page
 Files:
@@ -135,7 +135,7 @@ Steps:
 - 2. GREEN: branch on `isError && error?.status === 403`.
 - 3. REFACTOR: reuse existing /forbidden route if present; else inline panel.
 - 4. Commit `feat(rbac): project detail page handles 403 gracefully`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -155,7 +155,7 @@ Steps:
   - 5d. Member views project tasks → sees ALL tasks in that project (Mine chip still works).
   - 5e. Member visits non-member project URL → 403 page.
 - 6. Commit `test: verify member-visibility suite green + 3-role smoke`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 13: docs + close phase 3
 Files:
@@ -167,7 +167,7 @@ Steps:
 - 2. Update progress.md.
 - 3. Mark #B1 RESOLVED in backlog.
 - 4. Commit `docs(member-visibility): phase 3 superpowers complete + #B1 resolved`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 14: USER PERMISSION — push + open PR feature/member-visibility → develop
 Files: none
