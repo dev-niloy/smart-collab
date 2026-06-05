@@ -6,6 +6,10 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/dashboard',
 }));
 
+vi.mock('@/hooks/useNotifications', () => ({
+  useUnreadCount: () => ({ data: { count: 0 } }),
+}));
+
 describe('ShellLayout', () => {
   it('renders rail, panel, topbar, and main slots', () => {
     render(

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Inbox, LayoutDashboard, FolderKanban, Search } from 'lucide-react';
+import { useUnreadCount } from '@/hooks/useNotifications';
 
 export interface RailProps {
   bottom?: ReactNode;
@@ -32,6 +33,8 @@ const isActive = (pathname: string | null, href: string): boolean => {
 
 export function Rail({ bottom, onSearchClick }: RailProps) {
   const pathname = usePathname();
+  const unread = useUnreadCount();
+  const unreadCount = unread.data?.count ?? 0;
 
   return (
     <aside
@@ -61,18 +64,29 @@ export function Rail({ bottom, onSearchClick }: RailProps) {
         {NAV_ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = item.icon;
+          const showUnreadDot = item.key === 'inbox' && unreadCount > 0;
           return (
             <Link
               key={item.key}
               href={item.href}
-              aria-label={item.label}
+              aria-label={
+                showUnreadDot ? `${item.label} (${unreadCount} unread)` : item.label
+              }
               data-active={active ? 'true' : 'false'}
+              data-unread={showUnreadDot ? 'true' : 'false'}
               className={
-                'grid h-9 w-9 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground ' +
+                'relative grid h-9 w-9 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground ' +
                 (active ? 'bg-accent text-foreground shadow-[inset_2px_0_0_var(--primary)]' : '')
               }
             >
               <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              {showUnreadDot ? (
+                <span
+                  data-testid="inbox-unread-dot"
+                  aria-hidden
+                  className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-card"
+                />
+              ) : null}
             </Link>
           );
         })}

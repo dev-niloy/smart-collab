@@ -3,9 +3,16 @@ import { render, screen } from '@testing-library/react';
 import { Rail } from '../Rail';
 
 const mockPathname = vi.fn<() => string>(() => '/dashboard');
+const mockUnreadData = vi.fn<() => { data: { count: number } | undefined }>(() => ({
+  data: { count: 0 },
+}));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname(),
+}));
+
+vi.mock('@/hooks/useNotifications', () => ({
+  useUnreadCount: () => mockUnreadData(),
 }));
 
 describe('Rail (top nav)', () => {
@@ -61,5 +68,32 @@ describe('Rail (top nav)', () => {
     const search = screen.getByRole('button', { name: /search/i });
     expect(search).not.toHaveAttribute('href');
     expect(search).not.toHaveAttribute('data-active');
+  });
+
+  it('shows no unread dot on Inbox when count is 0', () => {
+    mockPathname.mockReturnValue('/dashboard');
+    mockUnreadData.mockReturnValue({ data: { count: 0 } });
+    render(<Rail />);
+
+    expect(screen.queryByTestId('inbox-unread-dot')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^inbox$/i })).toHaveAttribute('data-unread', 'false');
+  });
+
+  it('shows red unread dot + count in aria-label when unread > 0', () => {
+    mockPathname.mockReturnValue('/dashboard');
+    mockUnreadData.mockReturnValue({ data: { count: 3 } });
+    render(<Rail />);
+
+    expect(screen.getByTestId('inbox-unread-dot')).toBeInTheDocument();
+    const inbox = screen.getByRole('link', { name: /inbox \(3 unread\)/i });
+    expect(inbox).toHaveAttribute('data-unread', 'true');
+  });
+
+  it('handles missing unread query data gracefully (no dot)', () => {
+    mockPathname.mockReturnValue('/dashboard');
+    mockUnreadData.mockReturnValue({ data: undefined });
+    render(<Rail />);
+
+    expect(screen.queryByTestId('inbox-unread-dot')).not.toBeInTheDocument();
   });
 });
