@@ -68,7 +68,13 @@ services:
       - key: EMAIL_WORKER_INLINE
         value: "true"
       # User-provided in dashboard (sync: false hides them from the blueprint).
+      # DATABASE_URL : Neon POOLED (-pooler) connection string — used at runtime.
+      # DIRECT_URL   : Neon DIRECT (no -pooler) connection string — used by
+      #                `prisma migrate deploy`. Pgbouncer pooling breaks
+      #                Postgres advisory locks (P1002 advisory lock timeout).
       - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
         sync: false
       - key: CORS_ORIGINS
         sync: false
