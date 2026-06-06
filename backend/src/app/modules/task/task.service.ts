@@ -372,6 +372,19 @@ const update = async (
           projectId: task.projectId,
           meta: { from: current.status, to: task.status },
         });
+        // Fan-out: notify every assignee except the actor on status change.
+        const recipients = task.assignees.map((a) => a.userId).filter((uid) => uid !== actorId);
+        for (const recipientId of recipients) {
+          await enqueueNotification(tx, {
+            recipientId,
+            actorId,
+            type: 'task.status_changed',
+            entityType: 'task',
+            entityId: task.id,
+            projectId: task.projectId,
+            payload: { taskTitle: task.title, taskId: task.id, projectId: task.projectId },
+          });
+        }
       }
 
       if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo) {

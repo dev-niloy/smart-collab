@@ -111,7 +111,7 @@ Steps:
 - 2. GREEN: route + service `addAssignee(actor, taskId, userId)`. Reuse `canReassignTask`.
 - 3. REFACTOR: shared response shape (return updated task w/ assignees).
 - 4. Commit `feat(tasks): POST /tasks/:id/assignees endpoint`
-Status: [ ]
+Status: [x] 2026-06-06 (combined w/ t9+t10 — single Phase C commit)
 
 ### Task 9: `DELETE /tasks/:id/assignees/:userId` — remove one
 Files: same as t8 + `__tests__/task.service.permissions.test.ts`
@@ -120,7 +120,7 @@ Steps:
 - 2. GREEN: service `removeAssignee(actor, taskId, userId)`.
 - 3. REFACTOR: ensure legacy column stays consistent w/ first assignee.
 - 4. Commit `feat(tasks): DELETE /tasks/:id/assignees/:userId`
-Status: [ ]
+Status: [x] 2026-06-06 (combined w/ t8)
 
 ### Task 10: `PUT /tasks/:id/assignees` — replace full list
 Files: same as t8
@@ -129,7 +129,7 @@ Steps:
 - 2. GREEN: service `replaceAssignees(actor, taskId, userIds)` in transaction.
 - 3. REFACTOR: dedupe input.
 - 4. Commit `feat(tasks): PUT /tasks/:id/assignees`
-Status: [ ]
+Status: [x] 2026-06-06 (combined w/ t8)
 
 ### Task 11: `task.update` rejects `assigneeIds` + `assignedTo` body
 Files:
@@ -141,7 +141,7 @@ Steps:
 - 2. GREEN: zod drops both keys. Service has no path for them.
 - 3. REFACTOR: error message points to new endpoints.
 - 4. Commit `feat(tasks): update rejects assignee body keys`
-Status: [ ]
+Status: [DEFERRED → t21] strict PATCH rejection breaks legacy tests/frontend mid-transition. PATCH still accepts assignedTo + dual-writes TaskAssignee during transition. Hard-rejection happens in t21 alongside column drop + frontend migration.
 
 ---
 

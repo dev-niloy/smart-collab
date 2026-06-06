@@ -31,10 +31,24 @@ const getKpis = async (scope: Scope): Promise<Kpis> => {
       prisma.task.count({ where: taskWhere(scope) }),
       prisma.task.count({ where: taskWhere(scope, { status: 'completed' }) }),
       prisma.task.count({
-        where: taskWhere(scope, { assignedTo: scope.actorId, status: { not: 'completed' } }),
+        // Multi-assignee: count tasks where actor is in TaskAssignee. Dual-reads legacy
+        // assignedTo during transition (Phase A m1 → Phase F m2).
+        where: taskWhere(scope, {
+          OR: [
+            { assignees: { some: { userId: scope.actorId } } },
+            { assignedTo: scope.actorId },
+          ],
+          status: { not: 'completed' },
+        }),
       }),
       prisma.task.count({
-        where: taskWhere(scope, { assignedTo: scope.actorId, status: 'completed' }),
+        where: taskWhere(scope, {
+          OR: [
+            { assignees: { some: { userId: scope.actorId } } },
+            { assignedTo: scope.actorId },
+          ],
+          status: 'completed',
+        }),
       }),
     ]);
   const myTotal = myOpenTasks + myCompletedTasks;

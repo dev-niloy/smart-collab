@@ -155,38 +155,49 @@ const buildWorkloadMap = async (
   const horizon = new Date(Date.now() + 7 * 86_400_000);
   const now = new Date();
 
-  const [byStatus, dueSoon] = await Promise.all([
-    prisma.task.groupBy({
-      by: ['assignedTo', 'status'],
-      where: { projectId, assignedTo: { in: userIds } },
-      _count: { _all: true },
-    }),
-    prisma.task.groupBy({
-      by: ['assignedTo'],
-      where: {
-        projectId,
-        assignedTo: { in: userIds },
-        status: { not: 'completed' },
-        dueDate: { lte: horizon, gte: now },
-      },
-      _count: { _all: true },
-    }),
-  ]);
-
-  for (const row of byStatus) {
-    if (!row.assignedTo) continue;
-    const w = map.get(row.assignedTo);
-    if (!w) continue;
-    const count = row._count?._all ?? 0;
-    if (row.status === 'todo') w.todo = count;
-    else if (row.status === 'in_progress') w.in_progress = count;
-    else if (row.status === 'completed') w.completed = count;
-  }
-  for (const row of dueSoon) {
-    if (!row.assignedTo) continue;
-    const w = map.get(row.assignedTo);
-    if (!w) continue;
-    w.due_soon = row._count?._all ?? 0;
+  // Multi-assignee: pull every task the userIds are attached to and attribute +1
+  // per assignee. Dual-reads TaskAssignee + legacy assignedTo during transition;
+  // a Set per user prevents double-count when both are populated for the same task.
+  const userSet = new Set(userIds);
+  const tasks = await prisma.task.findMany({
+    where: {
+      projectId,
+      deletedAt: null,
+      OR: [
+        { assignedTo: { in: userIds } },
+        { assignees: { some: { userId: { in: userIds } } } },
+      ],
+    },
+    select: {
+      id: true,
+      status: true,
+      dueDate: true,
+      assignedTo: true,
+      assignees: { select: { userId: true } },
+    },
+  });
+  const seen = new Map<string, Set<string>>(); // userId → Set<taskId>
+  for (const uid of userIds) seen.set(uid, new Set());
+  for (const t of tasks) {
+    const linked = new Set<string>();
+    if (t.assignedTo && userSet.has(t.assignedTo)) linked.add(t.assignedTo);
+    for (const a of t.assignees) if (userSet.has(a.userId)) linked.add(a.userId);
+    for (const uid of linked) {
+      const seenSet = seen.get(uid)!;
+      if (seenSet.has(t.id)) continue;
+      seenSet.add(t.id);
+      const w = map.get(uid)!;
+      if (t.status === 'todo') w.todo += 1;
+      else if (t.status === 'in_progress') w.in_progress += 1;
+      else if (t.status === 'completed') w.completed += 1;
+      if (
+        t.status !== 'completed' &&
+        t.dueDate.getTime() >= now.getTime() &&
+        t.dueDate.getTime() <= horizon.getTime()
+      ) {
+        w.due_soon += 1;
+      }
+    }
   }
   return map;
 };
@@ -260,6 +271,11 @@ const removeMember = async (
     const unassigned = await tx.task.updateMany({
       where: { projectId, assignedTo: target.userId },
       data: { assignedTo: null },
+    });
+
+    // Multi-assignee: also drop TaskAssignee rows for this user scoped to this project.
+    await tx.taskAssignee.deleteMany({
+      where: { userId: target.userId, task: { projectId } },
     });
 
     await recordActivity(tx, {

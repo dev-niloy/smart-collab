@@ -35,10 +35,22 @@ const toDTO = (row: CommentWithAuthor): CommentDTO => ({
 
 const ensureTaskExists = async (
   taskId: string,
-): Promise<{ projectId: string; createdBy: string; assignedTo: string | null; title: string }> => {
+): Promise<{
+  projectId: string;
+  createdBy: string;
+  assignedTo: string | null;
+  title: string;
+  assignees: { userId: string }[];
+}> => {
   const t = await prisma.task.findUnique({
     where: { id: taskId },
-    select: { projectId: true, createdBy: true, assignedTo: true, title: true },
+    select: {
+      projectId: true,
+      createdBy: true,
+      assignedTo: true,
+      title: true,
+      assignees: { select: { userId: true } },
+    },
   });
   if (!t) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
   return t;
@@ -103,11 +115,15 @@ const create = async (
       projectId: task.projectId,
       meta: { title: body.slice(0, 80) },
     });
-    // Notify task assignee + task creator (deduped, never the actor)
+    // Notify all task assignees + task creator (deduped, never the actor).
+    // Multi-assignee: every assignee receives comment notif. Legacy assignedTo still
+    // merged for transition safety (dedupe handles the overlap).
     const excerpt = body.slice(0, 140);
-    const recipients: string[] = [];
-    if (task.assignedTo) recipients.push(task.assignedTo);
-    if (task.createdBy) recipients.push(task.createdBy);
+    const recipientSet = new Set<string>();
+    for (const a of task.assignees) recipientSet.add(a.userId);
+    if (task.assignedTo) recipientSet.add(task.assignedTo);
+    if (task.createdBy) recipientSet.add(task.createdBy);
+    const recipients = Array.from(recipientSet);
     await enqueueNotifications(
       tx,
       recipients.map((recipientId) => ({
