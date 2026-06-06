@@ -96,8 +96,13 @@ maybe('activityLog list', () => {
     expect(overlap.length).toBe(0);
   });
 
-  it('listGlobal returns null nextCursor at end', async () => {
-    const out = await listGlobal({ limit: 50 });
+  it('returns null nextCursor at end (project-scoped to avoid shared-DB pollution)', async () => {
+    // listGlobal queries the entire activity_logs table, so cross-suite rows
+    // seeded by other tests (notification.triggers, task.routes, etc.) leak
+    // into the result set and break a global "at end" assertion in a shared DB.
+    // We assert end-of-page behavior on a project-scoped query where this
+    // suite owns the row count exactly (3 rows seeded for projectB).
+    const out = await listByProject(projectB, { limit: 50 });
     expect(out.nextCursor).toBeNull();
   });
 
