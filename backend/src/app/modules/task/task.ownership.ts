@@ -13,13 +13,21 @@ export const requireTaskOwnerOrPrivileged: RequestHandler = async (req, _res, ne
     }
     const task = await prisma.task.findUnique({
       where: { id: req.params.id },
-      select: { createdBy: true, assignedTo: true },
+      select: {
+        createdBy: true,
+        assignedTo: true,
+        assignees: { select: { userId: true } },
+      },
     });
     if (!task) {
       return next(ApiError.notFound('Task not found', 'TASK_NOT_FOUND'));
     }
     const actorId = req.user.id;
-    if (task.createdBy === actorId || task.assignedTo === actorId) {
+    if (
+      task.createdBy === actorId ||
+      task.assignedTo === actorId ||
+      task.assignees.some((a) => a.userId === actorId)
+    ) {
       return next();
     }
     return next(ApiError.forbidden('Insufficient permissions for this task', 'FORBIDDEN_OWNERSHIP'));

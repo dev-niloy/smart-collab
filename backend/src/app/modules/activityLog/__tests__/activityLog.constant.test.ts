@@ -8,6 +8,7 @@ describe('activityLog constants', () => {
       'task.deleted',
       'task.status_changed',
       'task.assigned',
+      'task.unassigned',
       'project.created',
       'project.updated',
       'project.deleted',

@@ -135,12 +135,15 @@ export const getProjectRoleFor = async (
   return row?.role ?? null;
 };
 
+type PrismaLike = typeof prisma | Prisma.TransactionClient;
+
 const ensureAssigneeIsProjectMember = async (
   projectId: string,
   assignedTo: string | null | undefined,
+  client: PrismaLike = prisma,
 ) => {
   if (!assignedTo) return; // null/undefined always allowed (unassigned)
-  const candidate = await prisma.user.findUnique({
+  const candidate = await client.user.findUnique({
     where: { id: assignedTo },
     select: { role: true },
   });
@@ -148,7 +151,7 @@ const ensureAssigneeIsProjectMember = async (
     throw ApiError.unprocessable(ASSIGNEE_NOT_PROJECT_MEMBER_MESSAGE, 'ASSIGNEE_NOT_PROJECT_MEMBER');
   }
   if (candidate.role === Role.admin) return; // system admin bypass — enum-safe vs string drift
-  const member = await prisma.projectMember.findFirst({
+  const member = await client.projectMember.findFirst({
     where: { projectId, userId: assignedTo },
     select: { id: true },
   });
@@ -195,12 +198,14 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
   await ensureProjectExists(input.projectId);
   await ensureTitleUnique(input.projectId, input.title);
   const assigneeIds = normalizeCreateAssignees(input);
-  for (const userId of assigneeIds) {
-    await ensureAssigneeIsProjectMember(input.projectId, userId);
-  }
   const legacyAssignedTo = assigneeIds[0] ?? null;
   try {
     return await prisma.$transaction(async (tx) => {
+      // Re-check membership INSIDE the tx so a member removed between request
+      // start and write can't slip through as an orphan TaskAssignee.
+      for (const userId of assigneeIds) {
+        await ensureAssigneeIsProjectMember(input.projectId, userId, tx);
+      }
       const task = await tx.task.create({
         data: {
           projectId: input.projectId,
@@ -686,8 +691,8 @@ const addAssignee = async (
 ): Promise<TaskWithRelations> => {
   const existing = await loadTaskForAssigneeOp(taskId);
   await ensureCanReassign(actor, existing.projectId);
-  await ensureAssigneeIsProjectMember(existing.projectId, userId);
   return prisma.$transaction(async (tx) => {
+    await ensureAssigneeIsProjectMember(existing.projectId, userId, tx);
     await tx.taskAssignee.upsert({
       where: { taskId_userId: { taskId, userId } },
       create: { taskId, userId, addedById: actorId },
@@ -736,7 +741,7 @@ const removeAssignee = async (
     await syncLegacyAssignedTo(tx, taskId);
     await recordActivity(tx, {
       actorId,
-      action: 'task.assigned',
+      action: 'task.unassigned',
       entityType: 'task',
       entityId: taskId,
       projectId: existing.projectId,
@@ -767,15 +772,16 @@ const replaceAssignees = async (
   const existing = await loadTaskForAssigneeOp(taskId);
   await ensureCanReassign(actor, existing.projectId);
   const next = Array.from(new Set(userIds));
-  // Atomic membership validation BEFORE any write — partial apply not allowed.
-  for (const id of next) {
-    await ensureAssigneeIsProjectMember(existing.projectId, id);
-  }
   const current = new Set(existing.assignees.map((a) => a.userId));
   const nextSet = new Set(next);
   const toAdd = next.filter((id) => !current.has(id));
   const toRemove = Array.from(current).filter((id) => !nextSet.has(id));
   return prisma.$transaction(async (tx) => {
+    // Atomic membership validation INSIDE tx — partial apply not allowed, and
+    // we close the TOCTOU window between membership check and TaskAssignee write.
+    for (const id of next) {
+      await ensureAssigneeIsProjectMember(existing.projectId, id, tx);
+    }
     if (toRemove.length > 0) {
       await tx.taskAssignee.deleteMany({
         where: { taskId, userId: { in: toRemove } },

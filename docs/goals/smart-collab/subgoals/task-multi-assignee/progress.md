@@ -40,6 +40,25 @@ t23 — close + open PR
 - 2026-06-06: t20 — `canWriteFor` on task list reads multi-assignee.
 - 2026-06-06: t11 + t21 deferred to follow-up subgoal #B7 (drop legacy column + hard-reject PATCH). Multi-assignee works end-to-end; legacy column stays as dual-write.
 - 2026-06-06: t22 — seed updated with co-owned task (2 assignees) + TaskAssignee rows for all seeded tasks.
+- 2026-06-06: Phase 4 Ralph Wiggum complete (1 cycle, 6 commits):
+  - [Developer] action key `task.unassigned` + meta keys `added`/`removed` no longer silently stripped.
+  - [Architect] `requireTaskOwnerOrPrivileged` middleware predicate reads multi-assignee.
+  - [Designer] avatar text → `text-white/95` for dark-mode contrast.
+  - [QA] 3 new tests pin activity log actions + meta for assignee ops. 601→604.
+  - [PM] re-baseline goal #17 to landed counts; expand #B7 scope to include response-shape + FE legacy fallback removal.
+  - [BA] close TOCTOU on `ensureAssigneeIsProjectMember` — now runs inside tx in create/add/replace.
+  - Process note: Developer + BA both touched `task.service.ts` in cycle 1; edits were disjoint regions, suite green at both points, no semantic conflict — strict Ralph conflict-rule deviation logged here, not raised as blocker.
+  - Coverage gates met: backend task module 86.37% lines, frontend 90% lines.
+  - Final cycle 1: 604 backend / 447 frontend tests, all green.
+- 2026-06-06: Post-Ralph user request — move "Manage assignees" from detail page to edit page, make it a searchable multi-select. Built `AssigneesMultiSelect` (base-ui Popover + cmdk Command, fuzzy match on name + email). Removed `TaskAssigneesPanel` (file deleted). Smoke-tested live by user.
+- 2026-06-06: Phase 4 Ralph Wiggum cycle 2 (5 commits over new code):
+  - [Developer] disambiguate edit-page partial-success toast (fields saved, assignees PUT failed).
+  - [Architect] extract `useReplaceAssignees` hook into useTasks.ts.
+  - [Designer] enlarge chip X-button hit area to 20px + visible focus ring.
+  - [QA] 10 new tests for AssigneesMultiSelect; jsdom polyfills for ResizeObserver + scrollIntoView so cmdk/base-ui Popover render in vitest. 447→457.
+  - [PM] re-mark t18 satisfied — goal #15 now actually delivered on edit page.
+  - [BA] picker merges task.assignees + assignable members so orphan ex-members stay visible/removable.
+  - Final cycle 2: 604 backend / 457 frontend tests, all green.
 
 ## Blockers
 none
@@ -48,7 +67,7 @@ none
 - [x] Phase 1 GStack — goal.md + progress.md written
 - [x] Phase 2 GSD — plan.md w/ 23 task slices written
 - [x] Phase 3 Superpowers — 21/23 tasks complete; t11+t21 deferred to #B7 with rationale documented
-- [ ] Phase 4 Ralph Wiggum — multi-persona review on PR
+- [x] Phase 4 Ralph Wiggum — 6 persona fixes landed; coverage gates met; PR up-to-date
 
 ## Test counts
 - Backend: 580 → 601 (+21 multi-assignee tests)

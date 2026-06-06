@@ -52,7 +52,7 @@ export function TaskAssigneesAvatars(props: Props) {
           key={u.id}
           title={`${u.name} (${u.email})`}
           aria-label={u.name}
-          className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-medium text-primary-foreground ring-2 ring-background ${colorForId(u.id)}`}
+          className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-medium text-white/95 ring-2 ring-background ${colorForId(u.id)}`}
         >
           {initials(u.name)}
         </span>

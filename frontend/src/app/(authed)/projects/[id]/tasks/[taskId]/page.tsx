@@ -12,12 +12,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useTask } from '@/hooks/useTasks';
-import { useProjectMembers, useAssignableMembers } from '@/hooks/useProjectMembers';
+import { useProjectMembers } from '@/hooks/useProjectMembers';
 import { useUser } from '@/hooks/useUser';
 import { DeleteTaskButton } from '@/components/tasks/delete-task-button';
 import { TaskCommentsPanel } from '@/components/tasks/TaskCommentsPanel';
 import { TaskAttachmentsPanel } from '@/components/tasks/TaskAttachmentsPanel';
-import { TaskAssigneesPanel } from '@/components/tasks/TaskAssigneesPanel';
 import { TaskAssigneesAvatars } from '@/components/tasks/TaskAssigneesAvatars';
 import {
   STATUS_LABEL,
@@ -156,19 +155,6 @@ export default function TaskDetailPage() {
 
         {!isLoading && !isError && task ? (
           <div className="mt-6 space-y-8">
-            {isPrivileged ? (
-              <TaskAssigneesPanel
-                projectId={projectId}
-                taskId={task.id}
-                currentAssigneeIds={
-                  task.assignees && task.assignees.length > 0
-                    ? task.assignees.map((a) => a.userId)
-                    : task.assignedTo
-                      ? [task.assignedTo]
-                      : []
-                }
-              />
-            ) : null}
             <TaskCommentsPanel
               taskId={task.id}
               projectRole={role === 'admin' ? 'admin' : role === 'project_manager' ? 'pm' : 'member'}
