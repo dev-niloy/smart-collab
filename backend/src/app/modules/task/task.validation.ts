@@ -119,6 +119,10 @@ export const listTasksQuerySchema = z
       .positive()
       .default(DEFAULT_LIMIT)
       .transform((v) => Math.min(v, MAX_LIMIT)),
+    includeDeleted: z
+      .union([z.literal('true'), z.literal('false'), z.boolean()])
+      .optional()
+      .transform((v) => v === 'true' || v === true),
   })
   .refine(
     (v) => !(v.dueFrom && v.dueTo) || v.dueFrom.getTime() <= v.dueTo.getTime(),

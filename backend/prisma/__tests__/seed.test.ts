@@ -2,6 +2,19 @@ import { prisma, disconnectPrisma } from '../../src/config/prisma';
 import { seedDemoUsers } from '../seed';
 
 const DEMO_EMAILS = ['admin@demo.local', 'pm@demo.local', 'member@demo.local'];
+const DEMO_PROJECT_IDS = [
+  '00000000-0000-0000-0000-00000000000a',
+  '00000000-0000-0000-0000-00000000000b',
+];
+
+const cleanupDemoData = async () => {
+  // Clean up children before users (FK restrict on Project.createdBy + Task.createdBy).
+  await prisma.task.deleteMany({ where: { projectId: { in: DEMO_PROJECT_IDS } } });
+  await prisma.activityLog.deleteMany({ where: { projectId: { in: DEMO_PROJECT_IDS } } });
+  await prisma.projectMember.deleteMany({ where: { projectId: { in: DEMO_PROJECT_IDS } } });
+  await prisma.project.deleteMany({ where: { id: { in: DEMO_PROJECT_IDS } } });
+  await prisma.user.deleteMany({ where: { email: { in: DEMO_EMAILS } } });
+};
 
 const hasDb = !!process.env.DATABASE_URL;
 const maybe = hasDb ? describe : describe.skip;
@@ -20,12 +33,12 @@ maybe('prisma seed — demo users', () => {
 
   afterAll(async () => {
     process.env = ORIGINAL_ENV;
-    await prisma.user.deleteMany({ where: { email: { in: DEMO_EMAILS } } });
+    await cleanupDemoData();
     await disconnectPrisma();
   });
 
   beforeEach(async () => {
-    await prisma.user.deleteMany({ where: { email: { in: DEMO_EMAILS } } });
+    await cleanupDemoData();
   });
 
   it('inserts exactly 3 demo users on first run', async () => {

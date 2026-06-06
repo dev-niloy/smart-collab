@@ -21,6 +21,7 @@ export type ListTasksParams = {
   sort?: ListTasksQuery['sort'];
   page?: number;
   limit?: number;
+  includeDeleted?: boolean;
 };
 
 const buildQuery = (params: ListTasksParams = {}): string => {
@@ -36,6 +37,7 @@ const buildQuery = (params: ListTasksParams = {}): string => {
   if (params.sort) usp.set('sort', params.sort);
   if (params.page !== undefined) usp.set('page', String(params.page));
   if (params.limit !== undefined) usp.set('limit', String(params.limit));
+  if (params.includeDeleted) usp.set('includeDeleted', 'true');
   const qs = usp.toString();
   return qs ? `?${qs}` : '';
 };
@@ -66,3 +68,6 @@ export const updateTask = (id: string, input: UpdateTaskInput) =>
   apiPatch<TaskResponse>(`/api/v1/tasks/${id}`, serializeUpdate(input)).then((r) => r.task);
 
 export const deleteTask = (id: string) => apiDelete<void>(`/api/v1/tasks/${id}`);
+
+export const restoreTask = (id: string) =>
+  apiPost<TaskResponse>(`/api/v1/tasks/${id}/restore`, {}).then((r) => r.task);

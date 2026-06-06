@@ -8,6 +8,7 @@ import {
   createTask,
   updateTask,
   deleteTask,
+  restoreTask,
   type ListTasksParams,
 } from '@/lib/tasks';
 import type {
@@ -85,6 +86,17 @@ export const useDeleteTask = () => {
     onSuccess: (_v, id) => {
       qc.removeQueries({ queryKey: taskKey(id) });
       invalidateLists(qc);
+    },
+  });
+};
+
+export const useRestoreTask = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => restoreTask(id),
+    onSuccess: (task) => {
+      qc.setQueryData(taskKey(task.id), task);
+      invalidateLists(qc, task.projectId);
     },
   });
 };

@@ -43,6 +43,72 @@ export type TaskWithRelations = Task & {
   assignee: { id: string; email: string; name: string; role: string } | null;
 };
 
+// ──────────────────────────────────────────────────────────
+// Task write permission predicates (task-assignee-write)
+// ──────────────────────────────────────────────────────────
+
+type CanWriteArgs = {
+  actor: Actor | undefined;
+  task: Pick<Task, 'assignedTo' | 'createdBy'>;
+  projectRole?: 'pm' | 'member' | null; // resolved per-project; null = not a member
+};
+
+/**
+ * Returns true when the actor may edit task fields (status / title / desc / priority / due).
+ * Admin and project PM are always allowed. Assignee is allowed only when the task IS assigned to them.
+ * Unassigned tasks cannot be field-edited by anyone except admin / project PM.
+ */
+export const canWriteTask = ({ actor, task, projectRole }: CanWriteArgs): boolean => {
+  if (isAdmin(actor)) return true;
+  if (projectRole === 'pm') return true;
+  if (!task.assignedTo) return false; // unassigned → admin / PM only
+  return !!actor && task.assignedTo === actor.id;
+};
+
+/**
+ * Returns true when the actor may delete the task (soft delete).
+ * Admin, project PM, or the task creator (any role) can delete.
+ */
+export const canDeleteTask = ({ actor, task, projectRole }: CanWriteArgs): boolean => {
+  if (isAdmin(actor)) return true;
+  if (projectRole === 'pm') return true;
+  return !!actor && task.createdBy === actor.id;
+};
+
+/**
+ * Returns true when the actor may reassign the task (change assignedTo).
+ * PM/admin only — assignee CANNOT reassign out.
+ */
+export const canReassignTask = ({ actor, projectRole }: Omit<CanWriteArgs, 'task'>): boolean => {
+  if (isAdmin(actor)) return true;
+  return projectRole === 'pm';
+};
+
+/**
+ * Returns true when the actor may see soft-deleted tasks.
+ * PM/admin only — non-PM passing includeDeleted=true is silently ignored.
+ */
+export const canSeeDeleted = (actor: Actor | undefined, projectRole?: 'pm' | 'member' | null): boolean => {
+  if (isAdmin(actor)) return true;
+  return projectRole === 'pm';
+};
+
+/**
+ * Look up a single user's project role from ProjectMember. Returns null if not a member.
+ */
+export const getProjectRoleFor = async (
+  actor: Actor | undefined,
+  projectId: string,
+): Promise<'pm' | 'member' | null> => {
+  if (!actor) return null;
+  if (isAdmin(actor)) return null; // admin bypasses projectMember entirely
+  const row = await prisma.projectMember.findFirst({
+    where: { projectId, userId: actor.id },
+    select: { role: true },
+  });
+  return row?.role ?? null;
+};
+
 const ensureAssigneeIsProjectMember = async (
   projectId: string,
   assignedTo: string | null | undefined,
@@ -136,7 +202,7 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
 
 const findById = async (id: string, actor?: Actor): Promise<TaskWithRelations> => {
   const t = await prisma.task.findUnique({ where: { id }, include: taskInclude });
-  if (!t) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  if (!t || t.deletedAt) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
   await assertProjectAccess(actor, t.projectId);
   return t;
 };
@@ -145,14 +211,43 @@ const update = async (
   id: string,
   input: UpdateTaskInput,
   actorId: string | null = null,
+  actor?: Actor,
 ): Promise<TaskWithRelations> => {
   if (input.dueDate) ensureFutureDeadline(input.dueDate);
 
   const current = await prisma.task.findUnique({
     where: { id },
-    select: { projectId: true, status: true, assignedTo: true, title: true, priority: true },
+    select: {
+      projectId: true,
+      status: true,
+      assignedTo: true,
+      createdBy: true,
+      title: true,
+      priority: true,
+      deletedAt: true,
+    },
   });
-  if (!current) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  if (!current || current.deletedAt) {
+    throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  }
+
+  const projectRole = await getProjectRoleFor(actor, current.projectId);
+
+  if (!canWriteTask({ actor, task: current, projectRole })) {
+    throw ApiError.forbidden(
+      'You do not have permission to update this task.',
+      'TASK_WRITE_FORBIDDEN',
+    );
+  }
+
+  if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo) {
+    if (!canReassignTask({ actor, projectRole })) {
+      throw ApiError.forbidden(
+        'Only project managers can reassign tasks.',
+        'CANNOT_REASSIGN',
+      );
+    }
+  }
 
   if (input.title !== undefined && input.title.toLowerCase() !== current.title.toLowerCase()) {
     await ensureTitleUnique(current.projectId, input.title, id);
@@ -251,13 +346,26 @@ const update = async (
   }
 };
 
-const remove = async (id: string, actorId: string | null = null): Promise<void> => {
+const remove = async (
+  id: string,
+  actorId: string | null = null,
+  actor?: Actor,
+): Promise<void> => {
   try {
     const existing = await prisma.task.findUnique({
       where: { id },
-      select: { id: true, projectId: true, title: true },
+      select: { id: true, projectId: true, title: true, createdBy: true, assignedTo: true, deletedAt: true },
     });
-    if (!existing) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+    if (!existing || existing.deletedAt) {
+      throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+    }
+    const projectRole = await getProjectRoleFor(actor, existing.projectId);
+    if (!canDeleteTask({ actor, task: existing, projectRole })) {
+      throw ApiError.forbidden(
+        'You do not have permission to delete this task.',
+        'TASK_DELETE_FORBIDDEN',
+      );
+    }
     await prisma.$transaction(async (tx) => {
       await recordActivity(tx, {
         actorId,
@@ -267,7 +375,7 @@ const remove = async (id: string, actorId: string | null = null): Promise<void> 
         projectId: existing.projectId,
         meta: { title: existing.title },
       });
-      await tx.task.delete({ where: { id } });
+      await tx.task.update({ where: { id }, data: { deletedAt: new Date() } });
     });
   } catch (err) {
     if (err instanceof ApiError) throw err;
@@ -276,6 +384,44 @@ const remove = async (id: string, actorId: string | null = null): Promise<void> 
     }
     throw err;
   }
+};
+
+const restore = async (
+  id: string,
+  actorId: string | null = null,
+  actor?: Actor,
+): Promise<TaskWithRelations> => {
+  const existing = await prisma.task.findUnique({
+    where: { id },
+    select: { id: true, projectId: true, title: true, deletedAt: true },
+  });
+  if (!existing) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  if (!existing.deletedAt) {
+    throw ApiError.unprocessable('Task is not deleted.', 'NOT_DELETED');
+  }
+  const projectRole = await getProjectRoleFor(actor, existing.projectId);
+  if (!canSeeDeleted(actor, projectRole)) {
+    throw ApiError.forbidden(
+      'You do not have permission to restore this task.',
+      'TASK_RESTORE_FORBIDDEN',
+    );
+  }
+  return prisma.$transaction(async (tx) => {
+    const task = await tx.task.update({
+      where: { id },
+      data: { deletedAt: null },
+      include: taskInclude,
+    });
+    await recordActivity(tx, {
+      actorId,
+      action: 'task.restored',
+      entityType: 'task',
+      entityId: task.id,
+      projectId: task.projectId,
+      meta: { title: task.title },
+    });
+    return task;
+  });
 };
 
 type ListArgs = {
@@ -289,6 +435,7 @@ type ListArgs = {
   dueTo?: Date;
   actorId?: string; // used to resolve 'me' shorthands
   actor?: Actor;
+  includeDeleted?: boolean; // PM/admin only; silently ignored otherwise
   sort: SortKey;
   page: number;
   limit: number;
@@ -352,6 +499,18 @@ const list = async (args: ListArgs): Promise<ListResult> => {
     args.projectId || isAdmin(args.actor)
       ? undefined
       : { project: { members: { some: { userId: args.actor!.id } } } };
+
+  // Soft-delete: hide deleted by default; PM/admin can opt in via includeDeleted=true.
+  let projectRoleForDeleted: 'pm' | 'member' | null = null;
+  if (args.projectId && args.includeDeleted) {
+    projectRoleForDeleted = await getProjectRoleFor(args.actor, args.projectId);
+  }
+  const showDeleted =
+    args.includeDeleted === true && canSeeDeleted(args.actor, projectRoleForDeleted);
+  const deletedFilter: Prisma.TaskWhereInput = showDeleted
+    ? { deletedAt: { not: null } }
+    : { deletedAt: null };
+
   const where: Prisma.TaskWhereInput = {
     ...(args.projectId ? { projectId: args.projectId } : {}),
     ...(args.q ? { title: { contains: args.q, mode: 'insensitive' } } : {}),
@@ -361,6 +520,7 @@ const list = async (args: ListArgs): Promise<ListResult> => {
     ...buildAssignedToWhere(args.assignedTo, args.actorId),
     ...buildCreatedByWhere(args.createdBy, args.actorId),
     ...(rbacFilter ?? {}),
+    ...deletedFilter,
   };
   const [data, total] = await prisma.$transaction([
     prisma.task.findMany({
@@ -380,6 +540,7 @@ export const taskService = {
   findById,
   update,
   remove,
+  restore,
   list,
   ensureFutureDeadline,
 };

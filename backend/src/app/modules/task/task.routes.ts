@@ -1,9 +1,7 @@
 import { Router } from 'express';
 import { validate } from '../../middlewares/validate';
 import { requireAuth } from '../../middlewares/auth';
-import { requireRole } from '../../middlewares/rbac';
 import { taskController } from './task.controller';
-import { requireTaskOwnerOrPrivileged } from './task.ownership';
 import commentRoutes from '../comment/comment.routes';
 import attachmentRoutes from '../attachment/attachment.routes';
 import {
@@ -23,18 +21,18 @@ router.use('/:taskId/attachments', attachmentRoutes);
 router.get('/', validate({ query: listTasksQuerySchema }), taskController.list);
 router.get('/:id', validate({ params: taskIdParamSchema }), taskController.getById);
 router.post('/', validate({ body: createTaskSchema }), taskController.create);
+// PATCH + DELETE + restore: service layer enforces all write/delete RBAC (canWriteTask, canDeleteTask, canSeeDeleted).
 router.patch(
   '/:id',
   validate({ params: taskIdParamSchema }),
-  requireTaskOwnerOrPrivileged,
   validate({ body: updateTaskSchema }),
   taskController.update,
 );
-router.delete(
-  '/:id',
-  requireRole('admin', 'project_manager'),
+router.delete('/:id', validate({ params: taskIdParamSchema }), taskController.remove);
+router.post(
+  '/:id/restore',
   validate({ params: taskIdParamSchema }),
-  taskController.remove,
+  taskController.restore,
 );
 
 export default router;

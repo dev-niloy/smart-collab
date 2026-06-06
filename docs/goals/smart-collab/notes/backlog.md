@@ -1,6 +1,38 @@
 # Backlog — captured during progress-system smoke (2026-06-05)
 
-## #B1 — Member visibility scoping (RBAC) — **RESOLVED 2026-06-05 (PR #29 pending merge)**
+## #B6 — Multi-assignee on tasks — **NEXT SUBGOAL after task-assignee-write merges**
+
+**User-locked decisions (2026-06-05):**
+- Task can have **N assignees**, not just one. Industry standard (Linear/Jira/Asana).
+- Any assignee can update status + edit fields (today: only the single assignee). `canWriteTask` becomes `actor.id IN task.assigneeIds`.
+- Still PM-only for reassign + delete (no change).
+
+**Schema:**
+- New `TaskAssignee(taskId, userId, addedById, addedAt)` join table w/ unique `(taskId, userId)` + cascade on Task delete.
+- Drop `Task.assignedTo` column (single FK) — migration backfills each existing non-null `assignedTo` into a single `TaskAssignee` row.
+- Index `(taskId)` + `(userId)` for filter queries.
+
+**Backend:**
+- All assignee filters: `actor.id IN taskAssignees` (EXISTS subquery).
+- `canWriteTask`: assignee match via join, not direct FK.
+- `ensureAssigneeIsProjectMember`: validate every member of the new list.
+- `task.create` / `task.update` accept `assigneeIds: string[]` (replaces single `assignedTo`).
+- "assignedTo=me" filter becomes "any assignee = me".
+- Notifications: fan-out to every assignee on status changes.
+
+**Frontend:**
+- Replace single Select with multi-select chip picker (shadcn `combobox` or stacked checkbox dropdown).
+- Card UI: show stacked avatars + "+N" when >3 assignees.
+- New task page + edit page: multi-pick.
+- `useAssignableMembers` unchanged; consumer change.
+
+**Estimate:** 12–15 tasks across A schema migration / B service multi-assignee / C controllers + validation / D frontend picker + display / E close.
+
+**Branch when started:** `feature/task-multi-assignee` off whichever develop SHA task-assignee-write merges to.
+
+---
+
+## #B1 — Member visibility scoping (RBAC) — **RESOLVED 2026-06-05 (PR #29 merged)**
 
 **Observed:** logged in as `member@demo.local` (role: team_member), all projects + tasks were visible — including projects the user is NOT a member of.
 

@@ -308,14 +308,15 @@ maybe('taskService CRUD', () => {
   });
 
   describe('remove', () => {
-    it('deletes the row', async () => {
+    it('soft-deletes the row (sets deletedAt; row stays in DB)', async () => {
       const created = await taskService.create(
         { projectId, title: 'Bye', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium },
         actorId,
       );
       await taskService.remove(created.id);
       const after = await prisma.task.findUnique({ where: { id: created.id } });
-      expect(after).toBeNull();
+      expect(after).not.toBeNull();
+      expect(after?.deletedAt).toBeInstanceOf(Date);
     });
 
     it('404 when removing missing id', async () => {

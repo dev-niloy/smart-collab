@@ -35,6 +35,7 @@ const sampleTask = {
   createdBy: 'u-1',
   creator: { id: 'u-1', email: 'a@x.y', name: 'Alice', role: 'admin' as const },
   assignee: null,
+  deletedAt: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
