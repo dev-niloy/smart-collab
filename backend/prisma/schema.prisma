@@ -37,6 +37,8 @@ model User {
   attachments             Attachment[]     @relation("AttachmentUploader")
   notificationsReceived   Notification[]   @relation("NotificationRecipient")
   notificationsSent       Notification[]   @relation("NotificationActor")
+  taskAssignments         TaskAssignee[]   @relation("TaskAssigneeUser")
+  taskAssignmentsAdded    TaskAssignee[]   @relation("TaskAssigneeAddedBy")
 
   @@index([role])
   @@map("users")
@@ -100,6 +102,7 @@ model Task {
   assignee    User?        @relation("TaskAssignedTo", fields: [assignedTo], references: [id], onDelete: SetNull)
   comments    Comment[]
   attachments Attachment[]
+  assignees   TaskAssignee[]
 
   @@unique([projectId, title], name: "tasks_projectId_title_unique")
   @@index([projectId, status])
@@ -107,6 +110,22 @@ model Task {
   @@index([assignedTo])
   @@index([dueDate])
   @@map("tasks")
+}
+
+model TaskAssignee {
+  taskId    String   @db.Uuid
+  userId    String   @db.Uuid
+  addedById String   @db.Uuid
+  addedAt   DateTime @default(now())
+
+  task    Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user    User @relation("TaskAssigneeUser", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy User @relation("TaskAssigneeAddedBy", fields: [addedById], references: [id], onDelete: Restrict)
+
+  @@id([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+  @@map("task_assignees")
 }
 
 enum ProjectRole {

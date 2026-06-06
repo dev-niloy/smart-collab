@@ -23,7 +23,7 @@ Steps:
 - 1. `cd backend && npm test --silent` → expect 580 passing
 - 2. `cd frontend && npm test -- --run` → expect 442 passing
 - 3. Empty commit `chore: baseline before task-multi-assignee work begins`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ### Task 2: add `TaskAssignee` table + backfill migration
 Files:
