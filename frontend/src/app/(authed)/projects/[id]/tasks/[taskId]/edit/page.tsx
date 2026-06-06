@@ -158,15 +158,29 @@ export default function EditTaskPage() {
     }
   };
 
-  const assigneeOptions = useMemo(
-    () =>
-      (assignableQuery.data ?? []).map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-      })),
-    [assignableQuery.data],
-  );
+  const assigneeOptions = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; email: string }>();
+    // Currently-assigned users first — keeps a member who has since been removed
+    // from the project visible in the picker so the PM can see who's there.
+    if (task?.assignees) {
+      for (const a of task.assignees) {
+        map.set(a.user.id, { id: a.user.id, name: a.user.name, email: a.user.email });
+      }
+    } else if (task?.assignee) {
+      map.set(task.assignee.id, {
+        id: task.assignee.id,
+        name: task.assignee.name,
+        email: task.assignee.email,
+      });
+    }
+    // Then all assignable project members.
+    for (const u of assignableQuery.data ?? []) {
+      if (!map.has(u.id)) {
+        map.set(u.id, { id: u.id, name: u.name, email: u.email });
+      }
+    }
+    return Array.from(map.values());
+  }, [task, assignableQuery.data]);
 
   const readOnlyAssignees = useMemo(() => {
     if (!task) return [] as Array<{ id: string; name: string; email: string }>;
