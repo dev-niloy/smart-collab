@@ -76,8 +76,9 @@ export function Rail({ bottom, onSearchClick }: RailProps) {
         {NAV_ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = item.icon;
-          const showUnreadDot = item.key === 'inbox' && unreadCount > 0;
-          const label = showUnreadDot ? `${item.label} (${unreadCount} unread)` : item.label;
+          const showUnread = item.key === 'inbox' && unreadCount > 0;
+          const badgeLabel = unreadCount > 9 ? '9+' : String(unreadCount);
+          const label = showUnread ? `${item.label} (${unreadCount} unread)` : item.label;
           return (
             <Tooltip key={item.key}>
               <TooltipTrigger
@@ -86,7 +87,7 @@ export function Rail({ bottom, onSearchClick }: RailProps) {
                     href={item.href}
                     aria-label={label}
                     data-active={active ? 'true' : 'false'}
-                    data-unread={showUnreadDot ? 'true' : 'false'}
+                    data-unread={showUnread ? 'true' : 'false'}
                     className={
                       'relative grid h-9 w-9 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground ' +
                       (active
@@ -95,12 +96,19 @@ export function Rail({ bottom, onSearchClick }: RailProps) {
                     }
                   >
                     <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-                    {showUnreadDot ? (
-                      <span
-                        data-testid="inbox-unread-dot"
-                        aria-hidden
-                        className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-card"
-                      />
+                    {showUnread ? (
+                      <>
+                        {/* Numeric badge — top-right corner, shows up to 9, then 9+. */}
+                        <span
+                          data-testid="inbox-unread-count"
+                          aria-hidden
+                          className="absolute -right-1 -top-1 grid min-w-[16px] h-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground ring-2 ring-card"
+                        >
+                          {badgeLabel}
+                        </span>
+                        {/* Keep the dot test-id for e2e back-compat. */}
+                        <span data-testid="inbox-unread-dot" aria-hidden className="hidden" />
+                      </>
                     ) : null}
                   </Link>
                 }

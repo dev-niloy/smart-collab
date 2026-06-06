@@ -3,7 +3,11 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Topbar } from '@/components/shell/Topbar';
-import { useNotifications, useMarkAllNotificationsRead } from '@/hooks/useNotifications';
+import {
+  useNotifications,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+} from '@/hooks/useNotifications';
 import { useTasks } from '@/hooks/useTasks';
 import type { NotificationDTO } from '@/lib/schemas/notification';
 import type { Task } from '@/lib/schemas/task';
@@ -36,20 +40,52 @@ const notificationHref = (n: NotificationDTO): string | null => {
   return null;
 };
 
-function NotificationList({ notifications }: { notifications: NotificationDTO[] }) {
+function NotificationList({
+  notifications,
+  emptyHint,
+}: {
+  notifications: NotificationDTO[];
+  emptyHint?: string;
+}) {
+  const markRead = useMarkNotificationRead();
+
   if (notifications.length === 0) {
-    return <p className="px-1 py-6 text-sm text-muted-foreground">Nothing here yet.</p>;
+    return (
+      <p className="px-1 py-6 text-sm text-muted-foreground">
+        {emptyHint ?? 'Nothing here yet.'}
+      </p>
+    );
   }
+
+  // onClick runs before <Link>'s default navigation, so we can fire the
+  // mark-as-read mutation (fire-and-forget — its onSuccess invalidates the
+  // ['notifications'] cache + drops the unread badge) without blocking the
+  // route change. For notifications with no href we render a button instead.
+  const handleAction = (n: NotificationDTO): void => {
+    if (n.readAt === null) markRead.mutate(n.id);
+  };
+
   return (
     <ul className="flex flex-col divide-y divide-border">
       {notifications.map((n) => {
         const href = notificationHref(n);
+        const isUnread = n.readAt === null;
         const body = (
           <>
-            <span className={`block text-sm ${n.readAt === null ? 'font-medium' : 'text-muted-foreground'}`}>
-              {formatNotificationLine(n)}
+            <span className="flex items-center gap-2">
+              {isUnread ? (
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 shrink-0 rounded-full bg-destructive"
+                />
+              ) : null}
+              <span
+                className={`block text-sm ${isUnread ? 'font-medium' : 'text-muted-foreground'}`}
+              >
+                {formatNotificationLine(n)}
+              </span>
             </span>
-            <span className="block text-xs text-muted-foreground">
+            <span className="ml-4 block text-xs text-muted-foreground">
               {new Date(n.createdAt).toLocaleString()}
             </span>
           </>
@@ -57,11 +93,21 @@ function NotificationList({ notifications }: { notifications: NotificationDTO[] 
         return (
           <li key={n.id} className="py-2">
             {href ? (
-              <Link href={href} className="block rounded-md px-2 py-1 hover:bg-accent">
+              <Link
+                href={href}
+                onClick={() => handleAction(n)}
+                className="block rounded-md px-2 py-1 hover:bg-accent"
+              >
                 {body}
               </Link>
             ) : (
-              <div className="px-2 py-1">{body}</div>
+              <button
+                type="button"
+                onClick={() => handleAction(n)}
+                className="block w-full rounded-md px-2 py-1 text-left hover:bg-accent"
+              >
+                {body}
+              </button>
             )}
           </li>
         );
@@ -96,16 +142,24 @@ function TaskList({ tasks }: { tasks: Task[] }) {
 export default function InboxPage() {
   const [active, setActive] = useState<Tab>('unread');
 
-  const notifications = useNotifications({ limit: 20, unread: active === 'unread' });
+  // Single source of truth: always pull the full list. The tab filter is
+  // local, so switching tabs never re-fetches and 'Mentions' / 'Assigned'
+  // are never blank during a cache miss.
+  const notifications = useNotifications({ limit: 20, unread: false });
   const items: NotificationDTO[] = useMemo(
     () => (notifications.data?.pages ?? []).flatMap((p) => p.items),
     [notifications.data],
   );
 
+  const unreadItems = useMemo(() => items.filter((n) => n.readAt === null), [items]);
+
   const mentions = useMemo(
     () =>
       items.filter(
-        (n) => n.type === 'comment.mention' || n.type === 'mention.created' || n.type.includes('mention'),
+        (n) =>
+          n.type === 'comment.mention' ||
+          n.type === 'mention.created' ||
+          n.type.includes('mention'),
       ),
     [items],
   );
@@ -120,7 +174,7 @@ export default function InboxPage() {
       <Topbar
         segments={['Inbox']}
         actions={
-          active === 'unread' && items.length > 0 ? (
+          active === 'unread' && unreadItems.length > 0 ? (
             <button
               type="button"
               onClick={() => markAllRead.mutate()}
@@ -158,8 +212,15 @@ export default function InboxPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {active === 'unread' && <NotificationList notifications={items} />}
-        {active === 'mentions' && <NotificationList notifications={mentions} />}
+        {active === 'unread' && (
+          <NotificationList
+            notifications={unreadItems}
+            emptyHint="No unread notifications."
+          />
+        )}
+        {active === 'mentions' && (
+          <NotificationList notifications={mentions} emptyHint="No mentions yet." />
+        )}
         {active === 'assigned' && <TaskList tasks={tasks} />}
       </div>
     </div>

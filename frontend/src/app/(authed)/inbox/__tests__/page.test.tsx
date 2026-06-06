@@ -7,10 +7,12 @@ import type { NotificationDTO } from '@/lib/schemas/notification';
 const useNotificationsMock = vi.fn();
 const useTasksMock = vi.fn();
 const markAllMutate = vi.fn();
+const markReadMutate = vi.fn();
 
 vi.mock('@/hooks/useNotifications', () => ({
   useNotifications: (opts: unknown) => useNotificationsMock(opts),
   useMarkAllNotificationsRead: () => ({ mutate: markAllMutate, isPending: false }),
+  useMarkNotificationRead: () => ({ mutate: markReadMutate, isPending: false }),
 }));
 
 vi.mock('@/hooks/useTasks', () => ({
@@ -57,6 +59,7 @@ const task = (over: Partial<Task> = {}): Task => ({
 describe('InboxPage', () => {
   beforeEach(() => {
     markAllMutate.mockReset();
+    markReadMutate.mockReset();
     useNotificationsMock.mockReset();
     useTasksMock.mockReset();
     useNotificationsMock.mockReturnValue({
@@ -77,10 +80,47 @@ describe('InboxPage', () => {
     expect(screen.getByRole('tab', { name: /^unread$/i })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('Unread tab fetches notifications with unread:true and renders the list', () => {
+  it('Unread tab pulls the full list (locally filtered) and renders it', () => {
     render(<InboxPage />);
-    expect(useNotificationsMock).toHaveBeenLastCalledWith({ limit: 20, unread: true });
+    // Inbox page pulls the full list once and filters tabs locally so that
+    // switching tabs never produces a blank tab during a cache miss.
+    expect(useNotificationsMock).toHaveBeenLastCalledWith({ limit: 20, unread: false });
     expect(screen.getByText(/PM Dev assigned you to Wire up auth/i)).toBeInTheDocument();
+  });
+
+  it('clicking an unread notification fires markRead with its id', () => {
+    render(<InboxPage />);
+    const link = screen.getByRole('link', { name: /PM Dev assigned you to Wire up auth/i });
+    fireEvent.click(link);
+    expect(markReadMutate).toHaveBeenCalledTimes(1);
+    expect(markReadMutate).toHaveBeenCalledWith('n1');
+  });
+
+  it('clicking a read notification on Mentions tab does not double-mark', () => {
+    // Defense in depth: Mentions tab can display read items too, but clicking
+    // one should be a no-op against markRead since it's already read.
+    useNotificationsMock.mockReturnValue({
+      data: {
+        pages: [
+          {
+            items: [
+              notif({
+                id: 'n9',
+                type: 'comment.mention',
+                readAt: new Date().toISOString(),
+                payload: { taskTitle: 'Old mention', projectId: 'p1', taskId: 't1' },
+              }),
+            ],
+            nextCursor: null,
+          },
+        ],
+      },
+    });
+    render(<InboxPage />);
+    fireEvent.click(screen.getByRole('tab', { name: /mentions/i }));
+    const link = screen.getByRole('link', { name: /mentioned you on Old mention/i });
+    fireEvent.click(link);
+    expect(markReadMutate).not.toHaveBeenCalled();
   });
 
   it('switching to Assigned tab shows tasks assigned to me', () => {
