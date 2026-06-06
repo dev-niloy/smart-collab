@@ -130,14 +130,14 @@ export function AssigneesMultiSelect({
                 {selectedOptions.map((opt) => (
                   <span
                     key={opt.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-xs ring-1 ring-foreground/15"
+                    className="inline-flex items-center gap-0.5 rounded-full bg-background py-0.5 pl-2 pr-0.5 text-xs ring-1 ring-foreground/15"
                   >
                     {opt.name}
                     <button
                       type="button"
                       aria-label={`Remove ${opt.name}`}
                       onClick={() => toggle(opt.id)}
-                      className="text-muted-foreground hover:text-foreground"
+                      className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                     >
                       <X className="size-3" />
                     </button>
