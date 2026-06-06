@@ -10,6 +10,7 @@ export type PublicUserWithAvatar = PublicUser & {
 export type UpdateProfileInput = {
   name?: string;
   email?: string;
+  emailNotifications?: boolean;
 };
 
 export type ChangePasswordInput = {

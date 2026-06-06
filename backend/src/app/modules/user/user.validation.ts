@@ -9,10 +9,15 @@ export const updateProfileSchema = z
   .object({
     name: nameField.optional(),
     email: emailField.optional(),
+    emailNotifications: z.boolean().optional(),
   })
-  .refine((v) => v.name !== undefined || v.email !== undefined, {
-    message: 'At least one of name or email must be provided',
-  });
+  .refine(
+    (v) =>
+      v.name !== undefined || v.email !== undefined || v.emailNotifications !== undefined,
+    {
+      message: 'At least one of name, email, or emailNotifications must be provided',
+    },
+  );
 
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),

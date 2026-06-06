@@ -46,6 +46,28 @@ export default function ProfilePage() {
   const deleteAvatar = useDeleteAvatar();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarBust, setAvatarBust] = useState<number>(0);
+  // Optimistic mirror of the server flag — flips immediately on click, reverts
+  // if the PATCH fails. Kept in local state because react-query's refetch
+  // lag is visible to the user otherwise.
+  const [emailNotificationsLocal, setEmailNotificationsLocal] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (user && emailNotificationsLocal === null) {
+      setEmailNotificationsLocal(user.emailNotifications ?? true);
+    }
+  }, [user, emailNotificationsLocal]);
+
+  const onEmailNotificationsToggle = async (next: boolean) => {
+    const prev = emailNotificationsLocal;
+    setEmailNotificationsLocal(next);
+    try {
+      await updateProfile.mutateAsync({ emailNotifications: next });
+      toast.success(next ? 'Email notifications turned on.' : 'Email notifications turned off.');
+    } catch (err) {
+      setEmailNotificationsLocal(prev);
+      toast.error(err instanceof ApiError ? err.message : 'Could not update preference.');
+    }
+  };
 
   const identityForm = useForm<IdentityForm>({
     resolver: zodResolver(identitySchema),
@@ -195,6 +217,32 @@ export default function ProfilePage() {
               {updateProfile.isPending ? 'Saving…' : 'Save changes'}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Notifications</CardTitle>
+          <CardDescription>
+            Email delivery for mentions, comment replies, task assignments, and status changes.
+            In-app notifications stay on regardless.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <label className="flex cursor-pointer items-center gap-3">
+            <input
+              type="checkbox"
+              role="switch"
+              aria-label="Send me transactional emails"
+              className="h-4 w-4 cursor-pointer accent-primary"
+              checked={emailNotificationsLocal ?? user?.emailNotifications ?? true}
+              disabled={isLoading || updateProfile.isPending || emailNotificationsLocal === null}
+              onChange={(e) => void onEmailNotificationsToggle(e.target.checked)}
+            />
+            <span className="text-sm">
+              Send me transactional emails when someone mentions, assigns, or replies to me
+            </span>
+          </label>
         </CardContent>
       </Card>
 

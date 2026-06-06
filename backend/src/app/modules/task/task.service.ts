@@ -14,7 +14,47 @@ import {
 import type { CreateTaskInput, UpdateTaskInput } from './task.validation';
 import { recordActivity } from '../activityLog/activityLog.service';
 import { enqueue as enqueueNotification } from '../notification/notification.service';
+import { fanoutEmailJobs } from '../email/email.enqueue';
 import { arrayOrEq } from '../../lib/queryFields';
+
+// Post-commit email fan-out helper shared by every task.* mutation. Resolves
+// the actor's display name (so renderEmail can address users by name) and
+// hands the recipient set off to the queue producer. The producer fast-paths
+// when REDIS_URL is unset, so the only work this does in dev/test is an early
+// return on an empty recipient list.
+const fanoutTaskEmails = async (params: {
+  recipientIds: string[];
+  actorId: string | null;
+  type: 'task.assigned' | 'task.unassigned' | 'task.status_changed';
+  taskTitle: string;
+  taskId: string;
+  projectId: string;
+  status?: string;
+  previousStatus?: string;
+}): Promise<void> => {
+  if (params.recipientIds.length === 0) return;
+  let actorName: string | null = null;
+  if (params.actorId) {
+    const actor = await prisma.user.findUnique({
+      where: { id: params.actorId },
+      select: { name: true },
+    });
+    actorName = actor?.name ?? null;
+  }
+  await fanoutEmailJobs({
+    recipientIds: params.recipientIds,
+    actorId: params.actorId ?? '',
+    actorName,
+    type: params.type,
+    payload: {
+      taskTitle: params.taskTitle,
+      taskId: params.taskId,
+      projectId: params.projectId,
+      ...(params.status ? { status: params.status } : {}),
+      ...(params.previousStatus ? { previousStatus: params.previousStatus } : {}),
+    },
+  });
+};
 
 const ensureFutureDeadline = (dueDate: Date) => {
   if (dueDate.getTime() < Date.now()) {
@@ -169,7 +209,7 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
   await ensureTitleUnique(input.projectId, input.title);
   const assigneeIds = Array.from(new Set(input.assigneeIds ?? []));
   try {
-    return await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx) => {
       // Re-check membership INSIDE the tx so a member removed between request
       // start and write can't slip through as an orphan TaskAssignee.
       for (const userId of assigneeIds) {
@@ -215,6 +255,17 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
       }
       return task;
     });
+
+    // POST-COMMIT email fan-out for the newly-assigned users.
+    await fanoutTaskEmails({
+      recipientIds: assigneeIds.filter((uid) => uid !== actorId),
+      actorId,
+      type: 'task.assigned',
+      taskTitle: created.title,
+      taskId: created.id,
+      projectId: created.projectId,
+    });
+    return created;
   } catch (err) {
     if (isUniqueViolation(err)) {
       // Race: another insert won between ensureTitleUnique and create.
@@ -277,7 +328,8 @@ const update = async (
     (input.priority !== undefined && input.priority !== current.priority);
 
   try {
-    return await prisma.$transaction(async (tx) => {
+    let statusChangeRecipients: string[] = [];
+    const updated = await prisma.$transaction(async (tx) => {
       const task = await tx.task.update({
         where: { id },
         data: {
@@ -327,10 +379,26 @@ const update = async (
             payload: { taskTitle: task.title, taskId: task.id, projectId: task.projectId },
           });
         }
+        statusChangeRecipients = recipients;
       }
 
       return task;
     });
+
+    // POST-COMMIT email fan-out for status-change recipients.
+    if (statusChangeRecipients.length > 0) {
+      await fanoutTaskEmails({
+        recipientIds: statusChangeRecipients,
+        actorId,
+        type: 'task.status_changed',
+        taskTitle: updated.title,
+        taskId: updated.id,
+        projectId: updated.projectId,
+        status: updated.status,
+        previousStatus: current.status,
+      });
+    }
+    return updated;
   } catch (err) {
     if (isRecordNotFound(err)) {
       throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
@@ -581,7 +649,7 @@ const addAssignee = async (
 ): Promise<TaskWithRelations> => {
   const existing = await loadTaskForAssigneeOp(taskId);
   await ensureCanReassign(actor, existing.projectId);
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await ensureAssigneeIsProjectMember(existing.projectId, userId, tx);
     await tx.taskAssignee.upsert({
       where: { taskId_userId: { taskId, userId } },
@@ -610,6 +678,15 @@ const addAssignee = async (
     const task = await tx.task.findUniqueOrThrow({ where: { id: taskId }, include: taskInclude });
     return task;
   });
+  await fanoutTaskEmails({
+    recipientIds: userId !== actorId ? [userId] : [],
+    actorId,
+    type: 'task.assigned',
+    taskTitle: existing.title,
+    taskId,
+    projectId: existing.projectId,
+  });
+  return result;
 };
 
 const removeAssignee = async (
@@ -620,7 +697,7 @@ const removeAssignee = async (
 ): Promise<TaskWithRelations> => {
   const existing = await loadTaskForAssigneeOp(taskId);
   await ensureCanReassign(actor, existing.projectId);
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await tx.taskAssignee
       .delete({ where: { taskId_userId: { taskId, userId } } })
       .catch((err) => {
@@ -649,6 +726,15 @@ const removeAssignee = async (
     const task = await tx.task.findUniqueOrThrow({ where: { id: taskId }, include: taskInclude });
     return task;
   });
+  await fanoutTaskEmails({
+    recipientIds: userId !== actorId ? [userId] : [],
+    actorId,
+    type: 'task.unassigned',
+    taskTitle: existing.title,
+    taskId,
+    projectId: existing.projectId,
+  });
+  return result;
 };
 
 const replaceAssignees = async (
@@ -664,7 +750,7 @@ const replaceAssignees = async (
   const nextSet = new Set(next);
   const toAdd = next.filter((id) => !current.has(id));
   const toRemove = Array.from(current).filter((id) => !nextSet.has(id));
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     // Atomic membership validation INSIDE tx — partial apply not allowed, and
     // we close the TOCTOU window between membership check and TaskAssignee write.
     for (const id of next) {
@@ -718,6 +804,25 @@ const replaceAssignees = async (
     const task = await tx.task.findUniqueOrThrow({ where: { id: taskId }, include: taskInclude });
     return task;
   });
+
+  // POST-COMMIT fan-out for both sides of the assignee delta.
+  await fanoutTaskEmails({
+    recipientIds: toAdd.filter((uid) => uid !== actorId),
+    actorId,
+    type: 'task.assigned',
+    taskTitle: existing.title,
+    taskId,
+    projectId: existing.projectId,
+  });
+  await fanoutTaskEmails({
+    recipientIds: toRemove.filter((uid) => uid !== actorId),
+    actorId,
+    type: 'task.unassigned',
+    taskTitle: existing.title,
+    taskId,
+    projectId: existing.projectId,
+  });
+  return result;
 };
 
 export const taskService = {

@@ -7,6 +7,7 @@ import {
   sanitizeNotificationPayload,
   type NotificationType,
 } from './notification.constant';
+import { publishNotificationCreated } from './notification.sse';
 
 export type EnqueueInput = {
   recipientId: string;
@@ -34,7 +35,7 @@ export const enqueue = async (
     return null;
   }
   const payload = sanitizeNotificationPayload(input.payload ?? null);
-  return tx.notification.create({
+  const row = await tx.notification.create({
     data: {
       recipientId: input.recipientId,
       actorId: input.actorId ?? null,
@@ -45,6 +46,19 @@ export const enqueue = async (
       ...(payload ? { payload: payload as Prisma.InputJsonValue } : {}),
     },
   });
+  // Live push to any open SSE channel. See notification.sse for the
+  // documented rollback trade-off.
+  publishNotificationCreated(row.recipientId, {
+    id: row.id,
+    type: row.type,
+    actorId: row.actorId,
+    entityType: row.entityType,
+    entityId: row.entityId,
+    projectId: row.projectId,
+    payload: (row.payload as Record<string, unknown> | null) ?? null,
+    createdAt: row.createdAt.toISOString(),
+  });
+  return row;
 };
 
 export const enqueueMany = async (

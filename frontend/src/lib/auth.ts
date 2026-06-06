@@ -7,6 +7,7 @@ export type PublicUser = {
   name: string;
   role: Role;
   avatarPath?: string | null;
+  emailNotifications?: boolean;
   createdAt: string;
   updatedAt: string;
 };
