@@ -62,7 +62,7 @@ maybe('notification triggers (task.assigned + comment.created)', () => {
     await prisma.task.deleteMany({ where: { projectId } });
   });
 
-  const createTask = async (assignedTo: string | null = null, creator = actorId) => {
+  const createTask = async (assigneeId: string | null = null, creator = actorId) => {
     return taskService.create(
       {
         projectId,
@@ -70,7 +70,7 @@ maybe('notification triggers (task.assigned + comment.created)', () => {
         dueDate: future(),
         status: TaskStatus.todo,
         priority: TaskPriority.medium,
-        assignedTo,
+        assigneeIds: assigneeId ? [assigneeId] : [],
       },
       creator,
     );
@@ -92,8 +92,8 @@ maybe('notification triggers (task.assigned + comment.created)', () => {
 
   it('reassigning A → B enqueues for B only', async () => {
     const t = await createTask(aId, actorId);
-    await prisma.notification.deleteMany({}); // clear initial notif
-    await taskService.update(t.id, { assignedTo: bId }, actorId);
+    await prisma.notification.deleteMany({});
+    await taskService.replaceAssignees(t.id, [bId], actorId, { id: actorId, role: 'admin' });
     const notifs = await prisma.notification.findMany({ where: { entityId: t.id, type: 'task.assigned' } });
     expect(notifs.length).toBe(1);
     expect(notifs[0].recipientId).toBe(bId);
@@ -107,7 +107,7 @@ maybe('notification triggers (task.assigned + comment.created)', () => {
         dueDate: future(),
         status: TaskStatus.todo,
         priority: TaskPriority.medium,
-        assignedTo: aId,
+        assigneeIds: [aId],
       },
       creatorId, // creator = creatorId, assignee = aId
     );
@@ -135,7 +135,7 @@ maybe('notification triggers (task.assigned + comment.created)', () => {
         dueDate: future(),
         status: TaskStatus.todo,
         priority: TaskPriority.medium,
-        assignedTo: creatorId,
+        assigneeIds: [creatorId],
       },
       creatorId,
     );
@@ -146,10 +146,10 @@ maybe('notification triggers (task.assigned + comment.created)', () => {
     expect(notifs[0].recipientId).toBe(creatorId);
   });
 
-  it('unassigning task (assignee → null) does not enqueue', async () => {
+  it('unassigning task via empty replace does not enqueue task.assigned', async () => {
     const t = await createTask(aId, actorId);
     await prisma.notification.deleteMany({});
-    await taskService.update(t.id, { assignedTo: null }, actorId);
+    await taskService.replaceAssignees(t.id, [], actorId, { id: actorId, role: 'admin' });
     const notifs = await prisma.notification.findMany({ where: { entityId: t.id, type: 'task.assigned' } });
     expect(notifs.length).toBe(0);
   });

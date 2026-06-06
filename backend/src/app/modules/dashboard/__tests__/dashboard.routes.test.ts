@@ -66,12 +66,14 @@ maybe('dashboard routes', () => {
         { projectId, userId: memberId, role: 'member' },
       ],
     });
-    await prisma.task.createMany({
-      data: [
-        { projectId, title: 'rt1', dueDate: future(2), status: 'todo', priority: 'high', assignedTo: memberId, createdBy: pmId },
-        { projectId, title: 'rt2', dueDate: future(5), status: 'in_progress', priority: 'medium', assignedTo: pmId, createdBy: pmId },
-        { projectId, title: 'rt3', dueDate: future(1), status: 'completed', priority: 'low', createdBy: pmId },
-      ],
+    await prisma.task.create({
+      data: { projectId, title: 'rt1', dueDate: future(2), status: 'todo', priority: 'high', createdBy: pmId, assignees: { create: { userId: memberId, addedById: pmId } } },
+    });
+    await prisma.task.create({
+      data: { projectId, title: 'rt2', dueDate: future(5), status: 'in_progress', priority: 'medium', createdBy: pmId, assignees: { create: { userId: pmId, addedById: pmId } } },
+    });
+    await prisma.task.create({
+      data: { projectId, title: 'rt3', dueDate: future(1), status: 'completed', priority: 'low', createdBy: pmId },
     });
   });
 

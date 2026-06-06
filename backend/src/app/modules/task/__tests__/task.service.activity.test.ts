@@ -52,7 +52,7 @@ maybe('task.service activity emissions', () => {
         dueDate: future(5),
         status: 'todo',
         priority: 'medium',
-        assignedTo: null,
+        assigneeIds: [],
       } as any,
       actorId,
     );
@@ -73,7 +73,7 @@ maybe('task.service activity emissions', () => {
         dueDate: future(5),
         status: 'todo',
         priority: 'medium',
-        assignedTo: null,
+        assigneeIds: [],
       } as any,
       actorId,
     );
@@ -94,7 +94,7 @@ maybe('task.service activity emissions', () => {
         dueDate: future(5),
         status: 'todo',
         priority: 'medium',
-        assignedTo: null,
+        assigneeIds: [],
       } as any,
       actorId,
     );
@@ -113,7 +113,7 @@ maybe('task.service activity emissions', () => {
         dueDate: future(5),
         status: 'todo',
         priority: 'medium',
-        assignedTo: null,
+        assigneeIds: [],
       } as any,
       actorId,
     );
@@ -133,7 +133,7 @@ maybe('task.service activity emissions', () => {
         dueDate: future(5),
         status: 'todo',
         priority: 'medium',
-        assignedTo: null,
+        assigneeIds: [],
       } as any,
       actorId,
     );
@@ -151,7 +151,7 @@ maybe('task.service activity emissions', () => {
         dueDate: future(5),
         status: 'todo',
         priority: 'medium',
-        assignedTo: null,
+        assigneeIds: [],
       } as any,
       actorId,
     );
@@ -164,7 +164,7 @@ maybe('task.service activity emissions', () => {
           dueDate: future(5),
           status: 'todo',
           priority: 'medium',
-          assignedTo: null,
+          assigneeIds: [],
         } as any,
         actorId,
       ),

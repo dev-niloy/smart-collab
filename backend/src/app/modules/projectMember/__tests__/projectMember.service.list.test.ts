@@ -61,15 +61,26 @@ maybe('projectMemberService — listMembers + workload + updateRole', () => {
 
     // Seed tasks for workload
     // memberA: 2 todo, 1 in_progress, 1 completed, 1 due_soon (within 5 days)
-    await prisma.task.createMany({
-      data: [
-        { projectId, title: 'A-todo-1', dueDate: future(60), status: 'todo', priority: 'medium', assignedTo: memberAId, createdBy: actorId },
-        { projectId, title: 'A-todo-2', dueDate: future(60), status: 'todo', priority: 'medium', assignedTo: memberAId, createdBy: actorId },
-        { projectId, title: 'A-inp', dueDate: future(60), status: 'in_progress', priority: 'high', assignedTo: memberAId, createdBy: actorId },
-        { projectId, title: 'A-done', dueDate: future(60), status: 'completed', priority: 'low', assignedTo: memberAId, createdBy: actorId },
-        { projectId, title: 'A-due-soon', dueDate: future(5), status: 'todo', priority: 'high', assignedTo: memberAId, createdBy: actorId },
-      ],
-    });
+    const aSeed: Array<{ title: string; due: number; status: 'todo' | 'in_progress' | 'completed'; priority: 'low' | 'medium' | 'high' }> = [
+      { title: 'A-todo-1', due: 60, status: 'todo', priority: 'medium' },
+      { title: 'A-todo-2', due: 60, status: 'todo', priority: 'medium' },
+      { title: 'A-inp', due: 60, status: 'in_progress', priority: 'high' },
+      { title: 'A-done', due: 60, status: 'completed', priority: 'low' },
+      { title: 'A-due-soon', due: 5, status: 'todo', priority: 'high' },
+    ];
+    for (const t of aSeed) {
+      await prisma.task.create({
+        data: {
+          projectId,
+          title: t.title,
+          dueDate: future(t.due),
+          status: t.status,
+          priority: t.priority,
+          createdBy: actorId,
+          assignees: { create: { userId: memberAId, addedById: actorId } },
+        },
+      });
+    }
     // memberB: 0 anything in this project
     // memberB has 1 task in OTHER project (must not appear in workload here)
     await prisma.task.create({
@@ -79,8 +90,8 @@ maybe('projectMemberService — listMembers + workload + updateRole', () => {
         dueDate: future(60),
         status: 'todo',
         priority: 'medium',
-        assignedTo: memberBId,
         createdBy: actorId,
+        assignees: { create: { userId: memberBId, addedById: actorId } },
       },
     });
   });

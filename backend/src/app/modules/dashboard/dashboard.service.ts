@@ -212,9 +212,22 @@ const getHighPriority = async (scope: Scope): Promise<HighPriorityTask[]> => {
       dueDate: true,
       status: true,
       assignee: { select: userMiniSelect },
+      assignees: {
+        include: { user: { select: userMiniSelect } },
+        orderBy: { addedAt: 'asc' },
+        take: 1,
+      },
     },
   });
-  return rows.map((r) => ({ ...r, assignee: r.assignee ?? null }));
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    projectId: r.projectId,
+    dueDate: r.dueDate,
+    status: r.status,
+    // Prefer new multi-assignee shape; fall back to legacy single FK during transition.
+    assignee: r.assignees[0]?.user ?? r.assignee ?? null,
+  }));
 };
 
 export const dashboardService = {

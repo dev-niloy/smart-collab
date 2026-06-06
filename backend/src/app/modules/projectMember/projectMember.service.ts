@@ -268,15 +268,20 @@ const removeMember = async (
       }
     }
 
-    const unassigned = await tx.task.updateMany({
+    const legacyUnassigned = await tx.task.updateMany({
       where: { projectId, assignedTo: target.userId },
       data: { assignedTo: null },
     });
 
-    // Multi-assignee: also drop TaskAssignee rows for this user scoped to this project.
-    await tx.taskAssignee.deleteMany({
+    // Multi-assignee: drop TaskAssignee rows for this user scoped to this project.
+    const joinDeleted = await tx.taskAssignee.deleteMany({
       where: { userId: target.userId, task: { projectId } },
     });
+
+    // Report the higher count — covers both transition states (legacy-only rows
+    // and migrated rows). They overlap for dual-write tasks, so taking the max
+    // approximates the unique-task count rather than double-counting.
+    const tasksUnassigned = Math.max(legacyUnassigned.count, joinDeleted.count);
 
     await recordActivity(tx, {
       actorId,
@@ -289,7 +294,7 @@ const removeMember = async (
 
     await tx.projectMember.delete({ where: { id: memberId } });
 
-    return { removedMemberId: memberId, tasksUnassigned: unassigned.count };
+    return { removedMemberId: memberId, tasksUnassigned };
   });
 };
 

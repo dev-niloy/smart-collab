@@ -146,15 +146,15 @@ maybe('projectMember routes /api/v1/projects/:id/members', () => {
         projectId,
         title: 'route-rm',
         dueDate: future(20),
-        assignedTo: extraUserId,
         createdBy: pmId,
+        assignees: { create: { userId: extraUserId, addedById: pmId } },
       },
     });
     const r = await agent.delete(`/api/v1/projects/${projectId}/members/${memberRowId}`);
     expect(r.status).toBe(200);
     expect(r.body.tasksUnassigned).toBe(1);
-    const post = await prisma.task.findUniqueOrThrow({ where: { id: task.id } });
-    expect(post.assignedTo).toBeNull();
+    const post = await prisma.task.findUniqueOrThrow({ where: { id: task.id }, include: { assignees: true } });
+    expect(post.assignees).toEqual([]);
   });
 
   it('GET /assignable returns members and system admins', async () => {

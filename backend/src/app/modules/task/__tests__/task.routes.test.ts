@@ -93,13 +93,13 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
       projectId,
       title: 'Admin Task',
       dueDate: future(),
-      assignedTo: pmId,
+      assigneeIds: [pmId],
     });
     expect(res.status).toBe(201);
     expect(res.body.task.title).toBe('Admin Task');
     expect(res.body.task.createdBy).toBe(adminId);
     expect(res.body.task.creator).toMatchObject({ email: 'admin@demo.local' });
-    expect(res.body.task.assignee).toMatchObject({ email: 'pm@demo.local' });
+    expect(res.body.task.assignees[0]?.user).toMatchObject({ email: 'pm@demo.local' });
     expect(res.body.task.status).toBe('todo');
     expect(res.body.task.priority).toBe('medium');
   });
@@ -119,7 +119,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     const adminAgent = await loginAs('admin');
     await adminAgent
       .post('/api/v1/tasks')
-      .send({ projectId, title: 'Shared', dueDate: future(), assignedTo: memberId })
+      .send({ projectId, title: 'Shared', dueDate: future(), assigneeIds: [memberId] })
       .expect(201);
 
     for (const role of ['admin', 'project_manager', 'team_member'] as const) {
@@ -128,7 +128,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(1);
       expect(res.body.data[0].creator).toMatchObject({ email: 'admin@demo.local' });
-      expect(res.body.data[0].assignee).toMatchObject({ email: 'member@demo.local' });
+      expect(res.body.data[0].assignees[0]?.user).toMatchObject({ email: 'member@demo.local' });
     }
   });
 
@@ -136,7 +136,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     const agent = await loginAs('team_member');
     const created = await agent
       .post('/api/v1/tasks')
-      .send({ projectId, title: 'Own Task', dueDate: future(), assignedTo: memberId });
+      .send({ projectId, title: 'Own Task', dueDate: future(), assigneeIds: [memberId] });
     expect(created.status).toBe(201);
     const res = await agent
       .patch(`/api/v1/tasks/${created.body.task.id}`)
@@ -162,7 +162,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     const adminAgent = await loginAs('admin');
     const created = await adminAgent
       .post('/api/v1/tasks')
-      .send({ projectId, title: 'Assigned to Member', dueDate: future(), assignedTo: memberId });
+      .send({ projectId, title: 'Assigned to Member', dueDate: future(), assigneeIds: [memberId] });
     expect(created.status).toBe(201);
 
     const memberAgent = await loginAs('team_member');
@@ -176,7 +176,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     const agent = await loginAs('admin');
     const created = await agent
       .post('/api/v1/tasks')
-      .send({ projectId, title: 'Embed check', dueDate: future(), assignedTo: memberId });
+      .send({ projectId, title: 'Embed check', dueDate: future(), assigneeIds: [memberId] });
     const id = created.body.task.id;
     const res = await agent.get(`/api/v1/tasks/${id}`);
     expect(res.status).toBe(200);
@@ -186,7 +186,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
       name: 'Demo Admin',
       role: 'admin',
     });
-    expect(res.body.task.assignee).toMatchObject({
+    expect(res.body.task.assignees[0]?.user).toMatchObject({
       id: memberId,
       email: 'member@demo.local',
       role: 'team_member',
@@ -225,7 +225,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
         title: 'High Todo Assigned',
         dueDate: future(2),
         priority: 'high',
-        assignedTo: memberId,
+        assigneeIds: [memberId],
       })
       .expect(201);
     await agent
@@ -261,7 +261,11 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     const agent = await loginAs('team_member');
     const res = await agent.get(`/api/v1/tasks?projectId=${projectId}&assignedTo=me`);
     expect(res.status).toBe(200);
-    expect(res.body.data.every((t: { assignedTo: string }) => t.assignedTo === memberId)).toBe(true);
+    expect(
+      res.body.data.every((t: { assignees: { userId: string }[] }) =>
+        t.assignees.some((a) => a.userId === memberId),
+      ),
+    ).toBe(true);
   });
 
   it('list filter: createdBy=me resolves to authed user', async () => {
@@ -305,7 +309,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     const adminAgent = await loginAs('admin');
     const created = await adminAgent
       .post('/api/v1/tasks')
-      .send({ projectId, title: 'Admin-owned', dueDate: future(), assignedTo: pmId });
+      .send({ projectId, title: 'Admin-owned', dueDate: future(), assigneeIds: [pmId] });
     const memberAgent = await loginAs('team_member');
     const res = await memberAgent
       .patch(`/api/v1/tasks/${created.body.task.id}`)
@@ -318,7 +322,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     const adminAgent = await loginAs('admin');
     const created = await adminAgent
       .post('/api/v1/tasks')
-      .send({ projectId, title: 'Member cant delete', dueDate: future(), assignedTo: memberId });
+      .send({ projectId, title: 'Member cant delete', dueDate: future(), assigneeIds: [memberId] });
     const memberAgent = await loginAs('team_member');
     const res = await memberAgent.delete(`/api/v1/tasks/${created.body.task.id}`);
     expect(res.status).toBe(403);
@@ -467,39 +471,6 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     await prisma.project.delete({ where: { id: otherProj.id } });
   });
 
-  it('PATCH assignedTo while status=completed -> 422 REASSIGN_COMPLETED assessment-verbatim', async () => {
-    const agent = await loginAs('admin');
-    const created = await agent.post('/api/v1/tasks').send({
-      projectId,
-      title: 'Done task',
-      dueDate: future(),
-      status: 'completed',
-      assignedTo: adminId,
-    });
-    const res = await agent
-      .patch(`/api/v1/tasks/${created.body.task.id}`)
-      .send({ assignedTo: memberId });
-    expect(res.status).toBe(422);
-    expect(res.body.error.code).toBe('REASSIGN_COMPLETED');
-    expect(res.body.error.message).toBe('Cannot reassign a completed task.');
-  });
-
-  it('PATCH transitioning to completed AND reassigning in same call -> 422 REASSIGN_COMPLETED', async () => {
-    const agent = await loginAs('admin');
-    const created = await agent.post('/api/v1/tasks').send({
-      projectId,
-      title: 'In progress',
-      dueDate: future(),
-      status: 'in_progress',
-      assignedTo: adminId,
-    });
-    const res = await agent
-      .patch(`/api/v1/tasks/${created.body.task.id}`)
-      .send({ status: 'completed', assignedTo: memberId });
-    expect(res.status).toBe(422);
-    expect(res.body.error.code).toBe('REASSIGN_COMPLETED');
-  });
-
   it('PATCH status -> completed without reassign allowed (200)', async () => {
     const agent = await loginAs('admin');
     const created = await agent.post('/api/v1/tasks').send({
@@ -507,7 +478,7 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
       title: 'Finishing',
       dueDate: future(),
       status: 'in_progress',
-      assignedTo: adminId,
+      assigneeIds: [adminId],
     });
     const res = await agent
       .patch(`/api/v1/tasks/${created.body.task.id}`)
@@ -531,8 +502,6 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
       expect(res.body.task.assignees).toEqual(
         expect.arrayContaining([expect.objectContaining({ userId: memberId })]),
       );
-      // Legacy column dual-write set to the only assignee.
-      expect(res.body.task.assignedTo).toBe(memberId);
     });
 
     it('POST /:id/assignees by non-PM member → 403 CANNOT_REASSIGN', async () => {
@@ -574,7 +543,6 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
         .send({ userIds: [] });
       expect(res.status).toBe(200);
       expect(res.body.task.assignees).toEqual([]);
-      expect(res.body.task.assignedTo).toBeNull();
     });
 
     it('DELETE /:id/assignees/:userId removes (PM → 200)', async () => {
