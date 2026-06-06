@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +35,11 @@ import {
 } from '@/lib/schemas/task';
 import { STATUS_LABEL, PRIORITY_LABEL } from '@/lib/task-format';
 import { useTask, useUpdateTask } from '@/hooks/useTasks';
+import { useAssignableMembers, useProjectMembers } from '@/hooks/useProjectMembers';
+import { useUser } from '@/hooks/useUser';
 import { ApiError } from '@/lib/api';
+import { AssigneesMultiSelect } from '@/components/tasks/AssigneesMultiSelect';
+import { replaceTaskAssignees } from '@/lib/tasks';
 
 const formSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(200),
@@ -65,7 +70,41 @@ export default function EditTaskPage() {
   const taskId = routeParams?.taskId ?? '';
   const { data: task, isLoading, isError } = useTask(taskId);
   const updateMutation = useUpdateTask(taskId);
+  const assignableQuery = useAssignableMembers(projectId);
+  const { data: members } = useProjectMembers(projectId);
+  const { user } = useUser();
+  const qc = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+
+  const isAdmin = user?.role === 'admin';
+  const isProjectPm =
+    !!user && !!members?.some((m) => m.userId === user.id && m.role === 'pm');
+  const canManageAssignees = isAdmin || isProjectPm;
+
+  const initialAssigneeIds = useMemo(() => {
+    if (!task) return [];
+    if (task.assignees && task.assignees.length > 0) {
+      return task.assignees.map((a) => a.userId);
+    }
+    return task.assignedTo ? [task.assignedTo] : [];
+  }, [task]);
+
+  useEffect(() => {
+    setAssigneeIds(initialAssigneeIds);
+  }, [initialAssigneeIds]);
+
+  const assigneesDirty =
+    assigneeIds.length !== initialAssigneeIds.length ||
+    assigneeIds.some((id) => !initialAssigneeIds.includes(id));
+
+  const replaceAssigneesMutation = useMutation({
+    mutationFn: (userIds: string[]) => replaceTaskAssignees(taskId, userIds),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['task', taskId] });
+      void qc.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
 
   const {
     register,
@@ -110,6 +149,9 @@ export default function EditTaskPage() {
         status: data.status,
         priority: data.priority,
       });
+      if (canManageAssignees && assigneesDirty) {
+        await replaceAssigneesMutation.mutateAsync(assigneeIds);
+      }
       toast.success('Task updated');
       router.push(`/projects/${projectId}/tasks/${taskId}`);
     } catch (err) {
@@ -119,6 +161,33 @@ export default function EditTaskPage() {
       setSubmitting(false);
     }
   };
+
+  const assigneeOptions = useMemo(
+    () =>
+      (assignableQuery.data ?? []).map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+      })),
+    [assignableQuery.data],
+  );
+
+  const readOnlyAssignees = useMemo(() => {
+    if (!task) return [] as Array<{ id: string; name: string; email: string }>;
+    if (task.assignees && task.assignees.length > 0) {
+      return task.assignees.map((a) => ({
+        id: a.user.id,
+        name: a.user.name,
+        email: a.user.email,
+      }));
+    }
+    if (task.assignee) {
+      return [
+        { id: task.assignee.id, name: task.assignee.name, email: task.assignee.email },
+      ];
+    }
+    return [];
+  }, [task]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -212,9 +281,43 @@ export default function EditTaskPage() {
                     </Select>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Assignees are managed from the task detail page (project managers only).
-                </p>
+                <div className="space-y-2">
+                  <Label>Assignees</Label>
+                  {canManageAssignees ? (
+                    <AssigneesMultiSelect
+                      options={assigneeOptions}
+                      value={assigneeIds}
+                      onChange={setAssigneeIds}
+                      placeholder="Unassigned"
+                      emptyMessage="No project members match that search."
+                    />
+                  ) : (
+                    <div
+                      className="flex flex-wrap items-center gap-1.5 rounded-md border bg-muted/30 px-3 py-2"
+                      role="group"
+                      aria-label="Assignees (read-only)"
+                    >
+                      {readOnlyAssignees.length === 0 ? (
+                        <span className="text-sm text-muted-foreground">Unassigned</span>
+                      ) : (
+                        readOnlyAssignees.map((u) => (
+                          <span
+                            key={u.id}
+                            className="inline-flex items-center rounded-full bg-background px-2 py-0.5 text-xs ring-1 ring-foreground/15"
+                            title={u.email}
+                          >
+                            {u.name}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  )}
+                  {canManageAssignees ? (
+                    <p className="text-xs text-muted-foreground">
+                      Search by name or email. Only project managers + admins can change this list.
+                    </p>
+                  ) : null}
+                </div>
                 <div className="flex items-center gap-2">
                   <Button type="submit" disabled={submitting}>
                     {submitting ? 'Saving…' : 'Save changes'}
