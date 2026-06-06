@@ -6,7 +6,11 @@ import {
   type AttachmentList,
 } from './schemas/attachment';
 
+// Same-origin in the browser so requests hit the Next.js rewrite and
+// auth cookies (scoped to the FE host) round-trip. SSR/tests fall back
+// to the absolute backend URL.
 const apiBase = (): string => {
+  if (typeof window !== 'undefined') return '';
   const raw = process.env.NEXT_PUBLIC_API_URL;
   return raw ? raw.replace(/\/$/, '') : 'http://localhost:4000';
 };

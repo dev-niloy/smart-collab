@@ -55,8 +55,73 @@ services:
         generateValue: true
       - key: DEMO_MEMBER_PW
         generateValue: true
+      # Email pipeline — Resend chosen as default provider (1 API key + EMAIL_FROM).
+      # To swap to SMTP, set EMAIL_PROVIDER=smtp and add SMTP_HOST/PORT/USER/PASS instead.
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: EMAIL_FROM
+        value: "Smart Collab <onboarding@resend.dev>" # Resend's pre-verified test sender; replace with your verified domain to send to non-signup recipients
+      # Run the BullMQ email worker INSIDE the web process. Render free tier
+      # does not allow standalone background workers, so we co-host them.
+      # Flip to "false" + spin up the worker service from this blueprint
+      # once you move to a paid plan that supports type: worker.
+      - key: EMAIL_WORKER_INLINE
+        value: "true"
       # User-provided in dashboard (sync: false hides them from the blueprint).
+      # DATABASE_URL : Neon POOLED (-pooler) connection string — used at runtime.
+      # DIRECT_URL   : Neon DIRECT (no -pooler) connection string — used by
+      #                `prisma migrate deploy`. Pgbouncer pooling breaks
+      #                Postgres advisory locks (P1002 advisory lock timeout).
       - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
         sync: false
       - key: CORS_ORIGINS
         sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+
+  # NOTE: Standalone `type: worker` service is commented out because Render
+  # free tier does not allow background workers. The email queue drains
+  # inside the web service via EMAIL_WORKER_INLINE=true (see above).
+  #
+  # When you move to a paid plan, uncomment this block AND flip
+  # EMAIL_WORKER_INLINE back to "false" so the two roles split cleanly.
+  #
+  # - type: worker
+  #   name: smart-collab-email-worker
+  #   runtime: node
+  #   plan: starter
+  #   region: virginia
+  #   branch: develop
+  #   rootDir: backend
+  #   autoDeploy: true
+  #   buildCommand: npm ci --include=dev && npm run build:prod
+  #   startCommand: node dist/src/worker.js
+  #   envVars:
+  #     - key: NODE_ENV
+  #       value: production
+  #     - key: EMAIL_PROVIDER
+  #       value: resend
+  #     - key: EMAIL_FROM
+  #       fromService:
+  #         type: web
+  #         name: smart-collab-api
+  #         envVarKey: EMAIL_FROM
+  #     - key: DATABASE_URL
+  #       fromService:
+  #         type: web
+  #         name: smart-collab-api
+  #         envVarKey: DATABASE_URL
+  #     - key: REDIS_URL
+  #       fromService:
+  #         type: web
+  #         name: smart-collab-api
+  #         envVarKey: REDIS_URL
+  #     - key: RESEND_API_KEY
+  #       fromService:
+  #         type: web
+  #         name: smart-collab-api
+  #         envVarKey: RESEND_API_KEY

@@ -51,7 +51,20 @@ const loadEmailProcessor = async (): Promise<Processor<EmailJobData>> => {
 // enough to correlate against BullMQ events; the recipient address lives in
 // the job payload (Redis) for the brief retention window only.
 
-const start = async (): Promise<void> => {
+export type StartEmailWorkerOptions = {
+  // When inline (embedded in the HTTP server), let the host process own SIGTERM
+  // so we don't register duplicate shutdown handlers — the server will call
+  // worker.close() during its own drain.
+  registerSignalHandlers?: boolean;
+};
+
+export type EmailWorkerHandle = {
+  close: () => Promise<void>;
+};
+
+export const startEmailWorker = async (
+  opts: StartEmailWorkerOptions = {},
+): Promise<EmailWorkerHandle> => {
   log('starting');
   const processor = await loadEmailProcessor();
   const worker = new Worker<EmailJobData>(EMAIL_QUEUE_NAME, processor, {
@@ -72,19 +85,33 @@ const start = async (): Promise<void> => {
     });
   });
 
-  const shutdown = async (signal: string): Promise<void> => {
-    log(`received ${signal}, draining`);
-    try {
-      await worker.close();
-      await resetEmailQueueCache();
-    } finally {
-      process.exit(0);
-    }
+  const close = async (): Promise<void> => {
+    log('draining');
+    await worker.close();
+    await resetEmailQueueCache();
   };
-  process.on('SIGTERM', () => void shutdown('SIGTERM'));
-  process.on('SIGINT', () => void shutdown('SIGINT'));
+
+  if (opts.registerSignalHandlers !== false) {
+    const shutdown = async (signal: string): Promise<void> => {
+      log(`received ${signal}`);
+      try {
+        await close();
+      } finally {
+        process.exit(0);
+      }
+    };
+    process.on('SIGTERM', () => void shutdown('SIGTERM'));
+    process.on('SIGINT', () => void shutdown('SIGINT'));
+  }
 
   log('ready');
+  return { close };
 };
 
-void start();
+// Standalone entrypoint — only fires when this file is the process entry,
+// never when imported (e.g. from server.ts inline mode on free-tier Render).
+const isStandalone =
+  typeof require !== 'undefined' && require.main === module;
+if (isStandalone) {
+  void startEmailWorker();
+}
