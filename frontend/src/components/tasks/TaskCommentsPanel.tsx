@@ -25,6 +25,7 @@ import { ApiError } from '@/lib/api';
 import { MAX_COMMENT_BODY } from '@/lib/schemas/comment';
 import type { CommentDTO } from '@/lib/schemas/comment';
 import type { Role } from '@/lib/schemas/auth';
+import { CommentBody } from './CommentBody';
 
 const MAX_BODY = MAX_COMMENT_BODY;
 
@@ -110,7 +111,7 @@ function CommentRow({ comment, taskId, canEditRow, canDeleteRow }: RowProps) {
           </div>
         </div>
       ) : (
-        <p className="whitespace-pre-wrap text-sm">{comment.body}</p>
+        <CommentBody body={comment.body} />
       )}
       {!editing && (
         <div className="flex gap-2">
