@@ -141,6 +141,7 @@ export default function EditTaskPage() {
 
   const onSubmit = async (data: FormValues) => {
     setSubmitting(true);
+    let fieldsSaved = false;
     try {
       await updateMutation.mutateAsync({
         title: data.title,
@@ -149,14 +150,20 @@ export default function EditTaskPage() {
         status: data.status,
         priority: data.priority,
       });
+      fieldsSaved = true;
       if (canManageAssignees && assigneesDirty) {
         await replaceAssigneesMutation.mutateAsync(assigneeIds);
       }
       toast.success('Task updated');
       router.push(`/projects/${projectId}/tasks/${taskId}`);
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Update failed';
-      toast.error(msg);
+      const apiMsg = err instanceof ApiError ? err.message : 'Update failed';
+      if (fieldsSaved) {
+        // Field PATCH already landed; assignees PUT failed. Be explicit.
+        toast.error(`Fields saved. Assignees not updated: ${apiMsg}`);
+      } else {
+        toast.error(apiMsg);
+      }
     } finally {
       setSubmitting(false);
     }
