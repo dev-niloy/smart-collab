@@ -34,7 +34,7 @@ const loadEmailProcessor = async (): Promise<Processor<EmailJobData>> => {
     const path = './app/modules/email/email.processor';
     const mod = (await import(path)) as { emailProcessor: Processor<EmailJobData> };
     return mod.emailProcessor;
-  } catch (_err) {
+  } catch {
     log('email processor not yet implemented (T007 will land it)');
     // Stub processor so the worker boots cleanly during dev before T007.
     return async (job) => {

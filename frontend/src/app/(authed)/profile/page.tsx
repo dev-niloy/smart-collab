@@ -46,25 +46,30 @@ export default function ProfilePage() {
   const deleteAvatar = useDeleteAvatar();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarBust, setAvatarBust] = useState<number>(0);
-  // Optimistic mirror of the server flag — flips immediately on click, reverts
-  // if the PATCH fails. Kept in local state because react-query's refetch
-  // lag is visible to the user otherwise.
-  const [emailNotificationsLocal, setEmailNotificationsLocal] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (user && emailNotificationsLocal === null) {
-      setEmailNotificationsLocal(user.emailNotifications ?? true);
-    }
-  }, [user, emailNotificationsLocal]);
+  // Optimistic override of the server flag — null means "trust whatever
+  // useUser() last returned". Flips immediately on click, gets cleared on
+  // mutation success (so we fall back to the fresh server value) or
+  // restored to its previous value on failure. Deriving the displayed
+  // value instead of mirroring via useEffect keeps the lint rule against
+  // synchronous setState-in-effect happy.
+  const [emailNotificationsOverride, setEmailNotificationsOverride] = useState<boolean | null>(
+    null,
+  );
+  const emailNotificationsValue =
+    emailNotificationsOverride ?? user?.emailNotifications ?? true;
+  const emailNotificationsReady = !isLoading && user !== null && user !== undefined;
 
   const onEmailNotificationsToggle = async (next: boolean) => {
-    const prev = emailNotificationsLocal;
-    setEmailNotificationsLocal(next);
+    const prev = emailNotificationsOverride;
+    setEmailNotificationsOverride(next);
     try {
       await updateProfile.mutateAsync({ emailNotifications: next });
       toast.success(next ? 'Email notifications turned on.' : 'Email notifications turned off.');
+      // Server is authoritative now — drop the override so the next render
+      // reads straight from useUser().
+      setEmailNotificationsOverride(null);
     } catch (err) {
-      setEmailNotificationsLocal(prev);
+      setEmailNotificationsOverride(prev);
       toast.error(err instanceof ApiError ? err.message : 'Could not update preference.');
     }
   };
@@ -235,8 +240,8 @@ export default function ProfilePage() {
               role="switch"
               aria-label="Send me transactional emails"
               className="h-4 w-4 cursor-pointer accent-primary"
-              checked={emailNotificationsLocal ?? user?.emailNotifications ?? true}
-              disabled={isLoading || updateProfile.isPending || emailNotificationsLocal === null}
+              checked={emailNotificationsValue}
+              disabled={isLoading || updateProfile.isPending || !emailNotificationsReady}
               onChange={(e) => void onEmailNotificationsToggle(e.target.checked)}
             />
             <span className="text-sm">
