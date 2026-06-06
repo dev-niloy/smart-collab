@@ -53,13 +53,6 @@ export type TaskWithRelations = Task & {
   assignees: TaskAssigneeRel[];
 };
 
-/**
- * Map raw TaskAssignee rows (with included user) into ordered TaskUser[] for response shape.
- * Order preserved from query (`addedAt` ascending).
- */
-export const mapTaskAssignees = (rows: TaskAssigneeRel[]): TaskUserRel[] =>
-  rows.map((r) => r.user);
-
 // ──────────────────────────────────────────────────────────
 // Task write permission predicates (task-assignee-write)
 // ──────────────────────────────────────────────────────────
