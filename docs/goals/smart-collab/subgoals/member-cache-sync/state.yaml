@@ -1,0 +1,59 @@
+feature: member-cache-sync
+created: 2026-06-06
+updated: 2026-06-06
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 1                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+
+intake:
+  original_request: "Close backlog #B4 — members count + assignable list mismatch under react-query cache staleness."
+  interpreted_outcome: "After PM mutates project membership, every member-derived UI surface refreshes in the active tab and other open tabs without manual reload; locked by a Playwright e2e suite."
+  authority: approved
+  proof_type: test
+  completion_proof: "cd frontend && npm run e2e -- member-cache-sync.spec.ts exits 0 AND cd backend && npm test --silent reports 598+ AND cd frontend && npm test -- --run reports 460+"
+  likely_misfire: "We invalidate query keys that do NOT match the real useQuery keys (silent miss — react-query treats mismatched keys as no-op), the e2e asserts UI state BEFORE the refetch settles (false-green), and BroadcastChannel only fires same-browser so the second-browser-session smoke from #B4(b) silently stays broken."
+
+tasks: []                  # populated at Phase 2 (GSD planner)
+
+blockers: []
+
+next_task: null
+
+phase_completion:
+  gstack: false
+  gsd: false
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 598
+  frontend_tests: 457
+  e2e_tests: 0
+  branched_off: develop@ad6e121
+  recorded_at: 2026-06-06
+
+checks:
+  last_checkpoint_sha: ad6e121cd6129e4e42f582f0b107eb4986ec1f5d
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: baseline
+    commands:
+      - "cd backend && npm test --silent → 598 passed"
+      - "cd frontend && npm test -- --run → 457 passed"
+
+decisions:
+  approach: reproduce-first
+  scope:
+    member_list_invalidation: in
+    assignable_list_invalidation: in
+    cross_tab_sync: in        # BroadcastChannel, same-origin same-browser only
+    e2e_suite: in             # Playwright (greenfield in this repo)
+  test_budget: unit_integration_plus_e2e
+  e2e_framework: playwright
+  invalidation_style: prefix_match     # qc.invalidateQueries({ queryKey: ['project-members', projectId] })
+  cross_tab_transport: broadcast_channel_with_noop_fallback

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { HelpCircle, Moon, Sun, User as UserIcon } from 'lucide-react';
+import { HelpCircle, LogIn, Moon, Sun } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,7 +69,13 @@ export function RailBottom() {
         </TooltipContent>
       </Tooltip>
 
-      {!isLoading && user ? (
+      {isLoading ? (
+        <div
+          aria-label="Loading account"
+          aria-busy="true"
+          className="mt-1 h-8 w-8 animate-pulse rounded-full bg-secondary"
+        />
+      ) : user ? (
         <DropdownMenu>
           <Tooltip>
             <TooltipTrigger
@@ -78,22 +84,29 @@ export function RailBottom() {
                   render={
                     <button
                       type="button"
-                      aria-label="Account menu"
-                      className="mt-1 grid h-8 w-8 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground hover:opacity-90"
-                    />
+                      aria-label={`Account menu (${user.email})`}
+                      className="mt-1 grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground ring-1 ring-foreground/15 hover:opacity-90"
+                    >
+                      {(user.name || user.email || '?').slice(0, 1).toUpperCase()}
+                    </button>
                   }
-                >
-                  <UserIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                </DropdownMenuTrigger>
+                />
               }
             />
-            <TooltipContent side="right">Account</TooltipContent>
+            <TooltipContent side="right">{user.email}</TooltipContent>
           </Tooltip>
           <DropdownMenuContent side="right" align="end" className="w-56">
             <DropdownMenuGroup>
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">{user.email}</span>
+                  {user.name && user.name !== user.email ? (
+                    <>
+                      <span className="text-sm font-medium">{user.name}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </>
+                  ) : (
+                    <span className="text-sm font-medium">{user.email}</span>
+                  )}
                   <span className="text-xs text-muted-foreground capitalize">
                     {user.role?.replace('_', ' ')}
                   </span>
@@ -101,10 +114,27 @@ export function RailBottom() {
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onLogout}>Log out</DropdownMenuItem>
+            <DropdownMenuItem onClick={onLogout} disabled={logout.isPending}>
+              {logout.isPending ? 'Logging out…' : 'Log out'}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      ) : null}
+      ) : (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Link
+                href="/login"
+                aria-label="Sign in"
+                className="mt-1 grid h-8 w-8 place-items-center rounded-full bg-secondary text-secondary-foreground ring-1 ring-foreground/10 hover:bg-accent hover:text-foreground"
+              >
+                <LogIn className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+              </Link>
+            }
+          />
+          <TooltipContent side="right">Sign in</TooltipContent>
+        </Tooltip>
+      )}
     </>
   );
 }
