@@ -9,6 +9,7 @@ import {
   updateTask,
   deleteTask,
   restoreTask,
+  replaceTaskAssignees,
   type ListTasksParams,
 } from '@/lib/tasks';
 import type {
@@ -94,6 +95,17 @@ export const useRestoreTask = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => restoreTask(id),
+    onSuccess: (task) => {
+      qc.setQueryData(taskKey(task.id), task);
+      invalidateLists(qc, task.projectId);
+    },
+  });
+};
+
+export const useReplaceAssignees = (taskId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userIds: string[]) => replaceTaskAssignees(taskId, userIds),
     onSuccess: (task) => {
       qc.setQueryData(taskKey(task.id), task);
       invalidateLists(qc, task.projectId);

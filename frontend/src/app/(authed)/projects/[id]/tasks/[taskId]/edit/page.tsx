@@ -7,8 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,12 +32,11 @@ import {
   type TaskPriority,
 } from '@/lib/schemas/task';
 import { STATUS_LABEL, PRIORITY_LABEL } from '@/lib/task-format';
-import { useTask, useUpdateTask } from '@/hooks/useTasks';
+import { useTask, useUpdateTask, useReplaceAssignees } from '@/hooks/useTasks';
 import { useAssignableMembers, useProjectMembers } from '@/hooks/useProjectMembers';
 import { useUser } from '@/hooks/useUser';
 import { ApiError } from '@/lib/api';
 import { AssigneesMultiSelect } from '@/components/tasks/AssigneesMultiSelect';
-import { replaceTaskAssignees } from '@/lib/tasks';
 
 const formSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(200),
@@ -73,7 +70,7 @@ export default function EditTaskPage() {
   const assignableQuery = useAssignableMembers(projectId);
   const { data: members } = useProjectMembers(projectId);
   const { user } = useUser();
-  const qc = useQueryClient();
+  const replaceAssigneesMutation = useReplaceAssignees(taskId);
   const [submitting, setSubmitting] = useState(false);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
 
@@ -97,14 +94,6 @@ export default function EditTaskPage() {
   const assigneesDirty =
     assigneeIds.length !== initialAssigneeIds.length ||
     assigneeIds.some((id) => !initialAssigneeIds.includes(id));
-
-  const replaceAssigneesMutation = useMutation({
-    mutationFn: (userIds: string[]) => replaceTaskAssignees(taskId, userIds),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['task', taskId] });
-      void qc.invalidateQueries({ queryKey: ['tasks'] });
-    },
-  });
 
   const {
     register,
