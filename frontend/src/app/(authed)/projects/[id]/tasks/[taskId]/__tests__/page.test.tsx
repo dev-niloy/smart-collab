@@ -80,10 +80,9 @@ const sampleTask = (over: Partial<Record<string, unknown>> = {}) => ({
   status: 'todo' as const,
   priority: 'high' as const,
   dueDate: '2030-06-01T00:00:00.000Z',
-  assignedTo: null,
+  assignees: [],
   createdBy: 'creator-7',
   creator: { id: 'creator-7', email: 'alice@x.y', name: 'Alice', role: 'admin' as const },
-  assignee: null,
   deletedAt: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-02T00:00:00.000Z',
@@ -158,8 +157,14 @@ describe('TaskDetailPage', () => {
     setUser({ id: 'assignee-3', role: 'team_member' });
     getTaskSpy.mockResolvedValue(
       sampleTask({
-        assignedTo: 'assignee-3',
-        assignee: { id: 'assignee-3', email: 'm@x.y', name: 'Member', role: 'team_member' },
+        assignees: [
+          {
+            userId: 'assignee-3',
+            addedById: 'admin-1',
+            addedAt: '2026-01-01T00:00:00Z',
+            user: { id: 'assignee-3', email: 'm@x.y', name: 'Member', role: 'team_member' },
+          },
+        ],
       }),
     );
     renderPage();

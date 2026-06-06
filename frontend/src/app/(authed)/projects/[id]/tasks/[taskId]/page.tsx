@@ -41,16 +41,10 @@ export default function TaskDetailPage() {
     !!user && !!members?.some((m) => m.userId === user.id && m.role === 'pm');
   const isPrivileged = isAdmin || isProjectPm;
   const isAssignee =
-    !!user &&
-    !!task &&
-    ((task.assignees && task.assignees.some((a) => a.userId === user.id)) ||
-      task.assignedTo === user.id);
+    !!user && !!task && task.assignees.some((a) => a.userId === user.id);
   const isCreator = !!user && !!task && task.createdBy === user.id;
-  const hasAnyAssignee =
-    !!task &&
-    ((task.assignees && task.assignees.length > 0) || !!task.assignedTo);
-  // Field write: PM/admin always; any assignee. Unassigned → PM/admin only.
-  const canEdit = isPrivileged || (isAssignee && hasAnyAssignee);
+  // Field write: PM/admin always; any assignee.
+  const canEdit = isPrivileged || isAssignee;
   // Delete: PM/admin or creator (any role).
   const canDelete = isPrivileged || isCreator;
 
@@ -113,13 +107,7 @@ export default function TaskDetailPage() {
                   <dt className="text-xs text-muted-foreground">Assignees</dt>
                   <dd>
                     <TaskAssigneesAvatars
-                      users={
-                        task.assignees && task.assignees.length > 0
-                          ? task.assignees.map((a) => a.user)
-                          : task.assignee
-                            ? [task.assignee]
-                            : []
-                      }
+                      users={task.assignees.map((a) => a.user)}
                     />
                   </dd>
                 </div>

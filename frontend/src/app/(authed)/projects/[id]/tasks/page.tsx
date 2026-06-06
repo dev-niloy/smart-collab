@@ -89,10 +89,7 @@ function ProjectTasksPageInner() {
   const canWriteFor = (t: Task): boolean => {
     if (isPrivileged) return true;
     if (!user) return false;
-    if (t.assignees && t.assignees.length > 0) {
-      return t.assignees.some((a) => a.userId === user.id);
-    }
-    return !!t.assignedTo && t.assignedTo === user.id;
+    return t.assignees.some((a) => a.userId === user.id);
   };
 
   const q = params.get('q') ?? '';
@@ -193,14 +190,6 @@ function ProjectTasksPageInner() {
       : [...priorityList, p];
     setParam({ priority: next.length === 0 ? null : toCsv(next) });
   };
-
-  const assigneeMap = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; email: string; role: 'admin' | 'project_manager' | 'team_member' }>();
-    usersQuery.data?.forEach((u) =>
-      map.set(u.id, { id: u.id, name: u.name, email: u.email, role: u.role }),
-    );
-    return map;
-  }, [usersQuery.data]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -467,14 +456,7 @@ function ProjectTasksPageInner() {
               data-testid="tasks-grid"
             >
               {items.map((t) => {
-                const fallbackSingle =
-                  t.assignee ?? (t.assignedTo ? assigneeMap.get(t.assignedTo) ?? null : null);
-                const assigneeUsers =
-                  t.assignees && t.assignees.length > 0
-                    ? t.assignees.map((a) => a.user)
-                    : fallbackSingle
-                      ? [fallbackSingle]
-                      : [];
+                const assigneeUsers = t.assignees.map((a) => a.user);
                 return (
                   <Card
                     key={t.id}
