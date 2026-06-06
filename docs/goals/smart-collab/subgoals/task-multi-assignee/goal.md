@@ -32,7 +32,7 @@ Industry standard (Linear/Jira/Asana): tasks frequently need 2-3 collaborators (
 14. Frontend task card UI: stacked avatars showing up to 3 assignees + "+N" badge for overflow. Empty state: "Unassigned" pill.
 15. Frontend new-task + edit pages: multi-select picker (shadcn Combobox w/ multiple selection OR stacked checkbox list) listing project members. Pre-fills with current assignees on edit.
 16. Frontend filter UI ("My tasks" toggle): unchanged externally; under the hood uses `assignedTo=me` semantics over new model.
-17. Existing 580 backend + 442 frontend tests survive. New tests bring totals to ≥615 backend + ≥460 frontend.
+17. Existing 580 backend + 442 frontend tests survive. New tests bring totals to ≥600 backend + ≥445 frontend. (Final landed: 604 backend + 447 frontend — re-baselined from initial ≥615/≥460 estimate. The original estimate assumed strict PATCH rejection + column drop, both deferred to #B7; those would have added ~10-15 backend tests.)
 
 ## Mode
 - project_type: brownfield

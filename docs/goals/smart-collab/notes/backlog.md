@@ -24,9 +24,11 @@
 **Scope:**
 - Migrate ~20 backend test files from `prisma.task.create({ assignedTo: x })` → `prisma.task.create({ assignees: { create: { userId: x, addedById: y } } })`.
 - Service layer: remove dual-write paths (`task.create` legacy branch, `task.update` legacy `assignedTo` branch, `syncLegacyAssignedTo`, dashboard/workload `OR` clauses, comment service legacy merge).
-- Frontend: `Task.assignedTo` + `Task.assignee` removed from schema; bump `assignees` from optional → required.
+- Frontend: `Task.assignedTo` + `Task.assignee` removed from schema; bump `assignees` from optional → required. Drop legacy fallback in `canWriteFor` / `assigneeMap` / detail page.
 - Migration: `ALTER TABLE tasks DROP COLUMN "assignedTo"; DROP INDEX tasks_assignedTo_idx;`.
-- Hard-reject PATCH `assignedTo` / `assigneeIds` (t11 promise).
+- Hard-reject PATCH `assignedTo` / `assigneeIds` (t11 promise) — error code `USE_ASSIGNEE_ENDPOINTS`.
+- API response shape (goal #11): remove `assignedTo` + `assignee` from Task DTO.
+- Edit page: re-add assignee picker if multi-assignee Combobox lands (goal #15 originally placed it there).
 
 **Estimate:** 5-8 tasks; mostly mechanical churn + the column drop migration at the end.
 
