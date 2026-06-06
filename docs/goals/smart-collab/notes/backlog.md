@@ -168,7 +168,31 @@
 
 ---
 
+## #B8 — @-mentions in comment composer — **MEDIUM / FEATURE**
+
+**Captured 2026-06-06 during sidebar dogfooding.**
+
+**Why now:** Consumer side already plumbed — `InboxPanel` has a Mentions tab, notification type `comment.mention` is wired through inbox rendering, and `comment.service.create` already fans out to assignees + creator. Writer side is missing entirely: `TaskCommentsPanel.tsx` is a plain `<Textarea>` with no `@` picker, and `comment.service.create` does not parse mention tokens or enqueue a `comment.mention` notification. Result: nobody can actually be mentioned, so the Mentions tab will stay empty forever.
+
+**Scope:**
+- **Frontend composer:** `@` keystroke opens a popover anchored at the caret; popover lists assignable project members (reuse `useAssignableMembers(projectId)`), filters as the user types after `@`, arrow keys + Enter select, Esc dismisses; selection inserts a token `@[Name](userId)` into the textarea and advances the caret past it.
+- **Backend `comment.service.create`:** parse mention tokens from the persisted body with a deterministic regex (`/@\[([^\]]+)\]\(([0-9a-f-]{36})\)/g`), dedupe by userId, validate each userId against `prisma.projectMember.findFirst({ projectId, userId })` (silently drop non-members so a malicious sender cannot mention arbitrary users), then enqueue notification type `comment.mention` for each one. Skip self-mention via the existing `enqueue` self-filter.
+- **Notification overlap policy:** when a user is BOTH a task assignee AND mentioned, send only `comment.mention` (more specific, lands in the Mentions tab). Plain `comment.created` is suppressed for that recipient. Other assignees + creator still get `comment.created` as today.
+- **Body renderer:** when displaying a comment, replace `@[Name](userId)` tokens with a styled inline chip (link to `/users/:id` or hover-card showing email/role). Reuse the existing `TaskAssigneesAvatars` styling for consistency.
+- **Tests:** unit tests for the regex parser (token, multiple tokens, malformed, embedded code-fence, no-mentions), integration test for `comment.service.create` confirming `comment.mention` rows land for valid members only, frontend composer test using `userEvent.keyboard('@')` asserting popover opens, selection inserts the token, and the `useCreateComment` payload contains it.
+- **Out of scope:** mention notifications for edits (`comment.update` does not exist), @-channels (`@here`, `@all`), cross-project mentions, rich-text editor (Lexical / TipTap). Keep markdown-style token + plain textarea.
+
+**Risks:**
+- Token format is rendered to the user verbatim if the body renderer ships before the composer or vice-versa → ship both behind a single PR.
+- Members removed from the project after a comment is sent should not get an orphaned mention notification; the project-member validation at send-time handles it for new comments; existing comments are not retro-corrected.
+- Mention spam: cap at 20 mentions per comment, 422 over that.
+
+**Pre-requisites:** none — can land before or after #B4 cache-sync.
+
+---
+
 ## Notes
 - #B1 + #B2 surfaced 2026-06-05 during manual smoke of `progress-system` subgoal.
 - #B3 (org/team) captured 2026-06-05 in member-visibility Phase 1 brainstorm — deferred by user.
 - #B1 is the next subgoal (in progress). #B2 can be a `chore/*` branch any time. #B3 is a milestone-level conversation, not a subgoal.
+- #B4 (in progress as `feature/member-cache-sync`). #B8 captured 2026-06-06 during sidebar dogfooding; user noticed there was no way to @-mention a teammate from the comment box.
