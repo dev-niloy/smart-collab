@@ -13,6 +13,10 @@ import IORedis, { type Redis } from 'ioredis';
 
 export const EMAIL_QUEUE_NAME = 'email';
 
+// NOTE: project.member_added + project.member_role_changed values are added by
+// T004 alongside their template branches so renderEmail's exhaustive switch
+// extends with them in lock-step (typecheck would otherwise fail until both
+// sides land in the same commit).
 export type EmailJobName =
   | 'task.assigned'
   | 'task.unassigned'
@@ -20,24 +24,42 @@ export type EmailJobName =
   | 'comment.created'
   | 'comment.mention';
 
+// Pre-rendered context fed to the template renderer. The producer ALWAYS
+// supplies the context the rendered email needs — the processor + worker
+// never re-query the DB for it, so the queue stays decoupled from request-
+// time auth or project membership.
+//
+// Two transport shapes for the team list:
+// - projectMemberCount: cheap integer summary, always safe to populate.
+// - projectMembers: optional full list (name + projectRole) used by the
+//   project.member_* templates' "Full body" requirement.
+export type ProjectMemberEntry = {
+  name: string;
+  role: string;
+};
+
 export type EmailJobData = {
   recipientId: string;
   recipientEmail: string;
   recipientName: string;
   actorName: string | null;
   type: EmailJobName;
-  // Pre-rendered context — the processor only formats, never re-queries the DB
-  // for things the producer already had in hand. Keeps the worker decoupled
-  // from request-time auth + project membership context.
   payload: {
     taskTitle?: string;
     taskId?: string;
     projectId?: string;
     projectName?: string;
+    projectDescription?: string | null;
+    projectDeadline?: string;
+    projectMembers?: ProjectMemberEntry[];
+    projectMemberCount?: number;
     commentExcerpt?: string;
     commentId?: string;
     status?: string;
     previousStatus?: string;
+    memberId?: string;
+    newRole?: string;
+    previousRole?: string;
   };
 };
 
