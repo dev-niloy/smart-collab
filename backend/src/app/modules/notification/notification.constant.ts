@@ -3,6 +3,7 @@ export const NOTIFICATION_TYPES = [
   'task.unassigned',
   'task.status_changed',
   'comment.created',
+  'comment.mention',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
