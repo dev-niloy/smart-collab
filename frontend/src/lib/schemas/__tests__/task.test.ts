@@ -41,7 +41,7 @@ describe('task schemas', () => {
         title: 'X',
         dueDate: '2030-01-01',
         assignedTo: null,
-      } as any);
+      } as unknown);
       expect((r as { assignedTo?: unknown }).assignedTo).toBeUndefined();
     });
   });
@@ -57,7 +57,7 @@ describe('task schemas', () => {
     });
 
     it('drops unknown assignedTo key (use assignees endpoints instead)', () => {
-      const r = updateTaskSchema.parse({ assignedTo: null, status: 'completed' } as any);
+      const r = updateTaskSchema.parse({ assignedTo: null, status: 'completed' } as unknown);
       expect((r as { assignedTo?: unknown }).assignedTo).toBeUndefined();
     });
   });
