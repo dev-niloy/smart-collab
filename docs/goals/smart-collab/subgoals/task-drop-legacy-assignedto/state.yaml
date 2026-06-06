@@ -1,0 +1,58 @@
+feature: task-drop-legacy-assignedto
+created: 2026-06-06
+updated: 2026-06-06
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 2                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+
+tasks:
+  - id: t1
+    name: baseline verification commit
+    status: pending
+  - id: t2
+    name: backend test fixtures migrate to TaskAssignee shape
+    status: pending
+  - id: t3
+    name: PATCH hard-reject assignedTo + assigneeIds (422 USE_ASSIGNEE_ENDPOINTS)
+    status: pending
+  - id: t4
+    name: service create + update use TaskAssignee as sole source
+    status: pending
+  - id: t5
+    name: drop legacy dual-read across filter + dashboard + workload + comment
+    status: pending
+  - id: t6
+    name: frontend Task type drops assignedTo + assignee; assignees required
+    status: pending
+  - id: t7
+    name: drop Task.assignedTo column + relation (migration)
+    status: pending
+  - id: t8
+    name: smoke + close
+    status: pending
+
+blockers: []
+
+next_task: t1
+
+phase_completion:
+  gstack: true
+  gsd: true
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 604
+  frontend_tests: 457
+  branched_off: develop@9566021
+
+decisions:
+  migration_strategy: single migration — drop column + drop index in one step
+  patch_reject_code: USE_ASSIGNEE_ENDPOINTS (422); message points to assignee endpoints
+  fe_assignees_required: true  # bump assignees from optional to required
+  fixture_shape: prisma.task.create with `assignees: { create: { userId, addedById } }`
+  no_dto_alias: true  # assignedTo not preserved as computed getter
