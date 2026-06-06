@@ -35,7 +35,7 @@ Steps:
 - 3. `npx prisma migrate dev` to apply. Verify on local DB.
 - 4. Run backend + frontend suites → 580/442 still passing.
 - 5. Commit `feat(schema): add TaskAssignee join table + backfill from assignedTo`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ---
 

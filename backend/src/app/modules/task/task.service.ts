@@ -36,12 +36,32 @@ const userSelect = { id: true, email: true, name: true, role: true } as const;
 const taskInclude = {
   creator: { select: userSelect },
   assignee: { select: userSelect },
+  assignees: {
+    include: { user: { select: userSelect } },
+    orderBy: { addedAt: 'asc' },
+  },
 } as const;
 
-export type TaskWithRelations = Task & {
-  creator: { id: string; email: string; name: string; role: string };
-  assignee: { id: string; email: string; name: string; role: string } | null;
+export type TaskUserRel = { id: string; email: string; name: string; role: string };
+export type TaskAssigneeRel = {
+  userId: string;
+  addedById: string;
+  addedAt: Date;
+  user: TaskUserRel;
 };
+
+export type TaskWithRelations = Task & {
+  creator: TaskUserRel;
+  assignee: TaskUserRel | null;
+  assignees: TaskAssigneeRel[];
+};
+
+/**
+ * Map raw TaskAssignee rows (with included user) into ordered TaskUser[] for response shape.
+ * Order preserved from query (`addedAt` ascending).
+ */
+export const mapTaskAssignees = (rows: TaskAssigneeRel[]): TaskUserRel[] =>
+  rows.map((r) => r.user);
 
 // ──────────────────────────────────────────────────────────
 // Task write permission predicates (task-assignee-write)
@@ -49,20 +69,26 @@ export type TaskWithRelations = Task & {
 
 type CanWriteArgs = {
   actor: Actor | undefined;
-  task: Pick<Task, 'assignedTo' | 'createdBy'>;
+  task: Pick<Task, 'assignedTo' | 'createdBy'> & { assignees?: { userId: string }[] };
   projectRole?: 'pm' | 'member' | null; // resolved per-project; null = not a member
 };
 
 /**
  * Returns true when the actor may edit task fields (status / title / desc / priority / due).
- * Admin and project PM are always allowed. Assignee is allowed only when the task IS assigned to them.
- * Unassigned tasks cannot be field-edited by anyone except admin / project PM.
+ * Admin and project PM are always allowed. Any assignee is allowed (multi-assignee model).
+ * Unassigned tasks (no assignees) cannot be field-edited by anyone except admin / project PM.
+ * `task.assignees` is preferred when present (multi-assignee). Falls back to legacy `task.assignedTo`
+ * during the dual-write transition window (Phase A m1 → Phase F m2).
  */
 export const canWriteTask = ({ actor, task, projectRole }: CanWriteArgs): boolean => {
   if (isAdmin(actor)) return true;
   if (projectRole === 'pm') return true;
-  if (!task.assignedTo) return false; // unassigned → admin / PM only
-  return !!actor && task.assignedTo === actor.id;
+  if (!actor) return false;
+  if (task.assignees && task.assignees.length > 0) {
+    return task.assignees.some((a) => a.userId === actor.id);
+  }
+  if (!task.assignedTo) return false;
+  return task.assignedTo === actor.id;
 };
 
 /**
@@ -225,6 +251,7 @@ const update = async (
       title: true,
       priority: true,
       deletedAt: true,
+      assignees: { select: { userId: true } },
     },
   });
   if (!current || current.deletedAt) {
@@ -354,7 +381,15 @@ const remove = async (
   try {
     const existing = await prisma.task.findUnique({
       where: { id },
-      select: { id: true, projectId: true, title: true, createdBy: true, assignedTo: true, deletedAt: true },
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        createdBy: true,
+        assignedTo: true,
+        deletedAt: true,
+        assignees: { select: { userId: true } },
+      },
     });
     if (!existing || existing.deletedAt) {
       throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
