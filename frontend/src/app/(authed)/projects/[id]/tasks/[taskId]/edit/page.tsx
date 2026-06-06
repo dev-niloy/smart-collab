@@ -203,7 +203,7 @@ export default function EditTaskPage() {
           <Card>
             <CardHeader>
               <CardTitle>Edit task</CardTitle>
-              <CardDescription>Update title, description, status, priority, due date, or assignee.</CardDescription>
+              <CardDescription>Update title, description, status, priority, due date, or assignees.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
