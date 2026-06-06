@@ -6,8 +6,16 @@ export type PublicUser = {
   email: string;
   name: string;
   role: Role;
+  avatarPath?: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+/** Build the cache-busting avatar URL for a user, or null when none. */
+export const avatarUrlFor = (user: Pick<PublicUser, 'avatarPath' | 'updatedAt'> | null | undefined): string | null => {
+  if (!user?.avatarPath) return null;
+  const t = encodeURIComponent(user.updatedAt ?? '');
+  return `/api/v1/users/me/avatar?t=${t}`;
 };
 
 export type AuthResponse = { user: PublicUser };
