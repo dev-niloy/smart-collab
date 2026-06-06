@@ -219,7 +219,7 @@ Steps:
 - 2. GREEN: shadcn Popover + Command (combobox pattern) w/ checkbox per member.
 - 3. REFACTOR: reuse `useAssignableMembers`.
 - 4. Commit `feat(frontend): new-task multi-assignee picker`
-Status: [ ]
+Status: [x] 2026-06-06 (checkbox column, no shadcn Combobox — simpler shape)
 
 ### Task 18: edit-task page — multi-select + new endpoints
 Files:
@@ -230,7 +230,7 @@ Steps:
 - 2. GREEN: split form — fields PATCH as before, assignees through new mutation.
 - 3. REFACTOR: extract `useReplaceAssignees(taskId)` hook.
 - 4. Commit `feat(frontend): edit-task multi-assignee + new endpoints`
-Status: [ ]
+Status: [x] 2026-06-06 (edit page dropped Assignee field entirely — reassign UI lives on detail page only)
 
 ### Task 19: detail page — all assignees + canEdit over assignees array
 Files:
@@ -241,7 +241,7 @@ Steps:
 - 2. GREEN: rewrite predicate; render TaskAssigneesAvatars.
 - 3. REFACTOR: -.
 - 4. Commit `feat(frontend): task detail multi-assignee`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ### Task 20: inbox + filter UI compat sweep
 Files:

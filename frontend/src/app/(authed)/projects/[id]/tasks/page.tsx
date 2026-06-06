@@ -86,8 +86,14 @@ function ProjectTasksPageInner() {
   const isProjectPm =
     !!user && !!members?.some((m) => m.userId === user.id && m.role === 'pm');
   const isPrivileged = isAdmin || isProjectPm;
-  const canWriteFor = (t: { assignedTo: string | null }): boolean =>
-    isPrivileged || (!!user && !!t.assignedTo && t.assignedTo === user.id);
+  const canWriteFor = (t: Task): boolean => {
+    if (isPrivileged) return true;
+    if (!user) return false;
+    if (t.assignees && t.assignees.length > 0) {
+      return t.assignees.some((a) => a.userId === user.id);
+    }
+    return !!t.assignedTo && t.assignedTo === user.id;
+  };
 
   const q = params.get('q') ?? '';
   const statusList = parseStatusList(params.get('status'));
