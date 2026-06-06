@@ -70,7 +70,7 @@ describe('E20: new task form scoped assignee picker', () => {
     expect(listUsersSpy).not.toHaveBeenCalled();
   });
 
-  it('renders only project members in assignee dropdown', async () => {
+  it('renders only project members in multi-assignee picker', async () => {
     listAssignableSpy.mockResolvedValue([
       { id: 'u-alice', email: 'alice@x.co', name: 'Alice', role: 'team_member', projectRole: 'member' },
     ]);
@@ -79,11 +79,48 @@ describe('E20: new task form scoped assignee picker', () => {
         <NewTaskPage />
       </Providers>,
     );
-    const user = userEvent.setup();
     await waitFor(() => expect(listAssignableSpy).toHaveBeenCalled());
-    await user.click(screen.getByLabelText(/assignee/i));
-    await waitFor(() =>
-      expect(screen.getByRole('option', { name: /alice/i })).toBeTruthy(),
+    // Checkbox list, one per project member
+    expect(await screen.findByLabelText('Alice')).toBeInTheDocument();
+  });
+
+  it('checking a member adds them to assigneeIds; submit sends array', async () => {
+    listAssignableSpy.mockResolvedValue([
+      { id: 'u-alice', email: 'alice@x.co', name: 'Alice', role: 'team_member', projectRole: 'member' },
+      { id: 'u-bob', email: 'bob@x.co', name: 'Bob', role: 'team_member', projectRole: 'member' },
+    ]);
+    createSpy.mockResolvedValue({
+      id: 't-1',
+      projectId: 'p-1',
+      title: 'Two',
+      description: null,
+      status: 'todo',
+      priority: 'medium',
+      dueDate: '2030-06-01T00:00:00.000Z',
+      assignedTo: null,
+      createdBy: 'u-me',
+      creator: { id: 'u-me', email: 'me@x.co', name: 'Me', role: 'admin' },
+      assignee: null,
+      assignees: [],
+      deletedAt: null,
+      createdAt: '',
+      updatedAt: '',
+    });
+    const user = userEvent.setup();
+    render(
+      <Providers>
+        <NewTaskPage />
+      </Providers>,
     );
+    await waitFor(() => expect(listAssignableSpy).toHaveBeenCalled());
+    await user.type(screen.getByLabelText(/title/i), 'Two');
+    await user.type(screen.getByLabelText(/due date/i), '2030-06-01');
+    await user.click(await screen.findByLabelText('Alice'));
+    await user.click(await screen.findByLabelText('Bob'));
+    await user.click(screen.getByRole('button', { name: /create task/i }));
+    await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1));
+    const arg = createSpy.mock.calls[0][0];
+    expect(arg.assigneeIds).toEqual(expect.arrayContaining(['u-alice', 'u-bob']));
+    expect(arg.assigneeIds).toHaveLength(2);
   });
 });

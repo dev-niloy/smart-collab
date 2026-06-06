@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch, apiDelete } from './api';
+import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from './api';
 import type {
   CreateTaskInput,
   UpdateTaskInput,
@@ -71,3 +71,12 @@ export const deleteTask = (id: string) => apiDelete<void>(`/api/v1/tasks/${id}`)
 
 export const restoreTask = (id: string) =>
   apiPost<TaskResponse>(`/api/v1/tasks/${id}/restore`, {}).then((r) => r.task);
+
+export const addTaskAssignee = (id: string, userId: string) =>
+  apiPost<TaskResponse>(`/api/v1/tasks/${id}/assignees`, { userId }).then((r) => r.task);
+
+export const removeTaskAssignee = (id: string, userId: string) =>
+  apiDelete<TaskResponse>(`/api/v1/tasks/${id}/assignees/${userId}`).then((r) => r.task);
+
+export const replaceTaskAssignees = (id: string, userIds: string[]) =>
+  apiPut<TaskResponse>(`/api/v1/tasks/${id}/assignees`, { userIds }).then((r) => r.task);

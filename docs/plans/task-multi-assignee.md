@@ -207,7 +207,7 @@ Steps:
 - 2. GREEN: small component takes `assignees: TaskUser[]`.
 - 3. REFACTOR: `MAX_VISIBLE = 3` constant.
 - 4. Commit `feat(frontend): stacked-avatars w/ overflow badge`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ### Task 17: new-task page — multi-select picker
 Files:
