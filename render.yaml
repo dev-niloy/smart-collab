@@ -90,19 +90,23 @@ services:
         value: production
       - key: EMAIL_PROVIDER
         value: resend
-      - fromService:
+      - key: EMAIL_FROM
+        fromService:
           type: web
           name: smart-collab-api
           envVarKey: EMAIL_FROM
-      - fromService:
+      - key: DATABASE_URL
+        fromService:
           type: web
           name: smart-collab-api
           envVarKey: DATABASE_URL
-      - fromService:
+      - key: REDIS_URL
+        fromService:
           type: web
           name: smart-collab-api
           envVarKey: REDIS_URL
-      - fromService:
+      - key: RESEND_API_KEY
+        fromService:
           type: web
           name: smart-collab-api
           envVarKey: RESEND_API_KEY
