@@ -172,4 +172,115 @@ maybe('task.service activity emissions', () => {
     const after = await prisma.activityLog.count({ where: { action: 'task.created', projectId } });
     expect(after).toBe(before);
   });
+
+  describe('multi-assignee activity', () => {
+    let memberA: string;
+    let memberB: string;
+
+    beforeAll(async () => {
+      memberA = (
+        await prisma.user.create({
+          data: {
+            email: `${TEST_EMAIL}-mA`,
+            name: 'MA',
+            passwordHash: await bcrypt.hash('x', 4),
+            role: 'team_member',
+          },
+        })
+      ).id;
+      memberB = (
+        await prisma.user.create({
+          data: {
+            email: `${TEST_EMAIL}-mB`,
+            name: 'MB',
+            passwordHash: await bcrypt.hash('x', 4),
+            role: 'team_member',
+          },
+        })
+      ).id;
+    });
+
+    afterAll(async () => {
+      await prisma.user.deleteMany({ where: { id: { in: [memberA, memberB] } } });
+    });
+
+    beforeEach(async () => {
+      await prisma.projectMember.deleteMany({ where: { projectId } });
+      await prisma.projectMember.createMany({
+        data: [
+          { projectId, userId: memberA, role: 'member' },
+          { projectId, userId: memberB, role: 'member' },
+        ],
+      });
+    });
+
+    it('addAssignee records task.assigned with added user id in meta', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: 'MA-act-add',
+          dueDate: future(5),
+          status: 'todo',
+          priority: 'medium',
+          assigneeIds: [],
+        } as any,
+        actorId,
+      );
+      await prisma.activityLog.deleteMany({ where: { entityId: t.id } });
+      await taskService.addAssignee(t.id, memberA, actorId, { id: actorId, role: 'admin' });
+      const rows = await prisma.activityLog.findMany({
+        where: { entityId: t.id, action: 'task.assigned' },
+      });
+      expect(rows).toHaveLength(1);
+      expect((rows[0].meta as { added?: string } | null)?.added).toBe(memberA);
+    });
+
+    it('removeAssignee records task.unassigned with removed user id in meta', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: 'MA-act-remove',
+          dueDate: future(5),
+          status: 'todo',
+          priority: 'medium',
+          assigneeIds: [memberA, memberB],
+        } as any,
+        actorId,
+      );
+      await prisma.activityLog.deleteMany({ where: { entityId: t.id } });
+      await taskService.removeAssignee(t.id, memberA, actorId, { id: actorId, role: 'admin' });
+      const rows = await prisma.activityLog.findMany({
+        where: { entityId: t.id, action: 'task.unassigned' },
+      });
+      expect(rows).toHaveLength(1);
+      expect((rows[0].meta as { removed?: string } | null)?.removed).toBe(memberA);
+      const wrongAction = await prisma.activityLog.count({
+        where: { entityId: t.id, action: 'task.assigned' },
+      });
+      expect(wrongAction).toBe(0);
+    });
+
+    it('replaceAssignees records single task.assigned with added/removed arrays', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: 'MA-act-replace',
+          dueDate: future(5),
+          status: 'todo',
+          priority: 'medium',
+          assigneeIds: [memberA],
+        } as any,
+        actorId,
+      );
+      await prisma.activityLog.deleteMany({ where: { entityId: t.id } });
+      await taskService.replaceAssignees(t.id, [memberB], actorId, { id: actorId, role: 'admin' });
+      const rows = await prisma.activityLog.findMany({
+        where: { entityId: t.id, action: 'task.assigned' },
+      });
+      expect(rows).toHaveLength(1);
+      const meta = rows[0].meta as { added?: string[]; removed?: string[] } | null;
+      expect(meta?.added).toEqual([memberB]);
+      expect(meta?.removed).toEqual([memberA]);
+    });
+  });
 });
