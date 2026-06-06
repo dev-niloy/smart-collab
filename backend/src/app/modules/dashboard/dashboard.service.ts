@@ -31,22 +31,15 @@ const getKpis = async (scope: Scope): Promise<Kpis> => {
       prisma.task.count({ where: taskWhere(scope) }),
       prisma.task.count({ where: taskWhere(scope, { status: 'completed' }) }),
       prisma.task.count({
-        // Multi-assignee: count tasks where actor is in TaskAssignee. Dual-reads legacy
-        // assignedTo during transition (Phase A m1 → Phase F m2).
+        // Multi-assignee: count tasks where actor is in TaskAssignee.
         where: taskWhere(scope, {
-          OR: [
-            { assignees: { some: { userId: scope.actorId } } },
-            { assignedTo: scope.actorId },
-          ],
+          assignees: { some: { userId: scope.actorId } },
           status: { not: 'completed' },
         }),
       }),
       prisma.task.count({
         where: taskWhere(scope, {
-          OR: [
-            { assignees: { some: { userId: scope.actorId } } },
-            { assignedTo: scope.actorId },
-          ],
+          assignees: { some: { userId: scope.actorId } },
           status: 'completed',
         }),
       }),
@@ -211,7 +204,6 @@ const getHighPriority = async (scope: Scope): Promise<HighPriorityTask[]> => {
       projectId: true,
       dueDate: true,
       status: true,
-      assignee: { select: userMiniSelect },
       assignees: {
         include: { user: { select: userMiniSelect } },
         orderBy: { addedAt: 'asc' },
@@ -225,8 +217,7 @@ const getHighPriority = async (scope: Scope): Promise<HighPriorityTask[]> => {
     projectId: r.projectId,
     dueDate: r.dueDate,
     status: r.status,
-    // Prefer new multi-assignee shape; fall back to legacy single FK during transition.
-    assignee: r.assignees[0]?.user ?? r.assignee ?? null,
+    assignee: r.assignees[0]?.user ?? null,
   }));
 };
 

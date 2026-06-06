@@ -15,7 +15,6 @@ export const requireTaskOwnerOrPrivileged: RequestHandler = async (req, _res, ne
       where: { id: req.params.id },
       select: {
         createdBy: true,
-        assignedTo: true,
         assignees: { select: { userId: true } },
       },
     });
@@ -25,7 +24,6 @@ export const requireTaskOwnerOrPrivileged: RequestHandler = async (req, _res, ne
     const actorId = req.user.id;
     if (
       task.createdBy === actorId ||
-      task.assignedTo === actorId ||
       task.assignees.some((a) => a.userId === actorId)
     ) {
       return next();

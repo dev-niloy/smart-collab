@@ -33,14 +33,14 @@ describe('task validation', () => {
       ).toThrow();
     });
 
-    it('accepts null assignedTo', () => {
+    it('drops unknown assignedTo key silently (column dropped — use assigneeIds)', () => {
       const r = createTaskSchema.parse({
         projectId: validUuid,
         title: 'X',
         dueDate: '2030-01-01',
         assignedTo: null,
-      });
-      expect(r.assignedTo).toBeNull();
+      } as any);
+      expect((r as { assignedTo?: unknown }).assignedTo).toBeUndefined();
     });
 
     it('accepts assigneeIds: []', () => {
@@ -63,17 +63,6 @@ describe('task validation', () => {
       expect(r.assigneeIds).toHaveLength(2);
     });
 
-    it('rejects both assignedTo and assigneeIds simultaneously', () => {
-      expect(() =>
-        createTaskSchema.parse({
-          projectId: validUuid,
-          title: 'X',
-          dueDate: '2030-01-01',
-          assignedTo: validUuid,
-          assigneeIds: [validUuid],
-        }),
-      ).toThrow();
-    });
   });
 
   describe('updateTaskSchema', () => {

@@ -17,14 +17,14 @@ describe('task permission predicates', () => {
       expect(
         canWriteTask({
           actor: admin,
-          task: { assignedTo: null, createdBy: 'x' },
+          task: { createdBy: 'x', assignees: [] },
           projectRole: null,
         }),
       ).toBe(true);
       expect(
         canWriteTask({
           actor: admin,
-          task: { assignedTo: 'someone', createdBy: 'x' },
+          task: { createdBy: 'x', assignees: [{ userId: 'someone' }] },
           projectRole: null,
         }),
       ).toBe(true);
@@ -34,14 +34,14 @@ describe('task permission predicates', () => {
       expect(
         canWriteTask({
           actor: pm,
-          task: { assignedTo: null, createdBy: 'x' },
+          task: { createdBy: 'x', assignees: [] },
           projectRole: 'pm',
         }),
       ).toBe(true);
       expect(
         canWriteTask({
           actor: pm,
-          task: { assignedTo: otherMember.id, createdBy: 'x' },
+          task: { createdBy: 'x', assignees: [{ userId: otherMember.id }] },
           projectRole: 'pm',
         }),
       ).toBe(true);
@@ -51,7 +51,7 @@ describe('task permission predicates', () => {
       expect(
         canWriteTask({
           actor: member,
-          task: { assignedTo: member.id, createdBy: 'x' },
+          task: { createdBy: 'x', assignees: [{ userId: member.id }] },
           projectRole: 'member',
         }),
       ).toBe(true);
@@ -61,7 +61,7 @@ describe('task permission predicates', () => {
       expect(
         canWriteTask({
           actor: member,
-          task: { assignedTo: otherMember.id, createdBy: 'x' },
+          task: { createdBy: 'x', assignees: [{ userId: otherMember.id }] },
           projectRole: 'member',
         }),
       ).toBe(false);
@@ -71,7 +71,7 @@ describe('task permission predicates', () => {
       expect(
         canWriteTask({
           actor: member,
-          task: { assignedTo: null, createdBy: 'x' },
+          task: { createdBy: 'x', assignees: [] },
           projectRole: 'member',
         }),
       ).toBe(false);
@@ -81,7 +81,7 @@ describe('task permission predicates', () => {
       expect(
         canWriteTask({
           actor: member,
-          task: { assignedTo: member.id, createdBy: 'x' },
+          task: { createdBy: 'x', assignees: [{ userId: member.id }] },
           projectRole: null,
         }),
       ).toBe(true); // still true — assignee check doesn't depend on project membership here; service-level RBAC catches that
@@ -93,7 +93,6 @@ describe('task permission predicates', () => {
           canWriteTask({
             actor: member,
             task: {
-              assignedTo: null,
               createdBy: 'x',
               assignees: [{ userId: otherMember.id }, { userId: member.id }],
             },
@@ -107,7 +106,6 @@ describe('task permission predicates', () => {
           canWriteTask({
             actor: member,
             task: {
-              assignedTo: null,
               createdBy: 'x',
               assignees: [{ userId: otherMember.id }],
             },
@@ -120,7 +118,7 @@ describe('task permission predicates', () => {
         expect(
           canWriteTask({
             actor: member,
-            task: { assignedTo: null, createdBy: 'x', assignees: [] },
+            task: { createdBy: 'x', assignees: [] },
             projectRole: 'member',
           }),
         ).toBe(false);
@@ -130,14 +128,14 @@ describe('task permission predicates', () => {
         expect(
           canWriteTask({
             actor: pm,
-            task: { assignedTo: null, createdBy: 'x', assignees: [] },
+            task: { createdBy: 'x', assignees: [] },
             projectRole: 'pm',
           }),
         ).toBe(true);
         expect(
           canWriteTask({
             actor: admin,
-            task: { assignedTo: null, createdBy: 'x', assignees: [{ userId: otherMember.id }] },
+            task: { createdBy: 'x', assignees: [{ userId: otherMember.id }] },
             projectRole: null,
           }),
         ).toBe(true);
@@ -148,19 +146,19 @@ describe('task permission predicates', () => {
   describe('canDeleteTask', () => {
     it('admin → true', () => {
       expect(
-        canDeleteTask({ actor: admin, task: { assignedTo: null, createdBy: 'x' }, projectRole: null }),
+        canDeleteTask({ actor: admin, task: { createdBy: 'x', assignees: [] }, projectRole: null }),
       ).toBe(true);
     });
     it('project PM → true', () => {
       expect(
-        canDeleteTask({ actor: pm, task: { assignedTo: null, createdBy: 'x' }, projectRole: 'pm' }),
+        canDeleteTask({ actor: pm, task: { createdBy: 'x', assignees: [] }, projectRole: 'pm' }),
       ).toBe(true);
     });
     it('creator (any role) → true', () => {
       expect(
         canDeleteTask({
           actor: member,
-          task: { assignedTo: null, createdBy: member.id },
+          task: { createdBy: member.id, assignees: [] },
           projectRole: 'member',
         }),
       ).toBe(true);
@@ -169,7 +167,7 @@ describe('task permission predicates', () => {
       expect(
         canDeleteTask({
           actor: member,
-          task: { assignedTo: null, createdBy: 'someone-else' },
+          task: { createdBy: 'someone-else', assignees: [] },
           projectRole: 'member',
         }),
       ).toBe(false);

@@ -68,26 +68,20 @@ export const mapTaskAssignees = (rows: TaskAssigneeRel[]): TaskUserRel[] =>
 
 type CanWriteArgs = {
   actor: Actor | undefined;
-  task: Pick<Task, 'assignedTo' | 'createdBy'> & { assignees?: { userId: string }[] };
+  task: Pick<Task, 'createdBy'> & { assignees: { userId: string }[] };
   projectRole?: 'pm' | 'member' | null; // resolved per-project; null = not a member
 };
 
 /**
  * Returns true when the actor may edit task fields (status / title / desc / priority / due).
- * Admin and project PM are always allowed. Any assignee is allowed (multi-assignee model).
+ * Admin and project PM are always allowed. Any assignee is allowed (multi-assignee).
  * Unassigned tasks (no assignees) cannot be field-edited by anyone except admin / project PM.
- * `task.assignees` is preferred when present (multi-assignee). Falls back to legacy `task.assignedTo`
- * during the dual-write transition window (Phase A m1 → Phase F m2).
  */
 export const canWriteTask = ({ actor, task, projectRole }: CanWriteArgs): boolean => {
   if (isAdmin(actor)) return true;
   if (projectRole === 'pm') return true;
   if (!actor) return false;
-  if (task.assignees && task.assignees.length > 0) {
-    return task.assignees.some((a) => a.userId === actor.id);
-  }
-  if (!task.assignedTo) return false;
-  return task.assignedTo === actor.id;
+  return task.assignees.some((a) => a.userId === actor.id);
 };
 
 /**
@@ -178,26 +172,11 @@ const ensureTitleUnique = async (projectId: string, title: string, excludeTaskId
   }
 };
 
-/**
- * Normalize create input to the canonical multi-assignee shape.
- * - `assigneeIds: string[]` (preferred, 0..N) takes priority.
- * - Legacy `assignedTo: string | null` is mapped to `[assignedTo]` (or `[]` if null).
- * Validation has already rejected both being present simultaneously.
- */
-const normalizeCreateAssignees = (input: CreateTaskInput): string[] => {
-  if (input.assigneeIds !== undefined) {
-    return Array.from(new Set(input.assigneeIds));
-  }
-  if (input.assignedTo) return [input.assignedTo];
-  return [];
-};
-
 const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWithRelations> => {
   ensureFutureDeadline(input.dueDate);
   await ensureProjectExists(input.projectId);
   await ensureTitleUnique(input.projectId, input.title);
-  const assigneeIds = normalizeCreateAssignees(input);
-  const legacyAssignedTo = assigneeIds[0] ?? null;
+  const assigneeIds = Array.from(new Set(input.assigneeIds ?? []));
   try {
     return await prisma.$transaction(async (tx) => {
       // Re-check membership INSIDE the tx so a member removed between request
@@ -213,7 +192,6 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
           dueDate: input.dueDate,
           status: input.status,
           priority: input.priority,
-          assignedTo: legacyAssignedTo,
           createdBy: actorId,
           assignees: {
             create: assigneeIds.map((userId) => ({
@@ -275,7 +253,6 @@ const update = async (
     select: {
       projectId: true,
       status: true,
-      assignedTo: true,
       createdBy: true,
       title: true,
       priority: true,
@@ -387,7 +364,6 @@ const remove = async (
         projectId: true,
         title: true,
         createdBy: true,
-        assignedTo: true,
         deletedAt: true,
         assignees: { select: { userId: true } },
       },
@@ -500,25 +476,18 @@ const sortToOrderBy = (sort: SortKey): Prisma.TaskOrderByWithRelationInput[] => 
 };
 
 /**
- * `assignedTo` filter. Reads from BOTH legacy `Task.assignedTo` and the new `TaskAssignee` join
- * during the dual-write transition window (Phase A m1 → Phase F m2). After m2 drops the legacy
- * column, the legacy branch becomes dead code and will be removed in t21.
+ * Filter tasks by assignee. The query-string key is `assignedTo` (kept stable for
+ * frontend compat) but resolves to a `TaskAssignee` join check; the legacy
+ * single-FK column is gone (#B7).
  */
 const buildAssignedToWhere = (
   v: ListArgs['assignedTo'],
   actorId: string | undefined,
 ): Prisma.TaskWhereInput | Record<string, never> => {
   if (!v) return {};
-  if (v === UNASSIGNED) {
-    return { AND: [{ assignees: { none: {} } }, { assignedTo: null }] };
-  }
-  if (v === 'me') {
-    if (!actorId) return {};
-    return {
-      OR: [{ assignees: { some: { userId: actorId } } }, { assignedTo: actorId }],
-    };
-  }
-  return { OR: [{ assignees: { some: { userId: v } } }, { assignedTo: v }] };
+  if (v === UNASSIGNED) return { assignees: { none: {} } };
+  if (v === 'me') return actorId ? { assignees: { some: { userId: actorId } } } : {};
+  return { assignees: { some: { userId: v } } };
 };
 
 const buildCreatedByWhere = (
@@ -613,23 +582,6 @@ const ensureCanReassign = async (actor: Actor | undefined, projectId: string) =>
   }
 };
 
-const syncLegacyAssignedTo = async (
-  tx: Prisma.TransactionClient,
-  taskId: string,
-): Promise<void> => {
-  // During the dual-write transition (Phase A m1 → Phase F m2), keep legacy `assignedTo`
-  // synced to the first assignee (by addedAt). Removed in t21 when column drops.
-  const first = await tx.taskAssignee.findFirst({
-    where: { taskId },
-    orderBy: { addedAt: 'asc' },
-    select: { userId: true },
-  });
-  await tx.task.update({
-    where: { id: taskId },
-    data: { assignedTo: first?.userId ?? null },
-  });
-};
-
 const addAssignee = async (
   taskId: string,
   userId: string,
@@ -645,7 +597,6 @@ const addAssignee = async (
       create: { taskId, userId, addedById: actorId },
       update: {}, // idempotent: re-adding existing assignee is a no-op
     });
-    await syncLegacyAssignedTo(tx, taskId);
     await recordActivity(tx, {
       actorId,
       action: 'task.assigned',
@@ -685,7 +636,6 @@ const removeAssignee = async (
         if (isRecordNotFound(err)) return; // idempotent: removing non-assignee = no-op
         throw err;
       });
-    await syncLegacyAssignedTo(tx, taskId);
     await recordActivity(tx, {
       actorId,
       action: 'task.unassigned',
@@ -740,7 +690,6 @@ const replaceAssignees = async (
         skipDuplicates: true,
       });
     }
-    await syncLegacyAssignedTo(tx, taskId);
     if (toAdd.length > 0 || toRemove.length > 0) {
       await recordActivity(tx, {
         actorId,

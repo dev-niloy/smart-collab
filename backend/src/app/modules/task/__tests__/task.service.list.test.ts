@@ -187,8 +187,8 @@ maybe('taskService list', () => {
   it('returns embedded creator and assignee', async () => {
     const r = await taskService.list({ projectId: projectA, sort: 'created', page: 1, limit: 5 });
     expect(r.data[0].creator.email).toBe(TEST_EMAIL);
-    const assigned = r.data.find((t) => t.assignedTo === assigneeId);
-    expect(assigned?.assignee?.email).toBe(`a-${TEST_EMAIL}`);
+    const assigned = r.data.find((t) => t.assignees.some((a) => a.userId === assigneeId));
+    expect(assigned?.assignees[0]?.user.email).toBe(`a-${TEST_EMAIL}`);
   });
 
   describe('extended filters (multi-select + range + me)', () => {
