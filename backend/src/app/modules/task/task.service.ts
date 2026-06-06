@@ -176,11 +176,29 @@ const ensureTitleUnique = async (projectId: string, title: string, excludeTaskId
   }
 };
 
+/**
+ * Normalize create input to the canonical multi-assignee shape.
+ * - `assigneeIds: string[]` (preferred, 0..N) takes priority.
+ * - Legacy `assignedTo: string | null` is mapped to `[assignedTo]` (or `[]` if null).
+ * Validation has already rejected both being present simultaneously.
+ */
+const normalizeCreateAssignees = (input: CreateTaskInput): string[] => {
+  if (input.assigneeIds !== undefined) {
+    return Array.from(new Set(input.assigneeIds));
+  }
+  if (input.assignedTo) return [input.assignedTo];
+  return [];
+};
+
 const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWithRelations> => {
   ensureFutureDeadline(input.dueDate);
   await ensureProjectExists(input.projectId);
   await ensureTitleUnique(input.projectId, input.title);
-  await ensureAssigneeIsProjectMember(input.projectId, input.assignedTo ?? null);
+  const assigneeIds = normalizeCreateAssignees(input);
+  for (const userId of assigneeIds) {
+    await ensureAssigneeIsProjectMember(input.projectId, userId);
+  }
+  const legacyAssignedTo = assigneeIds[0] ?? null;
   try {
     return await prisma.$transaction(async (tx) => {
       const task = await tx.task.create({
@@ -191,8 +209,14 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
           dueDate: input.dueDate,
           status: input.status,
           priority: input.priority,
-          assignedTo: input.assignedTo ?? null,
+          assignedTo: legacyAssignedTo,
           createdBy: actorId,
+          assignees: {
+            create: assigneeIds.map((userId) => ({
+              userId,
+              addedById: actorId,
+            })),
+          },
         },
         include: taskInclude,
       });
@@ -204,9 +228,10 @@ const create = async (input: CreateTaskInput, actorId: string): Promise<TaskWith
         projectId: task.projectId,
         meta: { title: task.title, status: task.status, priority: task.priority },
       });
-      if (task.assignedTo) {
+      for (const userId of assigneeIds) {
+        if (userId === actorId) continue;
         await enqueueNotification(tx, {
-          recipientId: task.assignedTo,
+          recipientId: userId,
           actorId,
           type: 'task.assigned',
           entityType: 'task',

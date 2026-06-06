@@ -42,6 +42,38 @@ describe('task validation', () => {
       });
       expect(r.assignedTo).toBeNull();
     });
+
+    it('accepts assigneeIds: []', () => {
+      const r = createTaskSchema.parse({
+        projectId: validUuid,
+        title: 'X',
+        dueDate: '2030-01-01',
+        assigneeIds: [],
+      });
+      expect(r.assigneeIds).toEqual([]);
+    });
+
+    it('accepts assigneeIds: [uuid, uuid]', () => {
+      const r = createTaskSchema.parse({
+        projectId: validUuid,
+        title: 'X',
+        dueDate: '2030-01-01',
+        assigneeIds: [validUuid, validUuid],
+      });
+      expect(r.assigneeIds).toHaveLength(2);
+    });
+
+    it('rejects both assignedTo and assigneeIds simultaneously', () => {
+      expect(() =>
+        createTaskSchema.parse({
+          projectId: validUuid,
+          title: 'X',
+          dueDate: '2030-01-01',
+          assignedTo: validUuid,
+          assigneeIds: [validUuid],
+        }),
+      ).toThrow();
+    });
   });
 
   describe('updateTaskSchema', () => {

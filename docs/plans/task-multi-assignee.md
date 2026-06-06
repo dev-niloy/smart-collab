@@ -71,7 +71,7 @@ Steps:
 - 2. GREEN: rewrite where-clause to `taskAssignees: { some: { userId } }` / `{ none: {} }`.
 - 3. REFACTOR: tidy filter assembly.
 - 4. Commit `feat(tasks): list filter over multi-assignee`
-Status: [ ]
+Status: [x] 2026-06-06 (dual-reads via OR/AND during transition)
 
 ### Task 6: `task.create` accepts `assigneeIds: string[]`
 Files:
