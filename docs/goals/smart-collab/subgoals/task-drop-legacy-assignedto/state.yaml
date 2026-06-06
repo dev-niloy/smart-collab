@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 2                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+phase: 3                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
 
 tasks:
   - id: t1
@@ -37,12 +37,12 @@ tasks:
 
 blockers: []
 
-next_task: t1
+next_task: null
 
 phase_completion:
   gstack: true
   gsd: true
-  superpowers: false
+  superpowers: true
   ralph_wiggum: false
 
 baseline:

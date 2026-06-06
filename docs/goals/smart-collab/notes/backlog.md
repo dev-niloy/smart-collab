@@ -17,7 +17,7 @@
 
 ---
 
-## #B7 — Drop legacy `Task.assignedTo` column — **NEW, captured 2026-06-06**
+## #B7 — Drop legacy `Task.assignedTo` column — **RESOLVED 2026-06-06 (subgoal `task-drop-legacy-assignedto` complete, PR pending)**
 
 **Why:** finish the t21 cleanup deferred from `task-multi-assignee`. The column is dual-written but functionally inert; tests still seed via `assignedTo` directly. Until it's dropped + tests migrated, schema carries dead weight.
 
