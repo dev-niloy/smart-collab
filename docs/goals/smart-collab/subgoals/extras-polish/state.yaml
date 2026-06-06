@@ -1,0 +1,118 @@
+feature: extras-polish
+created: 2026-06-04
+updated: 2026-06-04
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 3 # Superpowers — all 19 tasks complete; ready for Phase 4 Ralph Wiggum
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit"
+    files: []
+    status: done
+  - id: t2
+    desc: "prisma schema — Comment + Attachment + Notification + migration + 4 tests"
+    files: [backend/prisma/]
+    status: done
+  - id: t3
+    desc: "comment.constant + validation + 5 tests"
+    files: [backend/src/app/modules/comment/]
+    status: done
+  - id: t4
+    desc: "comment.service — CRUD + activity emit + 8 tests"
+    files: [backend/src/app/modules/comment/]
+    status: done
+  - id: t5
+    desc: "comment.controller + routes mounted under task + 8 tests"
+    files:
+      [
+        backend/src/app/modules/comment/,
+        backend/src/app/modules/task/task.routes.ts,
+      ]
+    status: done
+  - id: t6
+    desc: "attachment: deps + constants + filename sanitiser + 4 tests"
+    files: [backend/src/app/modules/attachment/, backend/package.json]
+    status: done
+  - id: t7
+    desc: "attachment.service — upload/list/delete + activity + 6 tests"
+    files: [backend/src/app/modules/attachment/]
+    status: done
+  - id: t8
+    desc: "attachment.controller + routes + download endpoint + 6 tests"
+    files:
+      [backend/src/app/modules/attachment/, backend/src/app/routes/index.ts]
+    status: done
+  - id: t9
+    desc: "notification: enqueue helper + 5 tests"
+    files: [backend/src/app/modules/notification/]
+    status: done
+  - id: t10
+    desc: "notification triggers wired into task.assigned + comment.created + 6 tests"
+    files:
+      [
+        backend/src/app/modules/task/task.service.ts,
+        backend/src/app/modules/comment/,
+        backend/src/app/modules/notification/,
+      ]
+    status: done
+  - id: t11
+    desc: "notification.controller + routes (list/read/count) + 8 tests"
+    files:
+      [backend/src/app/modules/notification/, backend/src/app/routes/index.ts]
+    status: done
+  - id: t12
+    desc: "frontend: extras schemas + clients (comments + attachments + notifications) + 12 tests"
+    files: [frontend/src/lib/]
+    status: done
+  - id: t13
+    desc: "frontend: extras hooks + 10 tests"
+    files: [frontend/src/hooks/]
+    status: done
+  - id: t14
+    desc: "frontend: TaskCommentsPanel + 6 tests"
+    files: [frontend/src/components/tasks/]
+    status: done
+  - id: t15
+    desc: "frontend: TaskAttachmentsPanel + 5 tests"
+    files: [frontend/src/components/tasks/]
+    status: done
+  - id: t16
+    desc: "frontend: NotificationBell + Header mount + 6 tests"
+    files:
+      [
+        frontend/src/components/notifications/,
+        frontend/src/components/header.tsx,
+      ]
+    status: done
+  - id: t17
+    desc: "task detail integrates Comments + Attachments panels + 3 tests"
+    files: ["frontend/src/app/projects/[id]/tasks/[taskId]/"]
+    status: done
+  - id: t18
+    desc: "dark mode audit + fixes + 2 tests"
+    files: [frontend/src/]
+    status: done
+  - id: t19
+    desc: "coverage + README — subgoal complete"
+    files: [README.md]
+    status: done
+
+blockers: []
+
+next_task: null
+
+phase_completion:
+  gstack: true
+  gsd: true # locked 2026-06-04 — plan sliced into 19 tasks across 6 phases
+  superpowers: true # 2026-06-04 — 19/19 tasks; backend 459→520, frontend 319→364; coverage ≥85% new files
+  ralph_wiggum: true # 2026-06-04 — 2 cycles, 9 persona commits (Dev×2, Arch×2, Des×2, QA×1, BA×1, PM verify); 521/521 backend + 364/364 frontend; PR push gated by user permission
+
+baseline:
+  backend_tests: 459
+  frontend_tests: 319
+  branched_off: develop@7218dc2

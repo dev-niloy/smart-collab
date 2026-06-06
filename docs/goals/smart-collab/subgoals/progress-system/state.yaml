@@ -1,0 +1,87 @@
+feature: progress-system
+created: 2026-06-05
+updated: 2026-06-05
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 3 # Superpowers — t1–t12 done; t13 (push+PR) gated on user permission
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit (backend 523 + frontend 427)"
+    files: []
+    status: done
+  - id: t2
+    desc: "project service aggregates progress on list + detail"
+    files: [backend/src/projects/service.ts, backend/src/projects/__tests__/service.test.ts]
+    status: done
+  - id: t3
+    desc: "Zod schema + DTO type update for progress field"
+    files: [backend/src/projects/validation.ts, frontend/src/lib/schemas/project.ts]
+    status: done
+  - id: t4
+    desc: "ProgressBar primitive (shadcn progress)"
+    files: [frontend/src/components/ui/progress.tsx]
+    status: done
+  - id: t5
+    desc: "ProjectProgress helper component (card/detail/inline variants)"
+    files: [frontend/src/components/projects/ProjectProgress.tsx]
+    status: done
+  - id: t6
+    desc: "list card surface"
+    files: [frontend/src/app/(authed)/projects/page.tsx]
+    status: done
+  - id: t7
+    desc: "detail header surface"
+    files: [frontend/src/app/(authed)/projects/[id]/page.tsx]
+    status: done
+  - id: t8
+    desc: "sidebar Pinned row inline bar"
+    files: [frontend/src/components/shell/ProjectsPanel.tsx]
+    status: done
+  - id: t9
+    desc: "Dashboard My Open Tasks widget aggregate"
+    files: [frontend/src/components/dashboard/]
+    status: done
+  - id: t10
+    desc: "task mutation invalidates project queries"
+    files: [frontend/src/hooks/useTasks.ts]
+    status: done
+  - id: t11
+    desc: "full suite green + manual smoke"
+    files: []
+    status: done
+  - id: t12
+    desc: "docs + screenshot + close phase 3"
+    files: [README.md, docs/goals/smart-collab/subgoals/progress-system/state.yaml]
+    status: done
+  - id: t13
+    desc: "USER PERMISSION: push branch + open PR feature/progress-system -> develop"
+    files: []
+    manual: true
+    status: done
+
+blockers: []
+
+next_task: null
+
+phase_completion:
+  gstack: true # 2026-06-05 — goal.md approved by user
+  gsd: true # 2026-06-05 — 13 tasks sliced across phases A backend / B primitives / C surfaces / D invalidation / E close
+  superpowers: true # 2026-06-05 — t1–t12 done; t13 gated on push permission
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 523
+  frontend_tests: 427
+  branched_off: develop@25fb539
+
+decisions:
+  weighting: binary-done-only
+  surfaces: [list_card, detail_header, sidebar_pinned, dashboard_widget]
+  compute: server_side_aggregate
+  primitive: shadcn_progress
+  caching: react_query_invalidate

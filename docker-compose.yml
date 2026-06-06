@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: smartcollab_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: smartcollab
+      POSTGRES_PASSWORD: smartcollab
+      POSTGRES_DB: smartcollab
+    ports:
+      - "5433:5432"     # host 5433 avoids collision with system postgres on 5432
+    volumes:
+      - smartcollab_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartcollab -d smartcollab"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: smartcollab_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"   # localhost-only — never expose dev redis on LAN
+    volumes:
+      - smartcollab_redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  smartcollab_pgdata:
+  smartcollab_redisdata:

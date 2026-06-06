@@ -1,0 +1,56 @@
+feature: comment-mentions
+created: 2026-06-06
+updated: 2026-06-06
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 4                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+
+intake:
+  original_request: "Close backlog #B8 — @-mentions in task comment composer."
+  interpreted_outcome: "PM/member can @-mention a project member in a task comment; mention parser + comment.mention notification type ship; Inbox Mentions tab finally fires; renderer chips the mention inline."
+  authority: approved
+  proof_type: test
+  completion_proof: "cd backend && npm test --silent reports >= 598 AND cd frontend && npm test -- --run reports >= 462 AND grep -q \"'comment.mention'\" backend/src/app/modules/notification/notification.constant.ts AND grep -q 'parseMentions' backend/src/app/modules/comment/"
+  likely_misfire: "Parser regex matches a string that looks like @[x](uuid) but the renderer fails to chip it (visible token in UI), OR mentioned non-member silently dropped but error path raised 422 leaking project membership info, OR comment.mention enqueued without removing the recipient from comment.created → double notification."
+
+tasks: []                  # populated at Phase 2 (GSD planner)
+
+blockers: []
+
+next_task: null
+
+phase_completion:
+  gstack: true
+  gsd: true
+  superpowers: true
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 598
+  frontend_tests: 462
+  branched_off: develop@8b501f4
+  recorded_at: 2026-06-06
+
+checks:
+  last_checkpoint_sha: 8b501f4be205bda2abf5bce5dccac4d80592f862
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: baseline
+    commands:
+      - "cd backend && npm test --silent → 598 passed"
+      - "cd frontend && npm test -- --run → 462 passed"
+
+decisions:
+  token_format: "@[Name](<uuid-v4>)"
+  parser_strict_uuid: true
+  silent_drop_non_member: true             # information-disclosure guard
+  suppress_comment_created_for_mentioned: true
+  max_mentions_per_comment: 20
+  no_rich_text_editor: true                # plain Textarea + popover only
+  no_retro_mention_on_edit: true
+  activity_log_unchanged: true             # still comment.created only

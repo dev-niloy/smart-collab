@@ -1,0 +1,105 @@
+feature: sidebar-shell
+created: 2026-06-05
+updated: 2026-06-05
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 3 # Superpowers — t1–t16 done; t17 (push+PR) gated on user permission
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit (backend 523 + frontend 364)"
+    files: []
+    status: done
+  - id: t2
+    desc: "shell component scaffolding (ShellLayout, Rail, Panel, Topbar)"
+    files: [frontend/src/components/shell/]
+    status: done
+  - id: t3
+    desc: "Rail top nav (logo + Search/Dashboard/Projects/Inbox + active)"
+    files: [frontend/src/components/shell/Rail.tsx]
+    status: done
+  - id: t4
+    desc: "Rail bottom (Help / Theme / Avatar+Logout)"
+    files: [frontend/src/components/shell/RailBottom.tsx]
+    status: done
+  - id: t5
+    desc: "Inbox red-dot when unread > 0"
+    files: [frontend/src/components/shell/Rail.tsx]
+    status: done
+  - id: t6
+    desc: "Panel shell + collapse + localStorage hook"
+    files: [frontend/src/components/shell/Panel.tsx, frontend/src/hooks/usePanelCollapsed.ts]
+    status: done
+  - id: t7
+    desc: "ProjectsPanel content (filter chips, Pinned, All, +New)"
+    files: [frontend/src/components/shell/ProjectsPanel.tsx]
+    status: done
+  - id: t8
+    desc: "DashboardPanel + InboxPanel (minimal)"
+    files: [frontend/src/components/shell/DashboardPanel.tsx, frontend/src/components/shell/InboxPanel.tsx]
+    status: done
+  - id: t9
+    desc: "Topbar breadcrumbs + actions slot"
+    files: [frontend/src/components/shell/Topbar.tsx]
+    status: done
+  - id: t10
+    desc: "wire ShellLayout into (authed) route group; drop Header"
+    files: [frontend/src/app/(authed)/layout.tsx]
+    status: done
+  - id: t11
+    desc: "Cmd+K command palette over projects + tasks"
+    files: [frontend/src/components/shell/CommandPalette.tsx]
+    status: done
+  - id: t12
+    desc: "/inbox route page (notifications + assigned tasks)"
+    files: [frontend/src/app/(authed)/inbox/page.tsx]
+    status: done
+  - id: t13
+    desc: "mobile drawer below 768px"
+    files: [frontend/src/components/shell/MobileDrawer.tsx, frontend/src/hooks/useMediaQuery.ts]
+    status: done
+  - id: t14
+    desc: "theme + a11y parity sweep"
+    files: [frontend/src/components/shell/]
+    status: done
+  - id: t15
+    desc: "full suite green + local manual smoke"
+    files: []
+    status: done
+  - id: t16
+    desc: "README screenshot + close phase 3"
+    files: [README.md, docs/goals/smart-collab/subgoals/sidebar-shell/state.yaml]
+    status: done
+  - id: t17
+    desc: "USER PERMISSION: push branch + open PR feature/sidebar-shell -> develop"
+    files: []
+    manual: true
+    status: done
+
+blockers: []
+
+next_task: null
+
+phase_completion:
+  gstack: true # 2026-06-05 — goal.md approved by user
+  gsd: true # 2026-06-05 — 17 tasks sliced across phases A scaffold / B rail / C panel / D topbar / E integrate / F palette+inbox / G mobile+polish / H verify+close
+  superpowers: true # 2026-06-05 — t1–t16 done; t17 gated on user push permission
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 523
+  frontend_tests: 364
+  branched_off: develop@bdda6e0
+
+decisions:
+  shell_layout: rail-plus-collapsible-panel
+  icon_lib: lucide-react
+  backend_changes: none
+  panel_state: localStorage
+  cmd_k_palette: client-only
+  inbox_route: new
+  mobile_breakpoint: 768

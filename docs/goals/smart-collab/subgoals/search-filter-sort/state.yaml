@@ -1,0 +1,97 @@
+feature: search-filter-sort
+created: 2026-06-04
+updated: 2026-06-04
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 4 # Ralph Wiggum — 1 iter, 6 persona wins; DONE
+
+tasks:
+  - id: t1
+    desc: "baseline verification commit"
+    files: []
+    status: done
+  - id: t2
+    desc: "task.validation — multi-select + dueFrom/To + me + 10 tests"
+    files: [backend/src/app/modules/task/]
+    status: done
+  - id: t3
+    desc: "task.service.list — wire new filters + 8 tests"
+    files: [backend/src/app/modules/task/]
+    status: done
+  - id: t4
+    desc: "task.controller — me resolution + routes test + 4 tests"
+    files: [backend/src/app/modules/task/]
+    status: done
+  - id: t5
+    desc: "project.validation — multi-select + range + me + shared helpers + 9 tests"
+    files: [backend/src/app/modules/project/, backend/src/app/lib/queryFields.ts]
+    status: done
+  - id: t6
+    desc: "project.service+controller — filters wired + 6 tests"
+    files: [backend/src/app/modules/project/]
+    status: done
+  - id: t7
+    desc: "search.validation + constant + 5 tests"
+    files: [backend/src/app/modules/search/]
+    status: done
+  - id: t8
+    desc: "search.service — findProjects + findTasks w/ ranking + 9 tests"
+    files: [backend/src/app/modules/search/]
+    status: done
+  - id: t9
+    desc: "search.controller + routes + 6 tests"
+    files: [backend/src/app/modules/search/, backend/src/app/routes/index.ts]
+    status: done
+  - id: t10
+    desc: "lib/schemas/search + lib/search client + 5 tests"
+    files: [frontend/src/lib/]
+    status: done
+  - id: t11
+    desc: "lib/queryString multi-value helpers + 6 tests"
+    files: [frontend/src/lib/]
+    status: done
+  - id: t12
+    desc: "hooks/useGlobalSearch + 4 tests"
+    files: [frontend/src/hooks/]
+    status: done
+  - id: t13
+    desc: "GlobalSearchBar + Header mount + 7 tests"
+    files: [frontend/src/components/search/, frontend/src/components/header.tsx]
+    status: done
+  - id: t14
+    desc: "/projects page multi-select + range + me + 5 tests"
+    files: [frontend/src/app/projects/]
+    status: done
+  - id: t15
+    desc: "/projects/[id]/tasks page multi-select + range + me + 6 tests"
+    files: ["frontend/src/app/projects/[id]/tasks/"]
+    status: done
+  - id: t16
+    desc: "coverage + README — subgoal complete"
+    files: [README.md]
+    status: done
+
+blockers: []
+
+next_task: null # all 16 tasks done; awaiting Phase 4 Ralph
+
+phase_completion:
+  gstack: true
+  gsd: true
+  superpowers: true # all 16 done 2026-06-04; backend 458/458 jest, frontend 317/317 vitest
+  ralph_wiggum: true # 1 iter; 6 persona wins (Dev rank desc-only; Architect arrayOrEq dedupe; Designer chip focus ring; QA desc-match coverage; PM plan sync; BA client fail-fast); backend 459/459, frontend 319/319
+
+baseline:
+  backend_tests: 403
+  frontend_tests: 284
+  branched_off: develop@9ebf81e
+
+results:
+  backend_tests_final: 459 # phase3 458 + ralph QA (+1)
+  frontend_tests_final: 319 # phase3 317 + ralph BA (+2)
+  ralph_iterations: 1
+  ralph_status: DONE

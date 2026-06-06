@@ -1,0 +1,242 @@
+// Smart Collab — database schema
+// Foundation subgoal locks: User columns and Role enum. Later subgoals must
+// add new tables/columns only, never alter existing User fields.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  project_manager
+  team_member
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(team_member)
+  avatarPath   String?
+  emailNotifications Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions                Session[]
+  activities              ActivityLog[]
+  projects                Project[]        @relation("ProjectCreatedBy")
+  tasksCreated            Task[]           @relation("TaskCreatedBy")
+  projectMemberships      ProjectMember[]  @relation("ProjectMemberUser")
+  projectMembershipsAdded ProjectMember[]  @relation("ProjectMemberAddedBy")
+  comments                Comment[]        @relation("CommentAuthor")
+  attachments             Attachment[]     @relation("AttachmentUploader")
+  notificationsReceived   Notification[]   @relation("NotificationRecipient")
+  notificationsSent       Notification[]   @relation("NotificationActor")
+  taskAssignments         TaskAssignee[]   @relation("TaskAssigneeUser")
+  taskAssignmentsAdded    TaskAssignee[]   @relation("TaskAssigneeAddedBy")
+
+  @@index([role])
+  @@map("users")
+}
+
+enum ProjectStatus {
+  active
+  completed
+  on_hold
+}
+
+model Project {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  deadline    DateTime
+  status      ProjectStatus @default(active)
+  createdBy   String        @db.Uuid
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  creator    User            @relation("ProjectCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  tasks      Task[]
+  members    ProjectMember[]
+  activities ActivityLog[]
+
+  @@index([status, createdAt])
+  @@index([deadline])
+  @@index([createdBy])
+  @@map("projects")
+}
+
+enum TaskStatus {
+  todo
+  in_progress
+  completed
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+model Task {
+  id          String       @id @default(uuid()) @db.Uuid
+  projectId   String       @db.Uuid
+  title       String
+  description String?
+  status      TaskStatus   @default(todo)
+  priority    TaskPriority @default(medium)
+  dueDate     DateTime
+  createdBy   String       @db.Uuid
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator     User         @relation("TaskCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  comments    Comment[]
+  attachments Attachment[]
+  assignees   TaskAssignee[]
+
+  @@unique([projectId, title], name: "tasks_projectId_title_unique")
+  @@index([projectId, status])
+  @@index([projectId, deletedAt])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+model TaskAssignee {
+  taskId    String   @db.Uuid
+  userId    String   @db.Uuid
+  addedById String   @db.Uuid
+  addedAt   DateTime @default(now())
+
+  task    Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user    User @relation("TaskAssigneeUser", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy User @relation("TaskAssigneeAddedBy", fields: [addedById], references: [id], onDelete: Restrict)
+
+  @@id([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+  @@map("task_assignees")
+}
+
+enum ProjectRole {
+  pm
+  member
+
+  @@map("project_role")
+}
+
+model ProjectMember {
+  id          String      @id @default(uuid()) @db.Uuid
+  projectId   String      @db.Uuid
+  userId      String      @db.Uuid
+  role        ProjectRole @default(member)
+  addedAt     DateTime    @default(now())
+  addedById   String?     @db.Uuid
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation("ProjectMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy User?   @relation("ProjectMemberAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, userId], name: "project_members_project_user_unique")
+  @@index([userId])
+  @@index([projectId])
+  @@map("project_members")
+}
+
+model Session {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @db.Uuid
+  refreshTokenHash String   @unique
+  userAgent        String?
+  ip               String?
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid
+  action     String
+  entityType String
+  entityId   String   @db.Uuid
+  projectId  String?  @db.Uuid
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  actor   User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([projectId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@map("activity_logs")
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @db.Uuid
+  authorId  String   @db.Uuid
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([taskId, createdAt])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model Attachment {
+  id          String   @id @default(uuid()) @db.Uuid
+  taskId      String   @db.Uuid
+  uploaderId  String   @db.Uuid
+  filename    String
+  mimeType    String
+  sizeBytes   Int
+  storagePath String
+  createdAt   DateTime @default(now())
+
+  task     Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploader User @relation("AttachmentUploader", fields: [uploaderId], references: [id], onDelete: Restrict)
+
+  @@index([taskId, createdAt])
+  @@index([uploaderId])
+  @@map("attachments")
+}
+
+model Notification {
+  id          String    @id @default(uuid()) @db.Uuid
+  recipientId String    @db.Uuid
+  actorId     String?   @db.Uuid
+  type        String
+  entityType  String
+  entityId    String    @db.Uuid
+  projectId   String?   @db.Uuid
+  payload     Json?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, createdAt])
+  @@index([recipientId, readAt])
+  @@map("notifications")
+}

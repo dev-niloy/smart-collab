@@ -1,0 +1,59 @@
+feature: profile-settings
+created: 2026-06-06
+updated: 2026-06-06
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 4                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+
+intake:
+  original_request: "Add profile page so a signed-in user can update name, email, password, and avatar."
+  interpreted_outcome: "Self-service profile management at /profile; PATCH /users/me + password endpoint + avatar upload reuse the existing attachment-style multer pattern; sidebar dropdown links to the page; auth-me cache invalidation + BroadcastChannel make changes visible across tabs."
+  authority: approved
+  proof_type: test
+  completion_proof: "cd backend && npm test --silent reports >= 598 AND cd frontend && npm test -- --run reports >= 480 AND grep -q 'avatarPath' backend/prisma/schema.prisma AND grep -q '/profile' frontend/src/components/shell/RailBottom.tsx"
+  likely_misfire: "Password change correctly verifies current but forgets to spare the caller's own session → user bounced to /login on success. Avatar upload writes to disk but the GET endpoint never finds the file because the storage path is computed wrong. Email change updates DB but auth-me cache stale so RailBottom keeps showing the old email until reload."
+
+tasks: []
+
+blockers: []
+
+next_task: null
+
+phase_completion:
+  gstack: true
+  gsd: true
+  superpowers: true
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 598
+  frontend_tests: 465
+  branched_off: develop@7505845
+  recorded_at: 2026-06-06
+
+checks:
+  last_checkpoint_sha: 7505845b7cc32929d3a9badb5f3ede021c347f3e
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: baseline
+    commands:
+      - "cd backend && npm test --silent → 598 passed"
+      - "cd frontend && npm test -- --run → 465 passed"
+
+decisions:
+  avatar_storage: existing_attachment_multer_local_disk
+  avatar_subdir: avatars
+  avatar_max_bytes: 2_097_152              # 2 MB
+  avatar_allowed_mimes: ["image/png", "image/jpeg", "image/webp", "image/gif"]
+  avatar_url_contract: "/api/v1/users/me/avatar"
+  email_change_flow: trust_and_update
+  password_change_requires_current: true
+  password_change_session_policy: keep_caller_drop_all_others
+  no_admin_other_user_edit: true
+  no_email_verification_token: true
+  no_new_storage_dep: true
