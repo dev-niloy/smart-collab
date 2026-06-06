@@ -25,11 +25,14 @@ import { ApiError } from '@/lib/api';
 import { MAX_COMMENT_BODY } from '@/lib/schemas/comment';
 import type { CommentDTO } from '@/lib/schemas/comment';
 import type { Role } from '@/lib/schemas/auth';
+import { CommentBody } from './CommentBody';
+import { MentionTextarea } from './MentionTextarea';
 
 const MAX_BODY = MAX_COMMENT_BODY;
 
 type Props = {
   taskId: string;
+  projectId: string;
   projectRole?: 'pm' | 'member' | 'admin' | null;
 };
 
@@ -110,7 +113,7 @@ function CommentRow({ comment, taskId, canEditRow, canDeleteRow }: RowProps) {
           </div>
         </div>
       ) : (
-        <p className="whitespace-pre-wrap text-sm">{comment.body}</p>
+        <CommentBody body={comment.body} />
       )}
       {!editing && (
         <div className="flex gap-2">
@@ -146,7 +149,7 @@ function CommentRow({ comment, taskId, canEditRow, canDeleteRow }: RowProps) {
   );
 }
 
-export function TaskCommentsPanel({ taskId, projectRole }: Props) {
+export function TaskCommentsPanel({ taskId, projectId, projectRole }: Props) {
   const { user } = useUser();
   const q = useComments(taskId);
   const create = useCreateComment(taskId);
@@ -177,10 +180,11 @@ export function TaskCommentsPanel({ taskId, projectRole }: Props) {
     <section aria-label="Comments" className="space-y-4">
       <h3 className="text-lg font-semibold">Comments</h3>
       <form onSubmit={onSubmit} className="space-y-2">
-        <Textarea
+        <MentionTextarea
           value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder="Add a comment…"
+          onChange={setBody}
+          projectId={projectId}
+          placeholder="Add a comment… type @ to mention a teammate"
           aria-label="New comment body"
           maxLength={MAX_BODY + 50}
         />

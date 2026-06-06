@@ -1,9 +1,11 @@
-import type { Prisma, Comment, Role } from '@prisma/client';
+import type { Prisma, Comment } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { prisma } from '../../../config/prisma';
 import { ApiError } from '../../errors/ApiError';
 import { recordActivity } from '../activityLog/activityLog.service';
 import { decodeCursor, encodeCursor } from '../activityLog/activityLog.validation';
 import { enqueueMany as enqueueNotifications } from '../notification/notification.service';
+import { parseMentions, MAX_MENTIONS_PER_COMMENT } from './comment.mentions';
 
 export type CommentDTO = {
   id: string;
@@ -94,12 +96,54 @@ const buildCursorWhere = (cursor?: string): Prisma.CommentWhereInput | undefined
   };
 };
 
+// Resolve every parsed mention to the subset that is a real project member
+// (admin role bypass — matches `ensureAssigneeIsProjectMember`'s pattern).
+// Non-members are silently dropped so a malicious sender cannot enumerate
+// user existence by mention spam.
+const resolveValidMentionMembers = async (
+  projectId: string,
+  parsedIds: string[],
+): Promise<Set<string>> => {
+  if (parsedIds.length === 0) return new Set();
+  const users = await prisma.user.findMany({
+    where: { id: { in: parsedIds } },
+    select: { id: true, role: true },
+  });
+  const admins = new Set(users.filter((u) => u.role === Role.admin).map((u) => u.id));
+  const nonAdminIds = users.filter((u) => u.role !== Role.admin).map((u) => u.id);
+  const members =
+    nonAdminIds.length > 0
+      ? await prisma.projectMember.findMany({
+          where: { projectId, userId: { in: nonAdminIds } },
+          select: { userId: true },
+        })
+      : [];
+  const memberIds = new Set(members.map((m) => m.userId));
+  const valid = new Set<string>();
+  for (const id of parsedIds) {
+    if (admins.has(id) || memberIds.has(id)) valid.add(id);
+  }
+  return valid;
+};
+
 const create = async (
   taskId: string,
   authorId: string,
   body: string,
 ): Promise<CommentDTO> => {
   const task = await ensureTaskExists(taskId);
+
+  // Parse + cap-check mentions BEFORE opening the tx so a 422 reply does
+  // not leave half-written comment rows behind.
+  const parsedMentionIds = parseMentions(body);
+  if (parsedMentionIds.length > MAX_MENTIONS_PER_COMMENT) {
+    throw ApiError.unprocessable(
+      `Too many mentions (max ${MAX_MENTIONS_PER_COMMENT}).`,
+      'TOO_MANY_MENTIONS',
+    );
+  }
+  const validMentionSet = await resolveValidMentionMembers(task.projectId, parsedMentionIds);
+
   return prisma.$transaction(async (tx) => {
     const row = await tx.comment.create({
       data: { taskId, authorId, body },
@@ -113,29 +157,51 @@ const create = async (
       projectId: task.projectId,
       meta: { title: body.slice(0, 80) },
     });
-    // Notify all task assignees + task creator (deduped, never the actor).
+
     const excerpt = body.slice(0, 140);
-    const recipientSet = new Set<string>();
-    for (const a of task.assignees) recipientSet.add(a.userId);
-    if (task.createdBy) recipientSet.add(task.createdBy);
-    const recipients = Array.from(recipientSet);
+    const payload = {
+      taskTitle: task.title,
+      taskId,
+      commentId: row.id,
+      commentExcerpt: excerpt,
+    } as const;
+
+    // comment.created → assignees ∪ creator MINUS anyone we're about to
+    // tag with the more specific comment.mention. Actor self-skip handled
+    // downstream by `enqueue`.
+    const createdRecipients = new Set<string>();
+    for (const a of task.assignees) createdRecipients.add(a.userId);
+    if (task.createdBy) createdRecipients.add(task.createdBy);
+    for (const id of validMentionSet) createdRecipients.delete(id);
     await enqueueNotifications(
       tx,
-      recipients.map((recipientId) => ({
+      Array.from(createdRecipients).map((recipientId) => ({
         recipientId,
         actorId: authorId,
         type: 'comment.created' as const,
         entityType: 'comment',
         entityId: row.id,
         projectId: task.projectId,
-        payload: {
-          taskTitle: task.title,
-          taskId,
-          commentId: row.id,
-          commentExcerpt: excerpt,
-        },
+        payload,
       })),
     );
+
+    // comment.mention → validated project members only.
+    if (validMentionSet.size > 0) {
+      await enqueueNotifications(
+        tx,
+        Array.from(validMentionSet).map((recipientId) => ({
+          recipientId,
+          actorId: authorId,
+          type: 'comment.mention' as const,
+          entityType: 'comment',
+          entityId: row.id,
+          projectId: task.projectId,
+          payload,
+        })),
+      );
+    }
+
     return toDTO(row);
   });
 };
