@@ -174,6 +174,19 @@ narrows to #B4(b) cross-tab + e2e + invalidation broadening.
 - `@playwright/test` upgrade to 1.60.x once the core `playwright` peer
   dep ships a non-alpha 1.60 build.
 
+## Phase 4 Ralph Wiggum (2026-06-06, 1 cycle)
+- Developer / Architect / Designer / BA: scanned changed surface; no
+  concrete in-scope finding worth a commit. Skipped with rationale.
+- QA: full suites green on clean runs (BE 598 / 598, FE 462 / 462);
+  backend project module coverage 96.08% lines (≥80% target). Same
+  pre-existing `activityLog.service.list` flake observed; out of
+  subgoal scope.
+- **PM**: caught done-criteria item 7 (CI hook) NOT delivered. Amended
+  goal.md item 7 to explicitly defer to follow-up subgoal
+  `e2e-ci-wiring` (new backlog #B9 captures scope, risks,
+  pre-requisites). Commit `[PM] member-cache-sync: defer goal.md item
+  7 (CI hook) to backlog #B9`.
+
 ## Phase Completion
 - [x] Phase 1 GStack — goal.md + state.yaml + progress.md written;
       baseline recorded; intake locked
@@ -183,7 +196,8 @@ narrows to #B4(b) cross-tab + e2e + invalidation broadening.
       threaded into the Phase 3 commits
 - [x] Phase 3 Superpowers — t1 smoke, t2 BroadcastChannel hook + tests,
       t3 skipped (no surface), t4 Playwright config + spec, t5 close
-- [ ] Phase 4 Ralph Wiggum — multi-persona review
+- [x] Phase 4 Ralph Wiggum — 1 cycle; 1 PM commit (CI deferral
+      formalized into backlog #B9); 5 personas skipped with rationale
 
 ## Blockers
 none

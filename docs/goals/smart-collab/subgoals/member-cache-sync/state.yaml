@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 4                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+phase: DONE             # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
 
 intake:
   original_request: "Close backlog #B4 — members count + assignable list mismatch under react-query cache staleness."
@@ -27,7 +27,7 @@ phase_completion:
   gstack: true
   gsd: true
   superpowers: true
-  ralph_wiggum: false
+  ralph_wiggum: true
 
 baseline:
   backend_tests: 598
