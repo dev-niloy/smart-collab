@@ -49,7 +49,16 @@ t23 — close + open PR
   - [BA] close TOCTOU on `ensureAssigneeIsProjectMember` — now runs inside tx in create/add/replace.
   - Process note: Developer + BA both touched `task.service.ts` in cycle 1; edits were disjoint regions, suite green at both points, no semantic conflict — strict Ralph conflict-rule deviation logged here, not raised as blocker.
   - Coverage gates met: backend task module 86.37% lines, frontend 90% lines.
-  - Final: 604 backend / 447 frontend tests, all green.
+  - Final cycle 1: 604 backend / 447 frontend tests, all green.
+- 2026-06-06: Post-Ralph user request — move "Manage assignees" from detail page to edit page, make it a searchable multi-select. Built `AssigneesMultiSelect` (base-ui Popover + cmdk Command, fuzzy match on name + email). Removed `TaskAssigneesPanel` (file deleted). Smoke-tested live by user.
+- 2026-06-06: Phase 4 Ralph Wiggum cycle 2 (5 commits over new code):
+  - [Developer] disambiguate edit-page partial-success toast (fields saved, assignees PUT failed).
+  - [Architect] extract `useReplaceAssignees` hook into useTasks.ts.
+  - [Designer] enlarge chip X-button hit area to 20px + visible focus ring.
+  - [QA] 10 new tests for AssigneesMultiSelect; jsdom polyfills for ResizeObserver + scrollIntoView so cmdk/base-ui Popover render in vitest. 447→457.
+  - [PM] re-mark t18 satisfied — goal #15 now actually delivered on edit page.
+  - [BA] picker merges task.assignees + assignable members so orphan ex-members stay visible/removable.
+  - Final cycle 2: 604 backend / 457 frontend tests, all green.
 
 ## Blockers
 none
