@@ -18,7 +18,23 @@ export type EmailJobName =
   | 'task.unassigned'
   | 'task.status_changed'
   | 'comment.created'
-  | 'comment.mention';
+  | 'comment.mention'
+  | 'project.member_added'
+  | 'project.member_role_changed';
+
+// Pre-rendered context fed to the template renderer. The producer ALWAYS
+// supplies the context the rendered email needs — the processor + worker
+// never re-query the DB for it, so the queue stays decoupled from request-
+// time auth or project membership.
+//
+// Two transport shapes for the team list:
+// - projectMemberCount: cheap integer summary, always safe to populate.
+// - projectMembers: optional full list (name + projectRole) used by the
+//   project.member_* templates' "Full body" requirement.
+export type ProjectMemberEntry = {
+  name: string;
+  role: string;
+};
 
 export type EmailJobData = {
   recipientId: string;
@@ -26,18 +42,22 @@ export type EmailJobData = {
   recipientName: string;
   actorName: string | null;
   type: EmailJobName;
-  // Pre-rendered context — the processor only formats, never re-queries the DB
-  // for things the producer already had in hand. Keeps the worker decoupled
-  // from request-time auth + project membership context.
   payload: {
     taskTitle?: string;
     taskId?: string;
     projectId?: string;
     projectName?: string;
+    projectDescription?: string | null;
+    projectDeadline?: string;
+    projectMembers?: ProjectMemberEntry[];
+    projectMemberCount?: number;
     commentExcerpt?: string;
     commentId?: string;
     status?: string;
     previousStatus?: string;
+    memberId?: string;
+    newRole?: string;
+    previousRole?: string;
   };
 };
 

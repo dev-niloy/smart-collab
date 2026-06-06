@@ -170,4 +170,53 @@ describe('InboxPage', () => {
     fireEvent.click(screen.getByRole('tab', { name: /assigned to me/i }));
     expect(screen.getByText(/no tasks assigned to you/i)).toBeInTheDocument();
   });
+
+  it('renders project.member_added line with actor + project + role', () => {
+    useNotificationsMock.mockReturnValue({
+      data: {
+        pages: [{
+          items: [
+            notif({
+              id: 'n-add',
+              type: 'project.member_added',
+              entityType: 'member',
+              entityId: 'm1',
+              payload: { projectName: 'Apollo', projectId: 'p1', newRole: 'pm' },
+            }),
+          ],
+          nextCursor: null,
+        }],
+      },
+    });
+    render(<InboxPage />);
+    expect(screen.getByText(/PM Dev added you to Apollo as pm/i)).toBeInTheDocument();
+  });
+
+  it('renders project.member_role_changed line with previousRole + newRole', () => {
+    useNotificationsMock.mockReturnValue({
+      data: {
+        pages: [{
+          items: [
+            notif({
+              id: 'n-role',
+              type: 'project.member_role_changed',
+              entityType: 'member',
+              entityId: 'm1',
+              payload: {
+                projectName: 'Apollo',
+                projectId: 'p1',
+                newRole: 'pm',
+                previousRole: 'member',
+              },
+            }),
+          ],
+          nextCursor: null,
+        }],
+      },
+    });
+    render(<InboxPage />);
+    expect(
+      screen.getByText(/PM Dev changed your role on Apollo from member to pm/i),
+    ).toBeInTheDocument();
+  });
 });

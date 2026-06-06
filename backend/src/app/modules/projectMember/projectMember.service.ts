@@ -12,6 +12,99 @@ import {
   CANNOT_REMOVE_LAST_PM_MESSAGE,
 } from './projectMember.constant';
 import { recordActivity } from '../activityLog/activityLog.service';
+import { enqueue as enqueueNotification } from '../notification/notification.service';
+import { fanoutEmailJobs } from '../email/email.enqueue';
+import type { EmailJobData, EmailJobName, ProjectMemberEntry } from '../email/email.queue';
+
+// Post-commit context fetch for project.member_* emails. Pulled in a single
+// query so the request path stays fast and the worker never has to round-trip
+// back to Prisma for the team list / description / deadline.
+const buildProjectMemberEmailContext = async (
+  projectId: string,
+  actorId: string | null,
+): Promise<{
+  projectName: string | undefined;
+  projectDescription: string | null | undefined;
+  projectDeadline: string | undefined;
+  projectMembers: ProjectMemberEntry[];
+  projectMemberCount: number;
+  actorName: string | null;
+}> => {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: {
+      name: true,
+      description: true,
+      deadline: true,
+      members: {
+        select: {
+          role: true,
+          user: { select: { id: true, name: true } },
+        },
+        orderBy: { user: { name: 'asc' } },
+      },
+    },
+  });
+  if (!project) {
+    return {
+      projectName: undefined,
+      projectDescription: undefined,
+      projectDeadline: undefined,
+      projectMembers: [],
+      projectMemberCount: 0,
+      actorName: null,
+    };
+  }
+  const members: ProjectMemberEntry[] = project.members.map((m) => ({
+    name: m.user.name,
+    role: m.role,
+  }));
+  const actor = actorId
+    ? project.members.find((m) => m.user.id === actorId)?.user.name ??
+      (await prisma.user
+        .findUnique({ where: { id: actorId }, select: { name: true } })
+        .then((u) => u?.name ?? null))
+    : null;
+  return {
+    projectName: project.name,
+    projectDescription: project.description,
+    projectDeadline: project.deadline.toISOString(),
+    projectMembers: members,
+    projectMemberCount: members.length,
+    actorName: actor ?? null,
+  };
+};
+
+// Shared producer used by addMember + updateRole (T006). Wraps the context
+// fetch + fanoutEmailJobs call so each caller stays a one-liner.
+const fanoutProjectMemberEmails = async (params: {
+  projectId: string;
+  recipientId: string;
+  actorId: string;
+  type: Extract<EmailJobName, 'project.member_added' | 'project.member_role_changed'>;
+  extraPayload?: Partial<EmailJobData['payload']>;
+}): Promise<void> => {
+  // Self-action short circuit — fan-out already drops the actor, but skipping
+  // the DB roundtrip here keeps the request path cheap when a PM adds
+  // themselves to a project they created.
+  if (params.recipientId === params.actorId) return;
+  const ctx = await buildProjectMemberEmailContext(params.projectId, params.actorId);
+  await fanoutEmailJobs({
+    recipientIds: [params.recipientId],
+    actorId: params.actorId,
+    actorName: ctx.actorName,
+    type: params.type,
+    payload: {
+      projectId: params.projectId,
+      projectName: ctx.projectName,
+      projectDescription: ctx.projectDescription ?? undefined,
+      projectDeadline: ctx.projectDeadline,
+      projectMembers: ctx.projectMembers,
+      projectMemberCount: ctx.projectMemberCount,
+      ...(params.extraPayload ?? {}),
+    },
+  });
+};
 
 const userSelect = { id: true, email: true, name: true, role: true } as const;
 
@@ -47,7 +140,7 @@ const addMember = async (
   const user = await findUserByEmail(email);
   if (!user) throw ApiError.notFound(USER_NOT_FOUND_MESSAGE, ERR_USER_NOT_FOUND);
   try {
-    return await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx) => {
       const member = await tx.projectMember.create({
         data: { projectId, userId: user.id, role, addedById: actorId },
         include: memberInclude,
@@ -60,8 +153,35 @@ const addMember = async (
         projectId,
         meta: { userId: user.id, role: member.role, name: user.name },
       });
+      // In-app notification inside the tx so a rolled-back create never
+      // leaves an orphan notification row. Self-add is skipped by the
+      // notification.service.enqueue contract (actorId === recipientId
+      // returns null).
+      await enqueueNotification(tx, {
+        recipientId: user.id,
+        actorId,
+        type: 'project.member_added',
+        entityType: 'member',
+        entityId: member.id,
+        projectId,
+        payload: {
+          projectName: undefined,
+          memberId: member.id,
+          newRole: member.role,
+        },
+      });
       return member;
     });
+
+    // POST-COMMIT email fan-out. Self-add + opt-out are guarded downstream.
+    await fanoutProjectMemberEmails({
+      projectId,
+      recipientId: user.id,
+      actorId,
+      type: 'project.member_added',
+      extraPayload: { memberId: created.id, newRole: created.role },
+    });
+    return created;
   } catch (err) {
     if (isUniqueViolation(err)) {
       throw ApiError.unprocessable(ALREADY_MEMBER_MESSAGE, ERR_ALREADY_MEMBER);
@@ -210,13 +330,61 @@ const updateRole = async (
   projectId: string,
   memberId: string,
   role: ProjectRole,
+  actorId: string | null = null,
 ): Promise<MemberWithUser> => {
   try {
-    return await prisma.projectMember.update({
-      where: { id: memberId, projectId },
-      data: { role },
-      include: memberInclude,
+    const result = await prisma.$transaction(async (tx) => {
+      const current = await tx.projectMember.findUnique({
+        where: { id: memberId },
+        select: { id: true, projectId: true, userId: true, role: true },
+      });
+      if (!current || current.projectId !== projectId) {
+        throw ApiError.notFound(MEMBER_NOT_FOUND_MESSAGE, ERR_MEMBER_NOT_FOUND);
+      }
+      // Idempotent PATCH guard — no role transition means no notif/email.
+      if (current.role === role) {
+        const unchanged = await tx.projectMember.findUnique({
+          where: { id: memberId },
+          include: memberInclude,
+        });
+        return { member: unchanged as MemberWithUser, changed: false, previousRole: current.role, recipientId: current.userId };
+      }
+      const updated = await tx.projectMember.update({
+        where: { id: memberId, projectId },
+        data: { role },
+        include: memberInclude,
+      });
+      await enqueueNotification(tx, {
+        recipientId: current.userId,
+        actorId,
+        type: 'project.member_role_changed',
+        entityType: 'member',
+        entityId: updated.id,
+        projectId,
+        payload: {
+          projectName: undefined,
+          memberId: updated.id,
+          newRole: updated.role,
+          previousRole: current.role,
+        },
+      });
+      return { member: updated, changed: true, previousRole: current.role, recipientId: current.userId };
     });
+
+    if (result.changed && actorId) {
+      await fanoutProjectMemberEmails({
+        projectId,
+        recipientId: result.recipientId,
+        actorId,
+        type: 'project.member_role_changed',
+        extraPayload: {
+          memberId: result.member.id,
+          newRole: result.member.role,
+          previousRole: result.previousRole,
+        },
+      });
+    }
+    return result.member;
   } catch (err) {
     if (isRecordNotFound(err)) {
       throw ApiError.notFound(MEMBER_NOT_FOUND_MESSAGE, ERR_MEMBER_NOT_FOUND);

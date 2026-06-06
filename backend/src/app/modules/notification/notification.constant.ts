@@ -4,6 +4,8 @@ export const NOTIFICATION_TYPES = [
   'task.status_changed',
   'comment.created',
   'comment.mention',
+  'project.member_added',
+  'project.member_role_changed',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -14,11 +16,16 @@ export const isKnownNotificationType = (t: string): t is NotificationType =>
 export const PAYLOAD_WHITELIST = [
   'taskTitle',
   'projectName',
+  'projectDescription',
+  'projectDeadline',
   'commentExcerpt',
   'actorName',
   'taskId',
   'projectId',
   'commentId',
+  'memberId',
+  'newRole',
+  'previousRole',
 ] as const;
 export type PayloadKey = (typeof PAYLOAD_WHITELIST)[number];
 
