@@ -2,71 +2,166 @@
 
 import {
   useCallback,
+  useEffect,
   useId,
   useMemo,
   useRef,
   useState,
   type KeyboardEvent,
-  type TextareaHTMLAttributes,
 } from 'react';
 import { cn } from '@/lib/utils';
 import { useAssignableMembers } from '@/hooks/useProjectMembers';
-import { formatMentionToken } from '@/lib/mentions';
+import { splitMentionSegments } from '@/lib/mentions';
 import type { AssignableMember } from '@/lib/schemas/project-member';
 
-type Props = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange' | 'value'> & {
+type Props = {
   value: string;
   onChange: (next: string) => void;
   projectId: string;
+  placeholder?: string;
+  maxLength?: number;
+  'aria-label'?: string;
   /** Max members shown in the popover list (default 8). */
   maxResults?: number;
 };
 
 type PopoverState =
   | { open: false }
-  | { open: true; query: string; atIdx: number; highlighted: number };
+  | { open: true; query: string; highlighted: number };
 
 const initialState: PopoverState = { open: false };
 
-const TEXTAREA_CLASSES =
-  'flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40';
+const EDITOR_CLASSES =
+  'flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none whitespace-pre-wrap break-words placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground';
+
+const CHIP_CLASS =
+  'inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary ring-1 ring-primary/20 mx-0.5';
+
+const buildChipNode = (name: string, userId: string): HTMLSpanElement => {
+  const chip = document.createElement('span');
+  chip.contentEditable = 'false';
+  chip.dataset.mentionName = name;
+  chip.dataset.mentionUserId = userId;
+  chip.className = CHIP_CLASS;
+  chip.setAttribute('data-testid', 'comment-mention-chip');
+  chip.textContent = `@${name}`;
+  return chip;
+};
+
+const renderValueToDOM = (root: HTMLElement, value: string): void => {
+  root.textContent = '';
+  const segments = splitMentionSegments(value);
+  for (const seg of segments) {
+    if (seg.kind === 'text') {
+      const lines = seg.value.split('\n');
+      lines.forEach((line, i) => {
+        if (line.length > 0) root.appendChild(document.createTextNode(line));
+        if (i < lines.length - 1) root.appendChild(document.createElement('br'));
+      });
+    } else {
+      root.appendChild(buildChipNode(seg.value.name, seg.value.userId));
+    }
+  }
+};
+
+const serializeDOM = (root: HTMLElement): string => {
+  let out = '';
+  const walk = (node: Node): void => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      out += node.textContent ?? '';
+      return;
+    }
+    if (node instanceof HTMLElement) {
+      if (node.dataset.mentionUserId) {
+        const name = node.dataset.mentionName ?? '';
+        out += `@[${name}](${node.dataset.mentionUserId})`;
+        return;
+      }
+      if (node.tagName === 'BR') {
+        out += '\n';
+        return;
+      }
+      for (const child of Array.from(node.childNodes)) walk(child);
+    }
+  };
+  for (const child of Array.from(root.childNodes)) walk(child);
+  return out;
+};
 
 /**
  * Walks backwards from `caret` looking for an `@` that opens a mention
  * query. The `@` must sit at start-of-string or after whitespace; the
  * span between `@` and the caret must contain no whitespace. Returns the
- * index of the `@` plus the query slice, or null if we are NOT in a
- * mention context.
+ * query slice, or null if we are NOT in a mention context.
  */
-function detectMentionContext(
-  text: string,
-  caret: number,
-): { atIdx: number; query: string } | null {
-  for (let i = caret - 1; i >= 0; i--) {
-    const ch = text[i];
+const detectMentionContextFromText = (textBeforeCaret: string): { query: string } | null => {
+  for (let i = textBeforeCaret.length - 1; i >= 0; i--) {
+    const ch = textBeforeCaret[i];
     if (ch === '@') {
-      const prev = i > 0 ? text[i - 1] : '';
+      const prev = i > 0 ? textBeforeCaret[i - 1] : '';
       if (prev === '' || /\s/.test(prev)) {
-        const query = text.slice(i + 1, caret);
-        if (!/\s/.test(query)) return { atIdx: i, query };
+        const query = textBeforeCaret.slice(i + 1);
+        if (!/\s/.test(query)) return { query };
       }
       return null;
     }
     if (/\s/.test(ch)) return null;
   }
   return null;
-}
+};
+
+const textBeforeSelection = (root: HTMLElement): string | null => {
+  if (typeof window === 'undefined') return null;
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  const range = sel.getRangeAt(0);
+  if (!root.contains(range.endContainer)) return null;
+  const pre = document.createRange();
+  pre.selectNodeContents(root);
+  try {
+    pre.setEnd(range.endContainer, range.endOffset);
+  } catch {
+    return null;
+  }
+  return pre.toString();
+};
+
+/**
+ * Extend the current selection backward by `n` characters so it covers
+ * the `@query` text we are about to replace with a chip.
+ *
+ * Prefers the standard `Selection.modify` (Chromium/Firefox/Safari);
+ * falls back to a manual `setStart` on the current text node, which is
+ * what jsdom-driven tests exercise.
+ */
+const extendSelectionBackward = (n: number): void => {
+  const sel = window.getSelection();
+  if (!sel) return;
+  const modify = (sel as Selection & { modify?: (alter: string, dir: string, unit: string) => void })
+    .modify;
+  if (typeof modify === 'function') {
+    for (let i = 0; i < n; i++) modify.call(sel, 'extend', 'backward', 'character');
+    return;
+  }
+  if (sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+  if (range.endContainer.nodeType === Node.TEXT_NODE) {
+    const newStart = Math.max(0, range.endOffset - n);
+    range.setStart(range.endContainer, newStart);
+  }
+};
 
 export function MentionTextarea({
   value,
   onChange,
   projectId,
+  placeholder,
+  maxLength,
   maxResults = 8,
-  className,
-  onKeyDown,
-  ...textareaProps
+  'aria-label': ariaLabel,
 }: Props) {
-  const ref = useRef<HTMLTextAreaElement | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
+  const lastEmitted = useRef(value);
   const [state, setState] = useState<PopoverState>(initialState);
   const listboxId = useId();
   const assignable = useAssignableMembers(projectId);
@@ -81,63 +176,106 @@ export function MentionTextarea({
     return rows.slice(0, maxResults);
   }, [assignable.data, state, maxResults]);
 
-  // Clamp the highlighted index at render time — the filtered list can
-  // shrink between keystrokes and we never want `filtered[hi]` to be
-  // undefined when Enter fires.
   const highlighted =
     state.open && filtered.length > 0
       ? Math.min(state.highlighted, filtered.length - 1)
       : 0;
 
+  // Sync DOM from `value` whenever it changes EXTERNALLY (parent reset
+  // to '' after submit). If the value matches what we last emitted from
+  // our own onInput, do nothing — that would clobber the caret.
+  useEffect(() => {
+    if (!ref.current) return;
+    if (lastEmitted.current === value) return;
+    renderValueToDOM(ref.current, value);
+    lastEmitted.current = value;
+  }, [value]);
+
+  // Initial mount render.
+  useEffect(() => {
+    if (ref.current && ref.current.childNodes.length === 0 && value.length > 0) {
+      renderValueToDOM(ref.current, value);
+      lastEmitted.current = value;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const closePopover = useCallback(() => setState(initialState), []);
+
+  const emit = useCallback(() => {
+    if (!ref.current) return;
+    const wire = serializeDOM(ref.current);
+    lastEmitted.current = wire;
+    onChange(wire);
+  }, [onChange]);
+
+  const updatePopoverFromCaret = useCallback(() => {
+    if (!ref.current) return;
+    const before = textBeforeSelection(ref.current);
+    if (before === null) {
+      closePopover();
+      return;
+    }
+    const ctx = detectMentionContextFromText(before);
+    if (ctx) {
+      setState((prev) =>
+        prev.open ? { ...prev, query: ctx.query } : { open: true, query: ctx.query, highlighted: 0 },
+      );
+    } else {
+      closePopover();
+    }
+  }, [closePopover]);
 
   const insertMention = useCallback(
     (member: AssignableMember) => {
-      const ta = ref.current;
-      if (!ta) return;
+      if (!ref.current) return;
       if (!state.open) return;
-      const caret = ta.selectionStart;
-      const before = value.slice(0, state.atIdx);
-      const after = value.slice(caret);
-      const token = `${formatMentionToken(member.name, member.id)} `;
-      const next = `${before}${token}${after}`;
-      onChange(next);
+      const before = textBeforeSelection(ref.current);
+      if (before === null) return;
+      const ctx = detectMentionContextFromText(before);
+      if (!ctx) return;
+      // Extend selection back over `@query` so deleteFromDocument removes it.
+      extendSelectionBackward(ctx.query.length + 1);
+      const sel = window.getSelection();
+      if (!sel) return;
+      sel.deleteFromDocument();
+      const range = sel.getRangeAt(0);
+      const chip = buildChipNode(member.name, member.id);
+      const space = document.createTextNode(' ');
+      // Insert chip first so range.insertNode places it AT caret; then
+      // the space immediately after.
+      range.insertNode(chip);
+      range.setStartAfter(chip);
+      range.collapse(true);
+      range.insertNode(space);
+      range.setStartAfter(space);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
       closePopover();
-      requestAnimationFrame(() => {
-        const pos = before.length + token.length;
-        ta.focus();
-        ta.setSelectionRange(pos, pos);
-      });
+      emit();
     },
-    [state, value, onChange, closePopover],
+    [state.open, closePopover, emit],
   );
 
-  const updateMentionStateFromCaret = useCallback(
-    (text: string, caret: number) => {
-      const ctx = detectMentionContext(text, caret);
-      if (ctx) {
-        setState((prev) =>
-          prev.open && prev.atIdx === ctx.atIdx
-            ? { ...prev, query: ctx.query }
-            : { open: true, query: ctx.query, atIdx: ctx.atIdx, highlighted: 0 },
-        );
-      } else if (state.open) {
-        closePopover();
-      }
-    },
-    [state.open, closePopover],
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange(e.target.value);
-    updateMentionStateFromCaret(e.target.value, e.target.selectionStart);
+  const handleInput = () => {
+    emit();
+    updatePopoverFromCaret();
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyUp = () => {
+    // Caret may have moved without changing content (arrow keys).
+    updatePopoverFromCaret();
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (state.open && filtered.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setState({ ...state, highlighted: (highlighted + 1) % filtered.length });
+        setState({
+          ...state,
+          highlighted: (highlighted + 1) % filtered.length,
+        });
         return;
       }
       if (e.key === 'ArrowUp') {
@@ -159,28 +297,30 @@ export function MentionTextarea({
         return;
       }
     }
-    onKeyDown?.(e);
+  };
+
+  const handleBlur = () => {
+    // Defer so a popover click can run first.
+    setTimeout(() => closePopover(), 100);
   };
 
   return (
     <div className="relative">
-      <textarea
+      <div
         ref={ref}
-        value={value}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onBlur={(e) => {
-          // Defer so a popover click can run first.
-          setTimeout(() => closePopover(), 100);
-          textareaProps.onBlur?.(e);
-        }}
-        data-slot="textarea"
         role="combobox"
         aria-autocomplete="list"
         aria-controls={state.open && filtered.length > 0 ? listboxId : undefined}
         aria-expanded={state.open && filtered.length > 0}
-        className={cn(TEXTAREA_CLASSES, className)}
-        {...textareaProps}
+        aria-label={ariaLabel}
+        data-placeholder={placeholder}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}
+        onBlur={handleBlur}
+        className={cn(EDITOR_CLASSES)}
       />
       {state.open && filtered.length > 0 ? (
         <ul
@@ -213,6 +353,11 @@ export function MentionTextarea({
             );
           })}
         </ul>
+      ) : null}
+      {maxLength !== undefined ? (
+        // Soft cap surfaced via the parent's character counter. Hard cap is
+        // enforced server-side; this hint guides users locally.
+        <span className="sr-only">Max {maxLength} characters.</span>
       ) : null}
     </div>
   );

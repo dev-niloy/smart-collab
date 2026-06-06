@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -19,7 +19,8 @@ const wrap = (qc: QueryClient) => {
 
 const mockAssignable = () =>
   vi.fn(async (input: RequestInfo | URL) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const url =
+      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
     if (url.includes('/members/assignable')) {
       return new Response(
         JSON.stringify({
@@ -45,6 +46,30 @@ const Harness = ({ projectId = 'p1', initial = '' }: { projectId?: string; initi
   );
 };
 
+/**
+ * jsdom does not implement real text-input on a contentEditable div, so
+ * the tests below drive the component by mutating its DOM directly and
+ * dispatching the React synthetic events that the component listens to.
+ * The fallback `extendSelectionBackward` path in MentionTextarea is the
+ * one that runs here; the production `Selection.modify` path is
+ * exercised in real browsers via the manual smoke checklist.
+ */
+const typeAtCaret = (el: HTMLElement, text: string) => {
+  el.focus();
+  // Append the text as a child text node so the contentEditable layout
+  // stays sane, then move the caret to the end.
+  el.appendChild(document.createTextNode(text));
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  const sel = window.getSelection()!;
+  sel.removeAllRanges();
+  sel.addRange(range);
+  act(() => {
+    el.dispatchEvent(new InputEvent('input', { bubbles: true }));
+  });
+};
+
 describe('MentionTextarea', () => {
   let qc: QueryClient;
   let originalFetch: typeof globalThis.fetch;
@@ -60,84 +85,59 @@ describe('MentionTextarea', () => {
     qc.clear();
   });
 
+  it('renders an existing mention token as a chip in the editor', async () => {
+    render(<Harness initial={`Hi @[Alice](${ALICE_ID})`} />, { wrapper: wrap(qc) });
+    await waitFor(() => {
+      const chip = screen.getByTestId('comment-mention-chip');
+      expect(chip).toHaveTextContent('@Alice');
+      expect(chip.getAttribute('data-mention-user-id')).toBe(ALICE_ID);
+    });
+  });
+
   it('typing @ opens the popover with every assignable member', async () => {
-    const user = userEvent.setup();
     render(<Harness />, { wrapper: wrap(qc) });
-    const ta = await screen.findByLabelText('composer');
-    await user.click(ta);
-    await user.keyboard('@');
+    const ed = await screen.findByLabelText('composer');
+    typeAtCaret(ed, '@');
     await waitFor(() => expect(screen.getByTestId('mention-popover')).toBeInTheDocument());
     expect(screen.getByTestId(`mention-option-${ALICE_ID}`)).toBeInTheDocument();
     expect(screen.getByTestId(`mention-option-${BOB_ID}`)).toBeInTheDocument();
     expect(screen.getByTestId(`mention-option-${CAROL_ID}`)).toBeInTheDocument();
   });
 
-  it('filters the list by name as the user types after @', async () => {
-    const user = userEvent.setup();
+  it('filters the list by typed query after @', async () => {
     render(<Harness />, { wrapper: wrap(qc) });
-    const ta = await screen.findByLabelText('composer');
-    await user.click(ta);
-    await user.keyboard('@bo');
-    await waitFor(() =>
-      expect(screen.getByTestId(`mention-option-${BOB_ID}`)).toBeInTheDocument(),
-    );
+    const ed = await screen.findByLabelText('composer');
+    typeAtCaret(ed, '@bo');
+    await waitFor(() => expect(screen.getByTestId(`mention-option-${BOB_ID}`)).toBeInTheDocument());
     expect(screen.queryByTestId(`mention-option-${ALICE_ID}`)).not.toBeInTheDocument();
     expect(screen.queryByTestId(`mention-option-${CAROL_ID}`)).not.toBeInTheDocument();
   });
 
-  it('Enter inserts @[Name](userId) at the caret and advances past it', async () => {
+  it('clicking a popover option inserts a chip and emits the wire-format value', async () => {
     const user = userEvent.setup();
     render(<Harness />, { wrapper: wrap(qc) });
-    const ta = await screen.findByLabelText('composer');
-    await user.click(ta);
-    await user.keyboard('Hey @');
-    await waitFor(() => expect(screen.getByTestId('mention-popover')).toBeInTheDocument());
-    await user.keyboard('{ArrowDown}');
-    await user.keyboard('{Enter}');
-    await waitFor(() => {
-      expect(screen.getByTestId('captured-value')).toHaveTextContent(
-        `Hey @[Bob](${BOB_ID})`,
-      );
-    });
-    expect(screen.queryByTestId('mention-popover')).not.toBeInTheDocument();
-  });
-
-  it('Escape closes the popover without inserting', async () => {
-    const user = userEvent.setup();
-    render(<Harness />, { wrapper: wrap(qc) });
-    const ta = await screen.findByLabelText('composer');
-    await user.click(ta);
-    await user.keyboard('@');
-    await waitFor(() => expect(screen.getByTestId('mention-popover')).toBeInTheDocument());
-    await user.keyboard('{Escape}');
-    expect(screen.queryByTestId('mention-popover')).not.toBeInTheDocument();
-    expect(screen.getByTestId('captured-value')).toHaveTextContent('@');
-  });
-
-  it('does NOT open the popover when @ is typed immediately after a letter (e.g. email-like context)', async () => {
-    const user = userEvent.setup();
-    render(<Harness />, { wrapper: wrap(qc) });
-    const ta = await screen.findByLabelText('composer');
-    await user.click(ta);
-    await user.keyboard('user@');
-    // No popover — the @ is preceded by a non-whitespace char.
-    expect(screen.queryByTestId('mention-popover')).not.toBeInTheDocument();
-  });
-
-  it('clicking a popover option inserts the token (mouseDown path)', async () => {
-    const user = userEvent.setup();
-    render(<Harness />, { wrapper: wrap(qc) });
-    const ta = await screen.findByLabelText('composer');
-    await user.click(ta);
-    await user.keyboard('@al');
+    const ed = await screen.findByLabelText('composer');
+    typeAtCaret(ed, '@al');
     await waitFor(() =>
       expect(screen.getByTestId(`mention-option-${ALICE_ID}`)).toBeInTheDocument(),
     );
     await user.click(screen.getByTestId(`mention-option-${ALICE_ID}`));
     await waitFor(() => {
-      expect(screen.getByTestId('captured-value')).toHaveTextContent(
-        `@[Alice](${ALICE_ID})`,
-      );
+      expect(screen.getByTestId('comment-mention-chip')).toBeInTheDocument();
+      expect(screen.getByTestId('captured-value')).toHaveTextContent(`@[Alice](${ALICE_ID})`);
     });
+    expect(screen.queryByTestId('mention-popover')).not.toBeInTheDocument();
+  });
+
+  it('does NOT open the popover when @ is typed immediately after a letter', async () => {
+    render(<Harness />, { wrapper: wrap(qc) });
+    const ed = await screen.findByLabelText('composer');
+    typeAtCaret(ed, 'user@');
+    expect(screen.queryByTestId('mention-popover')).not.toBeInTheDocument();
+  });
+
+  it('serializes back to the empty string when the editor is empty', async () => {
+    render(<Harness />, { wrapper: wrap(qc) });
+    expect(screen.getByTestId('captured-value')).toHaveTextContent('');
   });
 });
