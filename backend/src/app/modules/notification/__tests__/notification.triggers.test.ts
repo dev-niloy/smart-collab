@@ -247,4 +247,97 @@ maybe('notification triggers (task.assigned + comment.created)', () => {
       expect(notifs.map((n) => n.recipientId)).toEqual([aId]);
     });
   });
+
+  describe('comment.mention fan-out (backlog #B8)', () => {
+    it('mentioning a project member suppresses comment.created for that user', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: `${tag} mention-${Math.random()}`,
+          dueDate: future(),
+          status: TaskStatus.todo,
+          priority: TaskPriority.medium,
+          assigneeIds: [aId, bId],
+        },
+        creatorId,
+      );
+      await prisma.notification.deleteMany({});
+      // creatorId comments and mentions aId. bId still gets comment.created.
+      await commentService.create(t.id, creatorId, `Heads up @[A](${aId}) please review.`);
+      const mentioned = await prisma.notification.findMany({
+        where: { entityId: { not: undefined }, type: 'comment.mention' },
+      });
+      const created = await prisma.notification.findMany({
+        where: { entityId: { not: undefined }, type: 'comment.created' },
+      });
+      expect(mentioned.map((n) => n.recipientId)).toEqual([aId]);
+      expect(created.map((n) => n.recipientId).sort()).toEqual([bId].sort());
+    });
+
+    it('mention of a non-project-member is silently dropped, no notification rows', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: `${tag} mention-nm-${Math.random()}`,
+          dueDate: future(),
+          status: TaskStatus.todo,
+          priority: TaskPriority.medium,
+          assigneeIds: [aId],
+        },
+        creatorId,
+      );
+      await prisma.notification.deleteMany({});
+      // Use a syntactically-valid UUID that is NOT any seeded user — silent drop.
+      const ghostId = '00000000-0000-4000-8000-000000000000';
+      await commentService.create(t.id, creatorId, `Ping @[Ghost](${ghostId}) for context.`);
+      const mentioned = await prisma.notification.findMany({ where: { type: 'comment.mention' } });
+      expect(mentioned.length).toBe(0);
+      // comment.created still fires for the assignee aId (creatorId is actor → self-skip).
+      const created = await prisma.notification.findMany({ where: { type: 'comment.created' } });
+      expect(created.map((n) => n.recipientId)).toEqual([aId]);
+    });
+
+    it('self-mention enqueues no comment.mention (actor self-skip)', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: `${tag} mention-self-${Math.random()}`,
+          dueDate: future(),
+          status: TaskStatus.todo,
+          priority: TaskPriority.medium,
+          assigneeIds: [aId],
+        },
+        creatorId,
+      );
+      await prisma.notification.deleteMany({});
+      await commentService.create(t.id, creatorId, `Note to self @[Me](${creatorId}).`);
+      const mentioned = await prisma.notification.findMany({ where: { type: 'comment.mention' } });
+      expect(mentioned.length).toBe(0);
+    });
+
+    it('rejects bodies with more than MAX_MENTIONS_PER_COMMENT mentions (422)', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: `${tag} mention-cap-${Math.random()}`,
+          dueDate: future(),
+          status: TaskStatus.todo,
+          priority: TaskPriority.medium,
+          assigneeIds: [aId],
+        },
+        creatorId,
+      );
+      await prisma.notification.deleteMany({});
+      const ids = Array.from({ length: 21 }, (_, i) =>
+        `${i.toString(16).padStart(8, '0')}-aaaa-4bbb-9ccc-dddddddddddd`,
+      );
+      const body = ids.map((id, i) => `@[U${i}](${id})`).join(' ');
+      await expect(commentService.create(t.id, creatorId, body)).rejects.toMatchObject({
+        code: 'TOO_MANY_MENTIONS',
+        statusCode: 422,
+      });
+      const anyComment = await prisma.comment.findMany({ where: { taskId: t.id } });
+      expect(anyComment.length).toBe(0);
+    });
+  });
 });
