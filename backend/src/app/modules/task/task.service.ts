@@ -498,14 +498,26 @@ const sortToOrderBy = (sort: SortKey): Prisma.TaskOrderByWithRelationInput[] => 
   }
 };
 
+/**
+ * `assignedTo` filter. Reads from BOTH legacy `Task.assignedTo` and the new `TaskAssignee` join
+ * during the dual-write transition window (Phase A m1 → Phase F m2). After m2 drops the legacy
+ * column, the legacy branch becomes dead code and will be removed in t21.
+ */
 const buildAssignedToWhere = (
   v: ListArgs['assignedTo'],
   actorId: string | undefined,
 ): Prisma.TaskWhereInput | Record<string, never> => {
   if (!v) return {};
-  if (v === UNASSIGNED) return { assignedTo: null };
-  if (v === 'me') return actorId ? { assignedTo: actorId } : {};
-  return { assignedTo: v };
+  if (v === UNASSIGNED) {
+    return { AND: [{ assignees: { none: {} } }, { assignedTo: null }] };
+  }
+  if (v === 'me') {
+    if (!actorId) return {};
+    return {
+      OR: [{ assignees: { some: { userId: actorId } } }, { assignedTo: actorId }],
+    };
+  }
+  return { OR: [{ assignees: { some: { userId: v } } }, { assignedTo: v }] };
 };
 
 const buildCreatedByWhere = (

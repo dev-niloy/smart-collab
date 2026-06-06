@@ -48,7 +48,7 @@ Steps:
 - 2. GREEN: include `taskAssignees: { include: { user: true }, orderBy: { addedAt: 'asc' } }` in default select. Map to `assignees: TaskUser[]`.
 - 3. REFACTOR: factor `mapTaskAssignees(rows): TaskUser[]`.
 - 4. Commit `feat(tasks): assignees included in task select w/ helper`
-Status: [ ]
+Status: [x] 2026-06-06 (combined w/ t4)
 
 ### Task 4: `canWriteTask` predicate rewritten over `assignees`
 Files:
@@ -60,7 +60,7 @@ Steps:
 - 2. GREEN: replace `task.assignedTo === actor.id` w/ `task.assignees.some(a => a.userId === actor.id)`. Keep PM/admin branch.
 - 3. REFACTOR: ensure `task.assignees` loaded everywhere canWriteTask called.
 - 4. Commit `refactor(tasks): canWriteTask over multi-assignee`
-Status: [ ]
+Status: [x] 2026-06-06 (combined w/ t3 — single commit `feat(tasks): canWriteTask over multi-assignee + assignees include`)
 
 ### Task 5: filter rewrite — `assignedTo` query param
 Files:
