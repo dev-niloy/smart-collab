@@ -119,5 +119,123 @@ export const renderEmail = (data: EmailJobData): RenderedEmail => {
       );
       return { subject, text, html };
     }
+    case 'project.member_added': {
+      const projectName = data.payload.projectName ?? 'a project';
+      const ctx = renderProjectContext(data);
+      const link = projectLinkOrNull(data.payload.projectId);
+      const subject = `${actor} added you to project "${projectName}"`;
+      const text =
+        `${greeting(data.recipientName)}\n\n` +
+        `${actor} added you to the project "${projectName}".\n\n` +
+        ctx.text +
+        (link ? `\n\nOpen the project: ${link}\n` : '') +
+        signature();
+      const html = wrap(
+        `${actor} added you to "${projectName}"`,
+        `<p>${escapeHtml(actor)} added you to the project ` +
+          `<strong>${escapeHtml(projectName)}</strong>.</p>` +
+          ctx.html +
+          (link
+            ? `<p style="margin-top:16px"><a href="${escapeHtml(link)}" style="display:inline-block;background:#111;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">Open project</a></p>`
+            : ''),
+      );
+      return { subject, text, html };
+    }
+    case 'project.member_role_changed': {
+      const projectName = data.payload.projectName ?? 'a project';
+      const previousRole = data.payload.previousRole ?? 'member';
+      const newRole = data.payload.newRole ?? 'member';
+      const ctx = renderProjectContext(data);
+      const link = projectLinkOrNull(data.payload.projectId);
+      const subject = `Your role on "${projectName}" is now ${newRole}`;
+      const text =
+        `${greeting(data.recipientName)}\n\n` +
+        `${actor} changed your role on the project "${projectName}" from ${previousRole} to ${newRole}.\n\n` +
+        ctx.text +
+        (link ? `\n\nOpen the project: ${link}\n` : '') +
+        signature();
+      const html = wrap(
+        `Your role on "${projectName}" is now ${newRole}`,
+        `<p>${escapeHtml(actor)} changed your role on ` +
+          `<strong>${escapeHtml(projectName)}</strong> from ` +
+          `<strong>${escapeHtml(previousRole)}</strong> to ` +
+          `<strong>${escapeHtml(newRole)}</strong>.</p>` +
+          ctx.html +
+          (link
+            ? `<p style="margin-top:16px"><a href="${escapeHtml(link)}" style="display:inline-block;background:#111;color:#fff;padding:8px 14px;border-radius:6px;text-decoration:none">Open project</a></p>`
+            : ''),
+      );
+      return { subject, text, html };
+    }
   }
+};
+
+// Shared "full body" project context block used by project.member_* templates.
+// Pulls projectDescription, projectDeadline, and the projectMembers team list
+// (falling back to projectMemberCount when the producer skipped the full list)
+// from the payload and renders both a plain-text and HTML variant.
+const renderProjectContext = (
+  data: EmailJobData,
+): { text: string; html: string } => {
+  const lines: string[] = [];
+  const htmlBlocks: string[] = [];
+
+  const description = data.payload.projectDescription;
+  if (description) {
+    lines.push(`About this project: ${description}`);
+    htmlBlocks.push(
+      `<p><strong>About this project:</strong> ${escapeHtml(description)}</p>`,
+    );
+  }
+
+  const deadlineRaw = data.payload.projectDeadline;
+  if (deadlineRaw) {
+    const formatted = formatDeadline(deadlineRaw);
+    lines.push(`Deadline: ${formatted}`);
+    htmlBlocks.push(
+      `<p><strong>Deadline:</strong> ${escapeHtml(formatted)}</p>`,
+    );
+  }
+
+  const members = data.payload.projectMembers;
+  if (members && members.length > 0) {
+    const formattedTeam = members
+      .map((m) => `${m.name} (${m.role})`)
+      .join(', ');
+    lines.push(`Team (${members.length}): ${formattedTeam}`);
+    htmlBlocks.push(
+      `<p><strong>Team (${members.length}):</strong></p>` +
+        `<ul style="margin:4px 0 12px 16px;padding:0">` +
+        members
+          .map(
+            (m) =>
+              `<li style="margin:2px 0">${escapeHtml(m.name)} ` +
+              `<span style="color:#666">(${escapeHtml(m.role)})</span></li>`,
+          )
+          .join('') +
+        `</ul>`,
+    );
+  } else if (typeof data.payload.projectMemberCount === 'number') {
+    lines.push(`Team size: ${data.payload.projectMemberCount}`);
+    htmlBlocks.push(
+      `<p><strong>Team size:</strong> ${data.payload.projectMemberCount}</p>`,
+    );
+  }
+
+  return { text: lines.join('\n'), html: htmlBlocks.join('') };
+};
+
+const formatDeadline = (raw: string): string => {
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toISOString().slice(0, 10);
+};
+
+// Builds an absolute-style link if PUBLIC_APP_URL is set, otherwise a path
+// the assessor can hand-copy. We never embed half-baked URLs from request
+// state — the queue payload only carries the projectId.
+const projectLinkOrNull = (projectId: string | undefined): string | null => {
+  if (!projectId) return null;
+  const base = (process.env.PUBLIC_APP_URL ?? '').replace(/\/$/, '');
+  return base ? `${base}/projects/${projectId}` : `/projects/${projectId}`;
 };

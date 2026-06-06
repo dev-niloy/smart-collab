@@ -13,16 +13,14 @@ import IORedis, { type Redis } from 'ioredis';
 
 export const EMAIL_QUEUE_NAME = 'email';
 
-// NOTE: project.member_added + project.member_role_changed values are added by
-// T004 alongside their template branches so renderEmail's exhaustive switch
-// extends with them in lock-step (typecheck would otherwise fail until both
-// sides land in the same commit).
 export type EmailJobName =
   | 'task.assigned'
   | 'task.unassigned'
   | 'task.status_changed'
   | 'comment.created'
-  | 'comment.mention';
+  | 'comment.mention'
+  | 'project.member_added'
+  | 'project.member_role_changed';
 
 // Pre-rendered context fed to the template renderer. The producer ALWAYS
 // supplies the context the rendered email needs — the processor + worker
