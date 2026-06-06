@@ -139,7 +139,7 @@ maybe('task.service activity emissions', () => {
     );
     expect(t.id).toBeDefined();
     expect(t.creator).toBeDefined();
-    expect(t.assignee).toBeNull();
+    expect(t.assignees).toEqual([]);
   });
 
   it('rolls back activity log when create fails after the row', async () => {

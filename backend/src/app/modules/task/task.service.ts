@@ -34,7 +34,6 @@ const userSelect = { id: true, email: true, name: true, role: true } as const;
 
 const taskInclude = {
   creator: { select: userSelect },
-  assignee: { select: userSelect },
   assignees: {
     include: { user: { select: userSelect } },
     orderBy: { addedAt: 'asc' },
@@ -51,7 +50,6 @@ export type TaskAssigneeRel = {
 
 export type TaskWithRelations = Task & {
   creator: TaskUserRel;
-  assignee: TaskUserRel | null;
   assignees: TaskAssigneeRel[];
 };
 

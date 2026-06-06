@@ -30,7 +30,6 @@ model User {
   activities              ActivityLog[]
   projects                Project[]        @relation("ProjectCreatedBy")
   tasksCreated            Task[]           @relation("TaskCreatedBy")
-  tasksAssigned           Task[]           @relation("TaskAssignedTo")
   projectMemberships      ProjectMember[]  @relation("ProjectMemberUser")
   projectMembershipsAdded ProjectMember[]  @relation("ProjectMemberAddedBy")
   comments                Comment[]        @relation("CommentAuthor")
@@ -91,7 +90,6 @@ model Task {
   status      TaskStatus   @default(todo)
   priority    TaskPriority @default(medium)
   dueDate     DateTime
-  assignedTo  String?      @db.Uuid
   createdBy   String       @db.Uuid
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -99,7 +97,6 @@ model Task {
 
   project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   creator     User         @relation("TaskCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
-  assignee    User?        @relation("TaskAssignedTo", fields: [assignedTo], references: [id], onDelete: SetNull)
   comments    Comment[]
   attachments Attachment[]
   assignees   TaskAssignee[]
@@ -107,7 +104,6 @@ model Task {
   @@unique([projectId, title], name: "tasks_projectId_title_unique")
   @@index([projectId, status])
   @@index([projectId, deletedAt])
-  @@index([assignedTo])
   @@index([dueDate])
   @@map("tasks")
 }
