@@ -24,6 +24,7 @@ export type PublicUser = {
   name: string;
   role: string;
   avatarUrl: string | null;
+  emailNotifications: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -39,6 +40,7 @@ const toPublicUser = (row: {
   name: string;
   role: string;
   avatarPath: string | null;
+  emailNotifications: boolean;
   createdAt: Date;
   updatedAt: Date;
 }): PublicUser => ({
@@ -47,6 +49,7 @@ const toPublicUser = (row: {
   name: row.name,
   role: row.role,
   avatarUrl: row.avatarPath ? AVATAR_URL : null,
+  emailNotifications: row.emailNotifications,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
 });
@@ -87,6 +90,9 @@ const updateMe = async (userId: string, input: UpdateProfileInput): Promise<Publ
       data: {
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.email !== undefined ? { email: input.email } : {}),
+        ...(input.emailNotifications !== undefined
+          ? { emailNotifications: input.emailNotifications }
+          : {}),
       },
     });
     return toPublicUser(updated);
