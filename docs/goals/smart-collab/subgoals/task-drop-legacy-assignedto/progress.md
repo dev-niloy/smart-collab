@@ -31,7 +31,27 @@ PR + Ralph cycle.
 - [x] Phase 1 GStack — goal.md + progress.md written
 - [x] Phase 2 GSD — plan.md w/ 8 task slices written
 - [x] Phase 3 Superpowers — all 8 tasks complete (t8 = close)
-- [ ] Phase 4 Ralph Wiggum — multi-persona review
+- [x] Phase 4 Ralph Wiggum — 2 cycles, 5 commits (Developer×2, Architect, Designer, PM)
 
 ## Blockers
 none
+
+## Ralph Wiggum session log (2026-06-06)
+- Cycle 1: Developer dropped dead `hasAssigneeKeys` controller check (de13d5b);
+  Architect removed unused `mapTaskAssignees` export (65fc490); Designer fixed
+  stale singular "assignee" copy on edit page (e6ec5a1); PM flipped plan
+  checkboxes t1/t3–t8 to [x] (298ad80). QA: 598 BE / 457 FE on clean runs;
+  project module coverage 96.08%. BA: deferred (CONFLICT — Architect touched
+  task.service.ts).
+- Cycle 2: Developer renamed stale `assignedTo` param in
+  `ensureAssigneeIsProjectMember` to `userId` + refreshed `canReassignTask`
+  docstring (e506349). Other personas: skip (no concrete in-scope finding).
+  QA: 598/598 + 457/457 on clean runs.
+- Pre-existing issues observed, out of subgoal scope, logged for follow-up:
+  (a) `activityLog.service.list › listGlobal returns null nextCursor at end`
+  is flaky under suite-wide DB residue (passes on retry; unscoped query);
+  (b) `REASSIGN_COMPLETED_MESSAGE` constants are now dead (rule retired at
+  PATCH layer, never ported to assignee endpoints) — safe to drop in a
+  follow-up subgoal.
+- Net delta: 4 src commits + 1 bookkeeping (plan checkboxes). No test count
+  change. No goal.md constraint violated.

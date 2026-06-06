@@ -7,33 +7,33 @@ mode:
   scope: feature
   session: new
 
-phase: 3                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+phase: DONE                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
 
 tasks:
   - id: t1
     name: baseline verification commit
-    status: pending
+    status: done
   - id: t2
     name: backend test fixtures migrate to TaskAssignee shape
-    status: pending
+    status: done
   - id: t3
     name: PATCH hard-reject assignedTo + assigneeIds (422 USE_ASSIGNEE_ENDPOINTS)
-    status: pending
+    status: done
   - id: t4
     name: service create + update use TaskAssignee as sole source
-    status: pending
+    status: done
   - id: t5
     name: drop legacy dual-read across filter + dashboard + workload + comment
-    status: pending
+    status: done
   - id: t6
     name: frontend Task type drops assignedTo + assignee; assignees required
-    status: pending
+    status: done
   - id: t7
     name: drop Task.assignedTo column + relation (migration)
-    status: pending
+    status: done
   - id: t8
     name: smoke + close
-    status: pending
+    status: done
 
 blockers: []
 
@@ -43,7 +43,7 @@ phase_completion:
   gstack: true
   gsd: true
   superpowers: true
-  ralph_wiggum: false
+  ralph_wiggum: true
 
 baseline:
   backend_tests: 604
