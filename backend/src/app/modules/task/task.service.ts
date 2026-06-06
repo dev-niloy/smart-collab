@@ -86,8 +86,8 @@ export const canDeleteTask = ({ actor, task, projectRole }: CanWriteArgs): boole
 };
 
 /**
- * Returns true when the actor may reassign the task (change assignedTo).
- * PM/admin only — assignee CANNOT reassign out.
+ * Returns true when the actor may reassign the task (add / remove / replace
+ * the TaskAssignee set). PM/admin only — assignees cannot reassign out.
  */
 export const canReassignTask = ({ actor, projectRole }: Omit<CanWriteArgs, 'task'>): boolean => {
   if (isAdmin(actor)) return true;
@@ -123,12 +123,12 @@ type PrismaLike = typeof prisma | Prisma.TransactionClient;
 
 const ensureAssigneeIsProjectMember = async (
   projectId: string,
-  assignedTo: string | null | undefined,
+  userId: string | null | undefined,
   client: PrismaLike = prisma,
 ) => {
-  if (!assignedTo) return; // null/undefined always allowed (unassigned)
+  if (!userId) return; // null/undefined always allowed (unassigned)
   const candidate = await client.user.findUnique({
-    where: { id: assignedTo },
+    where: { id: userId },
     select: { role: true },
   });
   if (!candidate) {
@@ -136,7 +136,7 @@ const ensureAssigneeIsProjectMember = async (
   }
   if (candidate.role === Role.admin) return; // system admin bypass — enum-safe vs string drift
   const member = await client.projectMember.findFirst({
-    where: { projectId, userId: assignedTo },
+    where: { projectId, userId },
     select: { id: true },
   });
   if (!member) {
