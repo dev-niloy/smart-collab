@@ -61,6 +61,12 @@ services:
         value: resend
       - key: EMAIL_FROM
         value: "Smart Collab <onboarding@resend.dev>" # Resend's pre-verified test sender; replace with your verified domain to send to non-signup recipients
+      # Run the BullMQ email worker INSIDE the web process. Render free tier
+      # does not allow standalone background workers, so we co-host them.
+      # Flip to "false" + spin up the worker service from this blueprint
+      # once you move to a paid plan that supports type: worker.
+      - key: EMAIL_WORKER_INLINE
+        value: "true"
       # User-provided in dashboard (sync: false hides them from the blueprint).
       - key: DATABASE_URL
         sync: false
@@ -71,42 +77,45 @@ services:
       - key: RESEND_API_KEY
         sync: false
 
-  # Email worker — drains BullMQ jobs queued by the API service. Shares
-  # DATABASE_URL, REDIS_URL, RESEND_API_KEY, EMAIL_FROM with the web service.
-  # Must run as a separate process so HTTP request lifecycle never blocks on
-  # SMTP latency.
-  - type: worker
-    name: smart-collab-email-worker
-    runtime: node
-    plan: free
-    region: virginia
-    branch: develop
-    rootDir: backend
-    autoDeploy: true
-    buildCommand: npm ci --include=dev && npm run build:prod
-    startCommand: node dist/src/worker.js
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: EMAIL_PROVIDER
-        value: resend
-      - key: EMAIL_FROM
-        fromService:
-          type: web
-          name: smart-collab-api
-          envVarKey: EMAIL_FROM
-      - key: DATABASE_URL
-        fromService:
-          type: web
-          name: smart-collab-api
-          envVarKey: DATABASE_URL
-      - key: REDIS_URL
-        fromService:
-          type: web
-          name: smart-collab-api
-          envVarKey: REDIS_URL
-      - key: RESEND_API_KEY
-        fromService:
-          type: web
-          name: smart-collab-api
-          envVarKey: RESEND_API_KEY
+  # NOTE: Standalone `type: worker` service is commented out because Render
+  # free tier does not allow background workers. The email queue drains
+  # inside the web service via EMAIL_WORKER_INLINE=true (see above).
+  #
+  # When you move to a paid plan, uncomment this block AND flip
+  # EMAIL_WORKER_INLINE back to "false" so the two roles split cleanly.
+  #
+  # - type: worker
+  #   name: smart-collab-email-worker
+  #   runtime: node
+  #   plan: starter
+  #   region: virginia
+  #   branch: develop
+  #   rootDir: backend
+  #   autoDeploy: true
+  #   buildCommand: npm ci --include=dev && npm run build:prod
+  #   startCommand: node dist/src/worker.js
+  #   envVars:
+  #     - key: NODE_ENV
+  #       value: production
+  #     - key: EMAIL_PROVIDER
+  #       value: resend
+  #     - key: EMAIL_FROM
+  #       fromService:
+  #         type: web
+  #         name: smart-collab-api
+  #         envVarKey: EMAIL_FROM
+  #     - key: DATABASE_URL
+  #       fromService:
+  #         type: web
+  #         name: smart-collab-api
+  #         envVarKey: DATABASE_URL
+  #     - key: REDIS_URL
+  #       fromService:
+  #         type: web
+  #         name: smart-collab-api
+  #         envVarKey: REDIS_URL
+  #     - key: RESEND_API_KEY
+  #       fromService:
+  #         type: web
+  #         name: smart-collab-api
+  #         envVarKey: RESEND_API_KEY
