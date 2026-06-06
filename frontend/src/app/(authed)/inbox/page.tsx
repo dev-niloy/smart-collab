@@ -23,10 +23,22 @@ const TABS: { key: Tab; label: string }[] = [
 const formatNotificationLine = (n: NotificationDTO): string => {
   const actor = n.actorName ?? 'Someone';
   const title = (n.payload?.taskTitle as string | undefined) ?? 'a task';
+  const projectName = (n.payload?.projectName as string | undefined) ?? 'a project';
   if (n.type === 'task.assigned') return `${actor} assigned you to ${title}`;
   if (n.type === 'comment.created') return `${actor} commented on ${title}`;
   if (n.type === 'comment.mention' || n.type === 'mention.created') {
     return `${actor} mentioned you on ${title}`;
+  }
+  if (n.type === 'project.member_added') {
+    const role = (n.payload?.newRole as string | undefined) ?? 'member';
+    return `${actor} added you to ${projectName} as ${role}`;
+  }
+  if (n.type === 'project.member_role_changed') {
+    const newRole = (n.payload?.newRole as string | undefined) ?? 'member';
+    const previousRole = n.payload?.previousRole as string | undefined;
+    return previousRole
+      ? `${actor} changed your role on ${projectName} from ${previousRole} to ${newRole}`
+      : `${actor} changed your role on ${projectName} to ${newRole}`;
   }
   return `${actor} · ${n.type}`;
 };
