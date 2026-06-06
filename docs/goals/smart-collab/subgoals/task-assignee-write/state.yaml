@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 3 # Superpowers — t1–t16 done; t17 push will close subgoal
+phase: 3 # Superpowers — t1–t17 done; PR #31 pending merge
 
 tasks:
   - id: t1
@@ -82,7 +82,7 @@ tasks:
 
 blockers: []
 
-next_task: t17
+next_task: null
 
 phase_completion:
   gstack: true # 2026-06-05 — goal.md approved by user (decisions locked in backlog #B5)

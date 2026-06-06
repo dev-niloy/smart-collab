@@ -204,7 +204,7 @@ Files: none
 Steps:
 - 1. (USER PERMISSION) `git push -u origin feature/task-assignee-write`
 - 2. (USER PERMISSION) `gh pr create --base develop --title "feat(tasks): assignee-only write + soft-delete + restore (closes #B5)"`
-Status: [x] 2026-06-05
+Status: [x] 2026-06-05 — PR #31 https://github.com/dev-niloy/smart-collab/pull/31
 
 ---
 
