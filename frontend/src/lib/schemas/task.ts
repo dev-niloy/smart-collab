@@ -34,7 +34,6 @@ export const createTaskSchema = z.object({
   dueDate: dueDateField,
   status: statusField.default('todo'),
   priority: priorityField.default('medium'),
-  assignedTo: uuidField.nullable().optional(),
   assigneeIds: z.array(uuidField).max(50).optional(),
 });
 
@@ -45,7 +44,6 @@ export const updateTaskSchema = z
     dueDate: dueDateField.optional(),
     status: statusField.optional(),
     priority: priorityField.optional(),
-    assignedTo: uuidField.nullable().optional(),
   })
   .refine(
     (v) =>
@@ -53,8 +51,7 @@ export const updateTaskSchema = z
       v.description !== undefined ||
       v.dueDate !== undefined ||
       v.status !== undefined ||
-      v.priority !== undefined ||
-      v.assignedTo !== undefined,
+      v.priority !== undefined,
     { message: 'At least one field must be provided' },
   );
 
@@ -100,13 +97,7 @@ export type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   dueDate: string;
-  // Legacy single-assignee fields kept during transition (backend dual-writes).
-  // Removed in t21 when backend column drops.
-  assignedTo: string | null;
-  assignee: TaskUser | null;
-  // Multi-assignee: ordered by addedAt asc. New canonical field. Optional during
-  // transition window to keep older fixtures + cached responses compatible.
-  assignees?: TaskAssigneeRel[];
+  assignees: TaskAssigneeRel[];
   createdBy: string;
   creator: TaskUser;
   deletedAt: string | null;

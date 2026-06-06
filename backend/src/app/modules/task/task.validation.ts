@@ -20,24 +20,15 @@ const statusField = z.nativeEnum(TaskStatus);
 const priorityField = z.nativeEnum(TaskPriority);
 const uuidField = z.string().uuid('Invalid id');
 
-export const createTaskSchema = z
-  .object({
-    projectId: uuidField,
-    title: titleField,
-    description: descriptionField,
-    dueDate: dueDateField,
-    status: statusField.default(TaskStatus.todo),
-    priority: priorityField.default(TaskPriority.medium),
-    assignedTo: uuidField.nullable().optional(),
-    assigneeIds: z.array(uuidField).max(50).optional(),
-  })
-  .refine(
-    (v) => !(v.assignedTo !== undefined && v.assigneeIds !== undefined),
-    {
-      message: 'Use assigneeIds (preferred) or legacy assignedTo, not both',
-      path: ['assigneeIds'],
-    },
-  );
+export const createTaskSchema = z.object({
+  projectId: uuidField,
+  title: titleField,
+  description: descriptionField,
+  dueDate: dueDateField,
+  status: statusField.default(TaskStatus.todo),
+  priority: priorityField.default(TaskPriority.medium),
+  assigneeIds: z.array(uuidField).max(50).optional(),
+});
 
 export const updateTaskSchema = z
   .object({
@@ -46,7 +37,6 @@ export const updateTaskSchema = z
     dueDate: dueDateField.optional(),
     status: statusField.optional(),
     priority: priorityField.optional(),
-    assignedTo: uuidField.nullable().optional(),
   })
   .refine(
     (v) =>
@@ -54,10 +44,22 @@ export const updateTaskSchema = z
       v.description !== undefined ||
       v.dueDate !== undefined ||
       v.status !== undefined ||
-      v.priority !== undefined ||
-      v.assignedTo !== undefined,
+      v.priority !== undefined,
     { message: 'At least one field must be provided' },
   );
+
+/**
+ * PATCH /tasks/:id rejects assignedTo and assigneeIds — reassignment goes through
+ * POST/PUT/DELETE /tasks/:id/assignees endpoints (added in #B6, hard-rejected here in #B7).
+ */
+export const USE_ASSIGNEE_ENDPOINTS_MESSAGE =
+  'Use POST/PUT/DELETE /tasks/:id/assignees to change assignees.';
+
+export const hasAssigneeKeys = (body: unknown): boolean => {
+  if (!body || typeof body !== 'object') return false;
+  const b = body as Record<string, unknown>;
+  return 'assignedTo' in b || 'assigneeIds' in b;
+};
 
 
 const assignedToFilterField = z

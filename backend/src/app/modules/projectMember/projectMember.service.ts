@@ -156,37 +156,26 @@ const buildWorkloadMap = async (
   const now = new Date();
 
   // Multi-assignee: pull every task the userIds are attached to and attribute +1
-  // per assignee. Dual-reads TaskAssignee + legacy assignedTo during transition;
-  // a Set per user prevents double-count when both are populated for the same task.
+  // per assignee. A task with N assignees contributes +1 to each assignee's
+  // workload.
   const userSet = new Set(userIds);
   const tasks = await prisma.task.findMany({
     where: {
       projectId,
       deletedAt: null,
-      OR: [
-        { assignedTo: { in: userIds } },
-        { assignees: { some: { userId: { in: userIds } } } },
-      ],
+      assignees: { some: { userId: { in: userIds } } },
     },
     select: {
       id: true,
       status: true,
       dueDate: true,
-      assignedTo: true,
       assignees: { select: { userId: true } },
     },
   });
-  const seen = new Map<string, Set<string>>(); // userId → Set<taskId>
-  for (const uid of userIds) seen.set(uid, new Set());
   for (const t of tasks) {
-    const linked = new Set<string>();
-    if (t.assignedTo && userSet.has(t.assignedTo)) linked.add(t.assignedTo);
-    for (const a of t.assignees) if (userSet.has(a.userId)) linked.add(a.userId);
-    for (const uid of linked) {
-      const seenSet = seen.get(uid)!;
-      if (seenSet.has(t.id)) continue;
-      seenSet.add(t.id);
-      const w = map.get(uid)!;
+    for (const a of t.assignees) {
+      if (!userSet.has(a.userId)) continue;
+      const w = map.get(a.userId)!;
       if (t.status === 'todo') w.todo += 1;
       else if (t.status === 'in_progress') w.in_progress += 1;
       else if (t.status === 'completed') w.completed += 1;
@@ -268,15 +257,11 @@ const removeMember = async (
       }
     }
 
-    const unassigned = await tx.task.updateMany({
-      where: { projectId, assignedTo: target.userId },
-      data: { assignedTo: null },
-    });
-
-    // Multi-assignee: also drop TaskAssignee rows for this user scoped to this project.
-    await tx.taskAssignee.deleteMany({
+    // Multi-assignee: drop TaskAssignee rows for this user scoped to this project.
+    const joinDeleted = await tx.taskAssignee.deleteMany({
       where: { userId: target.userId, task: { projectId } },
     });
+    const tasksUnassigned = joinDeleted.count;
 
     await recordActivity(tx, {
       actorId,
@@ -289,7 +274,7 @@ const removeMember = async (
 
     await tx.projectMember.delete({ where: { id: memberId } });
 
-    return { removedMemberId: memberId, tasksUnassigned: unassigned.count };
+    return { removedMemberId: memberId, tasksUnassigned };
   });
 };
 

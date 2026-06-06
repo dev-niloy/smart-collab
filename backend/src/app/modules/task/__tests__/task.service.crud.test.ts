@@ -5,7 +5,6 @@ import { taskService } from '../task.service';
 import {
   PAST_DEADLINE_MESSAGE,
   DUPLICATE_TASK_TITLE_MESSAGE,
-  REASSIGN_COMPLETED_MESSAGE,
 } from '../task.constant';
 
 const TEST_EMAIL = 't5-task-svc@test.local';
@@ -72,7 +71,7 @@ maybe('taskService CRUD', () => {
   });
 
   describe('create', () => {
-    it('inserts row with createdBy + creator + assignee embed + defaults', async () => {
+    it('inserts row with createdBy + creator + assignees + defaults', async () => {
       const t = await taskService.create(
         {
           projectId,
@@ -80,20 +79,20 @@ maybe('taskService CRUD', () => {
           dueDate: future(),
           status: TaskStatus.todo,
           priority: TaskPriority.medium,
-          assignedTo: assigneeId,
+          assigneeIds: [assigneeId],
         },
         actorId,
       );
       expect(t.id).toBeTruthy();
       expect(t.createdBy).toBe(actorId);
-      expect(t.assignedTo).toBe(assigneeId);
+      expect(t.assignees[0]?.userId).toBe(assigneeId);
       expect(t.status).toBe('todo');
       expect(t.priority).toBe('medium');
       expect(t.creator.email).toBe(TEST_EMAIL);
-      expect(t.assignee?.email).toBe(`assignee-${TEST_EMAIL}`);
+      expect(t.assignees[0]?.user.email).toBe(`assignee-${TEST_EMAIL}`);
     });
 
-    it('allows null assignee', async () => {
+    it('allows zero assignees', async () => {
       const t = await taskService.create(
         {
           projectId,
@@ -101,12 +100,11 @@ maybe('taskService CRUD', () => {
           dueDate: future(),
           status: TaskStatus.todo,
           priority: TaskPriority.medium,
-          assignedTo: null,
+          assigneeIds: [],
         },
         actorId,
       );
-      expect(t.assignedTo).toBeNull();
-      expect(t.assignee).toBeNull();
+      expect(t.assignees).toEqual([]);
     });
 
     it('rejects past due date with 422 assessment-verbatim', async () => {
@@ -179,7 +177,7 @@ maybe('taskService CRUD', () => {
     });
 
     describe('multi-assignee (assigneeIds)', () => {
-      it('creates TaskAssignee row per id + dual-writes legacy assignedTo to first', async () => {
+      it('creates TaskAssignee row per id', async () => {
         const t = await taskService.create(
           {
             projectId,
@@ -193,14 +191,13 @@ maybe('taskService CRUD', () => {
         );
         expect(t.assignees.length).toBe(1);
         expect(t.assignees[0].userId).toBe(assigneeId);
-        expect(t.assignedTo).toBe(assigneeId);
         const rows = await prisma.taskAssignee.findMany({ where: { taskId: t.id } });
         expect(rows).toHaveLength(1);
         expect(rows[0].userId).toBe(assigneeId);
         expect(rows[0].addedById).toBe(actorId);
       });
 
-      it('empty assigneeIds → zero rows + legacy null', async () => {
+      it('empty assigneeIds → zero rows', async () => {
         const t = await taskService.create(
           {
             projectId,
@@ -213,7 +210,6 @@ maybe('taskService CRUD', () => {
           actorId,
         );
         expect(t.assignees).toEqual([]);
-        expect(t.assignedTo).toBeNull();
       });
 
       it('dedupes duplicate ids in assigneeIds', async () => {
@@ -257,24 +253,6 @@ maybe('taskService CRUD', () => {
       });
     });
 
-    describe('back-compat (legacy assignedTo)', () => {
-      it('legacy assignedTo → single TaskAssignee row created', async () => {
-        const t = await taskService.create(
-          {
-            projectId,
-            title: 'Legacy-assigned',
-            dueDate: future(),
-            status: TaskStatus.todo,
-            priority: TaskPriority.medium,
-            assignedTo: assigneeId,
-          },
-          actorId,
-        );
-        expect(t.assignedTo).toBe(assigneeId);
-        expect(t.assignees.length).toBe(1);
-        expect(t.assignees[0].userId).toBe(assigneeId);
-      });
-    });
   });
 
   describe('findById', () => {
@@ -344,45 +322,7 @@ maybe('taskService CRUD', () => {
       expect(updated.title).toBe('STABLE');
     });
 
-    it('blocks reassign when task already completed (assignedTo change)', async () => {
-      const created = await taskService.create(
-        {
-          projectId,
-          title: 'Done task',
-          dueDate: future(),
-          status: TaskStatus.completed,
-          priority: TaskPriority.medium,
-          assignedTo: actorId,
-        },
-        actorId,
-      );
-      await expect(
-        taskService.update(created.id, { assignedTo: assigneeId }),
-      ).rejects.toMatchObject({
-        statusCode: 422,
-        code: 'REASSIGN_COMPLETED',
-        message: REASSIGN_COMPLETED_MESSAGE,
-      });
-    });
-
-    it('blocks reassign when transitioning to completed AND changing assignee in same PATCH', async () => {
-      const created = await taskService.create(
-        {
-          projectId,
-          title: 'In progress',
-          dueDate: future(),
-          status: TaskStatus.in_progress,
-          priority: TaskPriority.medium,
-          assignedTo: actorId,
-        },
-        actorId,
-      );
-      await expect(
-        taskService.update(created.id, { status: TaskStatus.completed, assignedTo: assigneeId }),
-      ).rejects.toMatchObject({ statusCode: 422, code: 'REASSIGN_COMPLETED' });
-    });
-
-    it('allows status -> completed without reassign', async () => {
+    it('allows status -> completed', async () => {
       const created = await taskService.create(
         {
           projectId,
@@ -390,7 +330,7 @@ maybe('taskService CRUD', () => {
           dueDate: future(),
           status: TaskStatus.in_progress,
           priority: TaskPriority.medium,
-          assignedTo: actorId,
+          assigneeIds: [actorId],
         },
         actorId,
       );
@@ -459,39 +399,39 @@ maybe('taskService CRUD', () => {
       await prisma.user.deleteMany({ where: { id: nonMemberId } });
     });
 
-    it('blocks create when assignedTo is not a project member', async () => {
+    it('blocks create when assignee is not a project member', async () => {
       await expect(
         taskService.create(
-          { projectId, title: 'C13-create', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assignedTo: nonMemberId },
+          { projectId, title: 'C13-create', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assigneeIds: [nonMemberId] },
           actorId,
         ),
       ).rejects.toMatchObject({ statusCode: 422, code: 'ASSIGNEE_NOT_PROJECT_MEMBER' });
     });
 
-    it('blocks update when reassigning to non-member', async () => {
+    it('blocks replaceAssignees when adding a non-member', async () => {
       const t = await taskService.create(
-        { projectId, title: 'C13-update', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assignedTo: assigneeId },
+        { projectId, title: 'C13-update', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assigneeIds: [assigneeId] },
         actorId,
       );
       await expect(
-        taskService.update(t.id, { assignedTo: nonMemberId }),
+        taskService.replaceAssignees(t.id, [nonMemberId], actorId, { id: actorId, role: 'admin' }),
       ).rejects.toMatchObject({ statusCode: 422, code: 'ASSIGNEE_NOT_PROJECT_MEMBER' });
     });
 
     it('allows assigning system admin even when not a ProjectMember (admin bypass)', async () => {
       const t = await taskService.create(
-        { projectId, title: 'C13-admin-bypass', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assignedTo: actorId },
+        { projectId, title: 'C13-admin-bypass', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assigneeIds: [actorId] },
         actorId,
       );
-      expect(t.assignedTo).toBe(actorId);
+      expect(t.assignees[0]?.userId).toBe(actorId);
     });
 
-    it('allows null assignedTo (unassigned) regardless of membership', async () => {
+    it('allows empty assigneeIds (unassigned) regardless of membership', async () => {
       const t = await taskService.create(
-        { projectId, title: 'C13-null', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assignedTo: null },
+        { projectId, title: 'C13-null', dueDate: future(), status: TaskStatus.todo, priority: TaskPriority.medium, assigneeIds: [] },
         actorId,
       );
-      expect(t.assignedTo).toBeNull();
+      expect(t.assignees).toEqual([]);
     });
   });
 });

@@ -67,19 +67,19 @@ maybe('projectMemberService.removeMember', () => {
       data: { projectId, userId: memberId, role: 'member' },
     });
     const t1 = await prisma.task.create({
-      data: { projectId, title: 't1', dueDate: future(60), assignedTo: memberId, createdBy: pmAId },
+      data: { projectId, title: 't1', dueDate: future(60), createdBy: pmAId, assignees: { create: { userId: memberId, addedById: pmAId } } },
     });
     const t2 = await prisma.task.create({
-      data: { projectId, title: 't2', dueDate: future(60), assignedTo: memberId, createdBy: pmAId },
+      data: { projectId, title: 't2', dueDate: future(60), createdBy: pmAId, assignees: { create: { userId: memberId, addedById: pmAId } } },
     });
 
     const out = await projectMemberService.removeMember(projectId, m.id);
     expect(out.tasksUnassigned).toBe(2);
 
-    const post1 = await prisma.task.findUniqueOrThrow({ where: { id: t1.id } });
-    const post2 = await prisma.task.findUniqueOrThrow({ where: { id: t2.id } });
-    expect(post1.assignedTo).toBeNull();
-    expect(post2.assignedTo).toBeNull();
+    const post1 = await prisma.task.findUniqueOrThrow({ where: { id: t1.id }, include: { assignees: true } });
+    const post2 = await prisma.task.findUniqueOrThrow({ where: { id: t2.id }, include: { assignees: true } });
+    expect(post1.assignees).toEqual([]);
+    expect(post2.assignees).toEqual([]);
     const exists = await prisma.projectMember.findUnique({ where: { id: m.id } });
     expect(exists).toBeNull();
   });
@@ -97,15 +97,15 @@ maybe('projectMemberService.removeMember', () => {
         projectId: otherProjectId,
         title: 'other',
         dueDate: future(60),
-        assignedTo: memberId,
         createdBy: pmAId,
+        assignees: { create: { userId: memberId, addedById: pmAId } },
       },
     });
 
     await projectMemberService.removeMember(projectId, m.id);
 
-    const post = await prisma.task.findUniqueOrThrow({ where: { id: otherTask.id } });
-    expect(post.assignedTo).toBe(memberId);
+    const post = await prisma.task.findUniqueOrThrow({ where: { id: otherTask.id }, include: { assignees: true } });
+    expect(post.assignees.map((a) => a.userId)).toEqual([memberId]);
   });
 
   it('removes a pm when another pm exists', async () => {

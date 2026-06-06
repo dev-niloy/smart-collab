@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../../errors/ApiError';
 import { taskService } from './task.service';
 import type { Actor } from '../project/project.service';
-import type { ListTasksQuery } from './task.validation';
+import { type ListTasksQuery } from './task.validation';
 
 const getActor = (req: Request): Actor | undefined =>
   req.user ? { id: req.user.id, role: req.user.role } : undefined;

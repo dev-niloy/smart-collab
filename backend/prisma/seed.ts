@@ -106,7 +106,7 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
       desc: 'Assigned to Member — they should be able to flip status inline.',
       status: TaskStatus.todo,
       priority: TaskPriority.high,
-      assignedTo: member.id,
+      assigneeId: member.id as string | null,
       createdBy: pm.id,
     },
     {
@@ -114,7 +114,7 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
       desc: 'Assigned to PM — Member sees it but cannot edit (read-only badge).',
       status: TaskStatus.in_progress,
       priority: TaskPriority.medium,
-      assignedTo: pm.id,
+      assigneeId: pm.id as string | null,
       createdBy: pm.id,
     },
     {
@@ -122,7 +122,7 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
       desc: 'Unassigned — only PM/Admin can change status.',
       status: TaskStatus.todo,
       priority: TaskPriority.low,
-      assignedTo: null,
+      assigneeId: null,
       createdBy: pm.id,
     },
     {
@@ -130,7 +130,7 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
       desc: 'Member is creator AND assignee — can edit + delete own.',
       status: TaskStatus.todo,
       priority: TaskPriority.medium,
-      assignedTo: member.id,
+      assigneeId: member.id as string | null,
       createdBy: member.id,
     },
     {
@@ -138,7 +138,7 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
       desc: 'Completed — used to verify completed badge + progress %.',
       status: TaskStatus.completed,
       priority: TaskPriority.medium,
-      assignedTo: pm.id,
+      assigneeId: pm.id as string | null,
       createdBy: pm.id,
     },
   ];
@@ -153,19 +153,17 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
         description: t.desc,
         status: t.status,
         priority: t.priority,
-        assignedTo: t.assignedTo,
         createdBy: t.createdBy,
         dueDate: dayFromNow(10),
       },
     });
-    // Multi-assignee: ensure a TaskAssignee row mirrors the legacy assignedTo.
-    if (t.assignedTo) {
+    if (t.assigneeId) {
       await client.taskAssignee.upsert({
-        where: { taskId_userId: { taskId: created.id, userId: t.assignedTo } },
+        where: { taskId_userId: { taskId: created.id, userId: t.assigneeId } },
         update: {},
         create: {
           taskId: created.id,
-          userId: t.assignedTo,
+          userId: t.assigneeId,
           addedById: t.createdBy,
         },
       });
@@ -185,7 +183,6 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
         'Multi-assignee demo: PM + Member both assigned — either can flip status; PM can add/remove via detail page.',
       status: TaskStatus.todo,
       priority: TaskPriority.high,
-      assignedTo: member.id, // legacy column dual-written; first assignee
       createdBy: pm.id,
       dueDate: dayFromNow(7),
     },
@@ -210,7 +207,6 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
       description: 'Member should NOT see this task in any list (RBAC scoping).',
       status: TaskStatus.todo,
       priority: TaskPriority.high,
-      assignedTo: pm.id,
       createdBy: pm.id,
       dueDate: dayFromNow(15),
     },

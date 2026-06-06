@@ -57,23 +57,23 @@ maybe('taskService list', () => {
 
     // Seed 6 tasks in A (varied), 2 in B
     await taskService.create(
-      { projectId: projectA, title: 'Alpha High Todo', dueDate: future(2), status: TaskStatus.todo, priority: TaskPriority.high, assignedTo: assigneeId },
+      { projectId: projectA, title: 'Alpha High Todo', dueDate: future(2), status: TaskStatus.todo, priority: TaskPriority.high, assigneeIds: [assigneeId]},
       actorId,
     );
     await taskService.create(
-      { projectId: projectA, title: 'Alpha Med InProg', dueDate: future(10), status: TaskStatus.in_progress, priority: TaskPriority.medium, assignedTo: assigneeId },
+      { projectId: projectA, title: 'Alpha Med InProg', dueDate: future(10), status: TaskStatus.in_progress, priority: TaskPriority.medium, assigneeIds: [assigneeId]},
       actorId,
     );
     await taskService.create(
-      { projectId: projectA, title: 'Beta Low Done', dueDate: future(5), status: TaskStatus.completed, priority: TaskPriority.low, assignedTo: actorId },
+      { projectId: projectA, title: 'Beta Low Done', dueDate: future(5), status: TaskStatus.completed, priority: TaskPriority.low, assigneeIds: [actorId]},
       actorId,
     );
     await taskService.create(
-      { projectId: projectA, title: 'Beta High Todo', dueDate: future(1), status: TaskStatus.todo, priority: TaskPriority.high, assignedTo: null },
+      { projectId: projectA, title: 'Beta High Todo', dueDate: future(1), status: TaskStatus.todo, priority: TaskPriority.high, assigneeIds: []},
       actorId,
     );
     await taskService.create(
-      { projectId: projectA, title: 'Gamma Med Todo', dueDate: future(3), status: TaskStatus.todo, priority: TaskPriority.medium, assignedTo: null },
+      { projectId: projectA, title: 'Gamma Med Todo', dueDate: future(3), status: TaskStatus.todo, priority: TaskPriority.medium, assigneeIds: []},
       actorId,
     );
     await taskService.create(
@@ -129,7 +129,7 @@ maybe('taskService list', () => {
       limit: 20,
     });
     expect(r.total).toBe(2);
-    expect(r.data.every((t) => t.assignedTo === assigneeId)).toBe(true);
+    expect(r.data.every((t) => t.assignees.some((a) => a.userId === assigneeId))).toBe(true);
   });
 
   it("filters by assignedTo='unassigned'", async () => {
@@ -141,7 +141,7 @@ maybe('taskService list', () => {
       limit: 20,
     });
     expect(r.total).toBe(2);
-    expect(r.data.every((t) => t.assignedTo === null)).toBe(true);
+    expect(r.data.every((t) => t.assignees.length === 0)).toBe(true);
   });
 
   it('search q (case-insensitive contains)', async () => {
@@ -187,8 +187,8 @@ maybe('taskService list', () => {
   it('returns embedded creator and assignee', async () => {
     const r = await taskService.list({ projectId: projectA, sort: 'created', page: 1, limit: 5 });
     expect(r.data[0].creator.email).toBe(TEST_EMAIL);
-    const assigned = r.data.find((t) => t.assignedTo === assigneeId);
-    expect(assigned?.assignee?.email).toBe(`a-${TEST_EMAIL}`);
+    const assigned = r.data.find((t) => t.assignees.some((a) => a.userId === assigneeId));
+    expect(assigned?.assignees[0]?.user.email).toBe(`a-${TEST_EMAIL}`);
   });
 
   describe('extended filters (multi-select + range + me)', () => {
@@ -260,7 +260,7 @@ maybe('taskService list', () => {
         page: 1,
         limit: 20,
       });
-      expect(r.data.every((t) => t.assignedTo === assigneeId)).toBe(true);
+      expect(r.data.every((t) => t.assignees.some((a) => a.userId === assigneeId))).toBe(true);
     });
 
     it('createdBy=me resolves to actorId', async () => {

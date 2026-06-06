@@ -98,7 +98,7 @@ maybe('taskService.update — assignee/PM/admin write gate', () => {
         priority: TaskPriority.medium,
         dueDate: dayFromNow(7),
         createdBy: pmId,
-        assignedTo: assigneeId,
+        assignees: { create: { userId: assigneeId, addedById: pmId } },
       },
     });
     const t2 = await prisma.task.create({
@@ -156,25 +156,25 @@ maybe('taskService.update — assignee/PM/admin write gate', () => {
     expect(t.title).toBe('admin-renamed');
   });
 
-  it('assignee cannot reassign (CANNOT_REASSIGN)', async () => {
+  it('assignee cannot reassign via replaceAssignees (CANNOT_REASSIGN)', async () => {
     await expect(
-      taskService.update(
+      taskService.replaceAssignees(
         taskAssigned,
-        { assignedTo: otherId },
+        [otherId],
         assigneeId,
         { id: assigneeId, role: Role.team_member },
       ),
     ).rejects.toMatchObject({ statusCode: 403, code: 'CANNOT_REASSIGN' });
   });
 
-  it('PM can reassign', async () => {
-    const t = await taskService.update(
+  it('PM can reassign via replaceAssignees', async () => {
+    const t = await taskService.replaceAssignees(
       taskAssigned,
-      { assignedTo: otherId },
+      [otherId],
       pmId,
       { id: pmId, role: Role.project_manager },
     );
-    expect(t.assignedTo).toBe(otherId);
+    expect(t.assignees[0]?.userId).toBe(otherId);
   });
 
   it('unassigned task: member cannot change status', async () => {

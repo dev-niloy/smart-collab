@@ -38,7 +38,6 @@ const ensureTaskExists = async (
 ): Promise<{
   projectId: string;
   createdBy: string;
-  assignedTo: string | null;
   title: string;
   assignees: { userId: string }[];
 }> => {
@@ -47,7 +46,6 @@ const ensureTaskExists = async (
     select: {
       projectId: true,
       createdBy: true,
-      assignedTo: true,
       title: true,
       assignees: { select: { userId: true } },
     },
@@ -116,12 +114,9 @@ const create = async (
       meta: { title: body.slice(0, 80) },
     });
     // Notify all task assignees + task creator (deduped, never the actor).
-    // Multi-assignee: every assignee receives comment notif. Legacy assignedTo still
-    // merged for transition safety (dedupe handles the overlap).
     const excerpt = body.slice(0, 140);
     const recipientSet = new Set<string>();
     for (const a of task.assignees) recipientSet.add(a.userId);
-    if (task.assignedTo) recipientSet.add(task.assignedTo);
     if (task.createdBy) recipientSet.add(task.createdBy);
     const recipients = Array.from(recipientSet);
     await enqueueNotifications(

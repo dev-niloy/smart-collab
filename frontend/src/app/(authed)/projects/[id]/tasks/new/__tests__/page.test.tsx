@@ -64,10 +64,9 @@ describe('NewTaskPage', () => {
       status: 'todo',
       priority: 'medium',
       dueDate: '2030-06-01T00:00:00.000Z',
-      assignedTo: null,
+      assignees: [],
       createdBy: 'u',
       creator: { id: 'u', email: 'me@x.y', name: 'Me', role: 'team_member' },
-      assignee: null,
       createdAt: '',
       updatedAt: '',
     });

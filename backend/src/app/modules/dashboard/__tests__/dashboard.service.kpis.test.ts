@@ -50,18 +50,37 @@ maybe('dashboardService.getKpis', () => {
 
     // Seed tasks across both projects.
     // projectA: 5 tasks: 2 todo (actor assigned), 1 in_progress (other), 2 completed (actor)
-    await prisma.task.createMany({
-      data: [
-        { projectId: projectA, title: 'kpi-a1', dueDate: future(10), status: 'todo', priority: 'medium', assignedTo: actorId, createdBy: actorId },
-        { projectId: projectA, title: 'kpi-a2', dueDate: future(10), status: 'todo', priority: 'medium', assignedTo: actorId, createdBy: actorId },
-        { projectId: projectA, title: 'kpi-a3', dueDate: future(10), status: 'in_progress', priority: 'high', assignedTo: otherUserId, createdBy: actorId },
-        { projectId: projectA, title: 'kpi-a4', dueDate: future(10), status: 'completed', priority: 'low', assignedTo: actorId, createdBy: actorId },
-        { projectId: projectA, title: 'kpi-a5', dueDate: future(10), status: 'completed', priority: 'low', assignedTo: actorId, createdBy: actorId },
-      ],
-    });
+    const aSeed = [
+      { title: 'kpi-a1', status: 'todo' as const, priority: 'medium' as const, userId: actorId },
+      { title: 'kpi-a2', status: 'todo' as const, priority: 'medium' as const, userId: actorId },
+      { title: 'kpi-a3', status: 'in_progress' as const, priority: 'high' as const, userId: otherUserId },
+      { title: 'kpi-a4', status: 'completed' as const, priority: 'low' as const, userId: actorId },
+      { title: 'kpi-a5', status: 'completed' as const, priority: 'low' as const, userId: actorId },
+    ];
+    for (const t of aSeed) {
+      await prisma.task.create({
+        data: {
+          projectId: projectA,
+          title: t.title,
+          dueDate: future(10),
+          status: t.status,
+          priority: t.priority,
+          createdBy: actorId,
+          assignees: { create: { userId: t.userId, addedById: actorId } },
+        },
+      });
+    }
     // projectB: 1 task, todo, assigned other
     await prisma.task.create({
-      data: { projectId: projectB, title: 'kpi-b1', dueDate: future(10), status: 'todo', priority: 'high', assignedTo: otherUserId, createdBy: actorId },
+      data: {
+        projectId: projectB,
+        title: 'kpi-b1',
+        dueDate: future(10),
+        status: 'todo',
+        priority: 'high',
+        createdBy: actorId,
+        assignees: { create: { userId: otherUserId, addedById: actorId } },
+      },
     });
   });
 

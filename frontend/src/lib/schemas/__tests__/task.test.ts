@@ -35,14 +35,14 @@ describe('task schemas', () => {
       ).toThrow();
     });
 
-    it('accepts null assignedTo', () => {
+    it('drops unknown assignedTo key (column removed — use assigneeIds)', () => {
       const r = createTaskSchema.parse({
         projectId: validUuid,
         title: 'X',
         dueDate: '2030-01-01',
         assignedTo: null,
-      });
-      expect(r.assignedTo).toBeNull();
+      } as unknown);
+      expect((r as { assignedTo?: unknown }).assignedTo).toBeUndefined();
     });
   });
 
@@ -56,9 +56,9 @@ describe('task schemas', () => {
       expect(() => updateTaskSchema.parse({})).toThrow();
     });
 
-    it('allows null assignedTo (unassign)', () => {
-      const r = updateTaskSchema.parse({ assignedTo: null });
-      expect(r.assignedTo).toBeNull();
+    it('drops unknown assignedTo key (use assignees endpoints instead)', () => {
+      const r = updateTaskSchema.parse({ assignedTo: null, status: 'completed' } as unknown);
+      expect((r as { assignedTo?: unknown }).assignedTo).toBeUndefined();
     });
   });
 

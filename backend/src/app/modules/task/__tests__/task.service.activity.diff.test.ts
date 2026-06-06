@@ -61,7 +61,7 @@ maybe('task.service status/assignee activity diffs', () => {
 
   it('emits task.status_changed when status changes', async () => {
     const t = await taskService.create(
-      { projectId, title: 'S1', dueDate: future(5), status: 'todo', priority: 'medium', assignedTo: null } as any,
+      { projectId, title: 'S1', dueDate: future(5), status: 'todo', priority: 'medium', assigneeIds: []} as any,
       actorId,
     );
     await taskService.update(t.id, { status: 'in_progress' } as any, actorId);
@@ -74,23 +74,23 @@ maybe('task.service status/assignee activity diffs', () => {
     expect(meta.to).toBe('in_progress');
   });
 
-  it('emits task.assigned when assignee changes', async () => {
+  it('emits task.assigned when an assignee is added via addAssignee', async () => {
     const t = await taskService.create(
-      { projectId, title: 'A1', dueDate: future(5), status: 'todo', priority: 'medium', assignedTo: null } as any,
+      { projectId, title: 'A1', dueDate: future(5), status: 'todo', priority: 'medium', assigneeIds: [] } as any,
       actorId,
     );
-    await taskService.update(t.id, { assignedTo: assigneeId } as any, actorId);
+    await taskService.addAssignee(t.id, assigneeId, actorId, { id: actorId, role: 'admin' });
     const log = await prisma.activityLog.findFirst({
       where: { action: 'task.assigned', entityId: t.id },
     });
     expect(log).not.toBeNull();
     const meta = log!.meta as Record<string, unknown>;
-    expect(meta.to).toBe(assigneeId);
+    expect(meta.added).toBe(assigneeId);
   });
 
   it('does not emit status_changed when status unchanged', async () => {
     const t = await taskService.create(
-      { projectId, title: 'S2', dueDate: future(5), status: 'todo', priority: 'medium', assignedTo: null } as any,
+      { projectId, title: 'S2', dueDate: future(5), status: 'todo', priority: 'medium', assigneeIds: [] } as any,
       actorId,
     );
     await taskService.update(t.id, { title: 'S2 renamed' } as any, actorId);
@@ -98,37 +98,5 @@ maybe('task.service status/assignee activity diffs', () => {
       where: { action: 'task.status_changed', entityId: t.id },
     });
     expect(count).toBe(0);
-  });
-
-  it('does not emit assigned when assignee unchanged', async () => {
-    const t = await taskService.create(
-      { projectId, title: 'A2', dueDate: future(5), status: 'todo', priority: 'medium', assignedTo: assigneeId } as any,
-      actorId,
-    );
-    await taskService.update(t.id, { assignedTo: assigneeId } as any, actorId);
-    const count = await prisma.activityLog.count({
-      where: { action: 'task.assigned', entityId: t.id },
-    });
-    expect(count).toBe(0);
-  });
-
-  it('emits both status_changed and assigned in single update call', async () => {
-    const t = await taskService.create(
-      { projectId, title: 'Both', dueDate: future(5), status: 'todo', priority: 'medium', assignedTo: null } as any,
-      actorId,
-    );
-    await taskService.update(
-      t.id,
-      { status: 'in_progress', assignedTo: assigneeId } as any,
-      actorId,
-    );
-    const s = await prisma.activityLog.count({
-      where: { action: 'task.status_changed', entityId: t.id },
-    });
-    const a = await prisma.activityLog.count({
-      where: { action: 'task.assigned', entityId: t.id },
-    });
-    expect(s).toBe(1);
-    expect(a).toBe(1);
   });
 });

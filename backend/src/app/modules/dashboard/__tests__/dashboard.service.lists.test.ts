@@ -37,13 +37,17 @@ maybe('dashboardService.getUpcoming + getHighPriority', () => {
     });
 
     // Mix of dueDates: 2 within 7d (one completed → excluded), 1 outside (15d), 2 high priority
-    await prisma.task.createMany({
-      data: [
-        { projectId, title: 'soon-1', dueDate: future(2), status: 'todo', priority: 'high', assignedTo: assigneeId, createdBy: actorId },
-        { projectId, title: 'soon-2', dueDate: future(4), status: 'in_progress', priority: 'medium', createdBy: actorId },
-        { projectId, title: 'soon-done', dueDate: future(2), status: 'completed', priority: 'high', createdBy: actorId },
-        { projectId, title: 'far', dueDate: future(15), status: 'todo', priority: 'high', assignedTo: assigneeId, createdBy: actorId },
-      ],
+    await prisma.task.create({
+      data: { projectId, title: 'soon-1', dueDate: future(2), status: 'todo', priority: 'high', createdBy: actorId, assignees: { create: { userId: assigneeId, addedById: actorId } } },
+    });
+    await prisma.task.create({
+      data: { projectId, title: 'soon-2', dueDate: future(4), status: 'in_progress', priority: 'medium', createdBy: actorId },
+    });
+    await prisma.task.create({
+      data: { projectId, title: 'soon-done', dueDate: future(2), status: 'completed', priority: 'high', createdBy: actorId },
+    });
+    await prisma.task.create({
+      data: { projectId, title: 'far', dueDate: future(15), status: 'todo', priority: 'high', createdBy: actorId, assignees: { create: { userId: assigneeId, addedById: actorId } } },
     });
   });
 
