@@ -37,7 +37,7 @@ const dto = (id: string, body: string, authorId = 'me') => ({
 const renderPanel = (projectRole: 'pm' | 'member' | 'admin' | null = 'member') =>
   render(
     <Providers>
-      <TaskCommentsPanel taskId="t1" projectRole={projectRole} />
+      <TaskCommentsPanel taskId="t1" projectId="p1" projectRole={projectRole} />
     </Providers>,
   );
 

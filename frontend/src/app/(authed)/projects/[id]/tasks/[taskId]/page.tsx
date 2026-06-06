@@ -145,6 +145,7 @@ export default function TaskDetailPage() {
           <div className="mt-6 space-y-8">
             <TaskCommentsPanel
               taskId={task.id}
+              projectId={task.projectId}
               projectRole={role === 'admin' ? 'admin' : role === 'project_manager' ? 'pm' : 'member'}
             />
             <TaskAttachmentsPanel
