@@ -17,7 +17,7 @@ Steps:
 - 1. `cd backend && npm test --silent` → expect 552 passing
 - 2. `cd frontend && npm test -- --run` → expect 442 passing
 - 3. Empty commit `chore: baseline before task-assignee-write work begins`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 2: add `deletedAt` column to Task + migration
 Files:
@@ -28,7 +28,7 @@ Steps:
 - 2. `npx prisma migrate dev --name add_task_deleted_at`.
 - 3. Run existing suite to confirm no breakage.
 - 4. Commit `feat(schema): add Task.deletedAt + index for soft-delete`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -41,7 +41,7 @@ Steps:
 - 2. GREEN: pure helper. Reuses `isAdmin`. Looks up projectMember role for PM check.
 - 3. REFACTOR: extract `getProjectRoleFor(actor, projectId)`.
 - 4. Commit `refactor(tasks): canWriteTask predicate (assignee + PM/admin)`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 4: taskService.update enforces canWriteTask
 Files:
@@ -52,7 +52,7 @@ Steps:
 - 2. GREEN: at top of `update`, fetch task + role; call `canWriteTask` → throw 403 if false.
 - 3. REFACTOR: avoid double-fetch.
 - 4. Commit `feat(tasks): update PATCH gated on canWriteTask`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 5: assignedTo change restricted to PM/admin
 Files: `backend/src/app/modules/task/task.service.ts`
@@ -61,7 +61,7 @@ Steps:
 - 2. GREEN: if `input.assignedTo !== undefined` AND actor not PM/admin → 403.
 - 3. REFACTOR: error code constant.
 - 4. Commit `feat(tasks): assignedTo change restricted to PM/admin`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 6: unassigned tasks → status updates PM/admin only
 Files: `backend/src/app/modules/task/task.service.ts`
@@ -70,7 +70,7 @@ Steps:
 - 2. GREEN: `canWriteTask` returns false when task.assignedTo null AND actor not PM/admin.
 - 3. REFACTOR: predicate test matrix.
 - 4. Commit `feat(tasks): unassigned task status updates restricted to PM/admin`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -85,7 +85,7 @@ Steps:
 - 2. GREEN: set `deletedAt: new Date()` (not `prisma.task.delete`). Gate on admin || project PM || task.createdBy === actor.id.
 - 3. REFACTOR: helper `canDeleteTask`.
 - 4. Commit `feat(tasks): soft-delete + creator/PM/admin gate`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 8: all task GET queries filter `deletedAt: null` by default
 Files: `backend/src/app/modules/task/task.service.ts`
@@ -94,7 +94,7 @@ Steps:
 - 2. GREEN: add `deletedAt: null` to every default `where`.
 - 3. REFACTOR: extract `notDeletedWhere` constant.
 - 4. Commit `feat(tasks): default queries filter deletedAt:null`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 9: `includeDeleted` flag — PM/admin only, silently ignored otherwise
 Files:
@@ -105,7 +105,7 @@ Steps:
 - 2. GREEN: accept `includeDeleted` boolean; only honour for PM/admin.
 - 3. REFACTOR: `canSeeDeleted(actor, projectRole)`.
 - 4. Commit `feat(tasks): includeDeleted flag for PM/admin`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 10: `POST /tasks/:id/restore` endpoint
 Files:
@@ -118,7 +118,7 @@ Steps:
 - 2. GREEN: route + controller + `restore` service (set deletedAt=null).
 - 3. REFACTOR: activityLog `task.restored`.
 - 4. Commit `feat(tasks): POST /restore (PM/admin only)`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -131,7 +131,7 @@ Steps:
 - 2. GREEN: optional nullable field.
 - 3. REFACTOR: re-export.
 - 4. Commit `feat(tasks): Task DTO includes deletedAt`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 12: permission-aware UI on task detail page
 Files:
@@ -143,7 +143,7 @@ Steps:
 - 3. GREEN: branch on `canWriteThisTask` derived from `useUser()` + `useProjectMembers()` + task.assignedTo + task.createdBy.
 - 4. REFACTOR: `useTaskPermissions(task)` hook.
 - 5. Commit `feat(tasks): task detail UI gates per assignee/PM/admin/creator`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 13: inline status select gated on canWrite prop
 Files:
@@ -154,7 +154,7 @@ Steps:
 - 2. GREEN: prop + branch.
 - 3. REFACTOR: keep API minimal.
 - 4. Commit `feat(tasks): InlineStatusSelect read-only when canWrite=false`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 14: Deleted tab on project tasks page (PM/admin only)
 Files:
@@ -167,7 +167,7 @@ Steps:
 - 3. GREEN: tab + fetch w/ `?includeDeleted=true` + restore mutation.
 - 4. REFACTOR: tab state in URL `?tab=deleted`.
 - 5. Commit `feat(tasks): Deleted tab + Restore action for PM/admin`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
@@ -185,7 +185,7 @@ Steps:
   - 4c. PM: delete a task → vanishes from default list; Deleted tab shows it; Restore returns to active list.
   - 4d. team_member (creator) deletes their own task → 204; visible in PM's Deleted tab.
 - 5. Commit `test: verify task-assignee-write suite green + 4-role smoke`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 16: docs + close phase 3
 Files:
@@ -197,14 +197,14 @@ Steps:
 - 2. Update progress.md.
 - 3. Mark #B5 RESOLVED.
 - 4. Commit `docs(task-assignee-write): phase 3 superpowers complete + #B5 resolved`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ### Task 17: USER PERMISSION — push + open PR
 Files: none
 Steps:
 - 1. (USER PERMISSION) `git push -u origin feature/task-assignee-write`
 - 2. (USER PERMISSION) `gh pr create --base develop --title "feat(tasks): assignee-only write + soft-delete + restore (closes #B5)"`
-Status: [ ]
+Status: [x] 2026-06-05
 
 ---
 
