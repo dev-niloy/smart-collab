@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 1                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+phase: 4                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
 
 intake:
   original_request: "Close backlog #B4 — members count + assignable list mismatch under react-query cache staleness."
@@ -24,16 +24,16 @@ blockers: []
 next_task: null
 
 phase_completion:
-  gstack: false
-  gsd: false
-  superpowers: false
+  gstack: true
+  gsd: true
+  superpowers: true
   ralph_wiggum: false
 
 baseline:
   backend_tests: 598
   frontend_tests: 457
-  e2e_tests: 0
-  branched_off: develop@ad6e121
+  e2e_tests: 0           # Playwright infra landed; chromium binary not in CI yet
+  branched_off: develop@5b6af5b
   recorded_at: 2026-06-06
 
 checks:

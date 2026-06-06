@@ -120,14 +120,69 @@ narrows to #B4(b) cross-tab + e2e + invalidation broadening.
 - **t5** Smoke + close: manual two-browser-session smoke; mark
   state.yaml ralph_wiggum pending; hand off to Ralph.
 
+## Phase 3 Superpowers — shipped (2026-06-06)
+- **t1 reproduce-first**: user-run smoke on develop @ `5b6af5b` —
+  #B4(a) same-tab mismatch NOT reproducible (matches Scout's code-path
+  scan); #B4(b) cross-tab confirmed broken by code scan (provider has
+  `refetchOnWindowFocus: false` and no peer-tab transport).
+- **t2 BroadcastChannel hook** (`feat(member-cache-sync): cross-tab
+  react-query invalidation via BroadcastChannel`):
+  - `frontend/src/lib/broadcast-cache.ts` — channel name, message type,
+    serializer, capability probe.
+  - `frontend/src/hooks/useBroadcastInvalidation.ts` — subscribes to
+    the QueryCache invalidate events, posts to the channel, replays
+    peer messages via `invalidateQueries({ queryKey, refetchType:
+    'active' })`, guards an echo loop via a `replaying` set + per-tab
+    `senderId`, no-ops when `BroadcastChannel` is undefined.
+  - `frontend/src/components/providers.tsx` — `CacheBroadcastBridge`
+    child mounts the hook inside `QueryClientProvider`.
+  - 5 new vitest tests covering: peer replay, echo-suppression, no-op
+    fallback, channel-name contract, message shape. FE 457 → 462.
+- **t3 invalidation broaden**: skipped — t1 surfaced no extra surface.
+- **t4 Playwright e2e** (`test(member-cache-sync): playwright e2e infra
+  + member-cache-sync spec`):
+  - `frontend/playwright.config.ts` chromium-only, retain-on-failure
+    trace + screenshot, baseURL from `E2E_BASE_URL`.
+  - `frontend/e2e/member-cache-sync.spec.ts` — two scenarios: same-tab
+    header-count + members-list refresh; cross-tab assignee-picker
+    refresh via BroadcastChannel within 5s.
+  - npm scripts `e2e`, `e2e:install`, `e2e:ui`. `.gitignore` adds
+    `/test-results`, `/playwright-report`, `/playwright/.cache`.
+  - `@playwright/test` pinned to `1.59.1` (npm rejected `1.60.0`
+    because the core `playwright` peer dep is still alpha on 1.60).
+- **t5 close**: this section + state.yaml flip to `phase: 4`,
+  `phase_completion.superpowers: true`. Ralph pending.
+
+## Verification (Phase 3)
+- `cd frontend && npx tsc --noEmit` → clean.
+- `cd frontend && npm test -- --run` → 462 / 462 pass (was 457 baseline,
+  +5 from `useBroadcastInvalidation.test.tsx`).
+- `cd frontend && npm run lint` → exit 0 (5 pre-existing react-hook-form
+  / React Compiler warnings on unrelated files, no errors).
+- `cd backend && npm test --silent` → 598 / 598 pass on clean run (BE
+  not modified; same pre-existing `activityLog.service.list` flake
+  documented in `task-drop-legacy-assignedto`).
+- E2E: locally requires `npx playwright install chromium`, dev stack
+  up, `DEMO_PM_PW` exported — not gated in CI yet (deferred per goal.md
+  item 7).
+
+## Deferred for follow-up subgoal / PR
+- CI integration of the Playwright suite (Postgres service container +
+  backend + frontend started in background + `npx playwright install
+  --with-deps chromium`). Heavier CI change, isolating it keeps this
+  PR reviewable.
+- `@playwright/test` upgrade to 1.60.x once the core `playwright` peer
+  dep ships a non-alpha 1.60 build.
+
 ## Phase Completion
-- [x] Phase 1 GStack — goal.md + state.yaml + progress.md written; baseline
-      recorded; intake locked
-- [x] Phase 2 GSD Scout — cache-key map + mutation map + hypothesis verdicts
-      + fix surface + draft slice plan written (this section)
-- [ ] Phase 2 GSD Judge — pick first Worker slice + verify commands +
-      stop_if conditions
-- [ ] Phase 3 Superpowers — execute task slices
+- [x] Phase 1 GStack — goal.md + state.yaml + progress.md written;
+      baseline recorded; intake locked
+- [x] Phase 2 GSD Scout — cache-key map + mutation map + hypothesis
+      verdicts + fix surface + draft slice plan written
+- [x] Phase 2 GSD Judge — slice plan locked (t1..t5); decisions
+      threaded into the Phase 3 commits
+- [x] Phase 3 Superpowers — t1 smoke, t2 BroadcastChannel hook + tests,
+      t3 skipped (no surface), t4 Playwright config + spec, t5 close
 - [ ] Phase 4 Ralph Wiggum — multi-persona review
 
 ## Blockers
