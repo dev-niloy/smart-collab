@@ -26,7 +26,7 @@ The first investigation pass already located one likely root cause: `useAddMembe
 4. Playwright e2e test (new infra) `frontend/e2e/member-cache-sync.spec.ts` covers: PM signs in → opens project detail (header shows `Members (N)`) → opens add-member form → adds a new member → header count is now `(N+1)` without page reload → opens task-create page → new member is present in the assignee dropdown without reload.
 5. Vitest unit / integration tests for the hook invalidation surfaces, asserting that each mutation's `onSuccess` calls `invalidateQueries` with every key in §2 above. Net Vitest count ≥ 460 (baseline 457).
 6. Backend Jest suite stays at 598 / 598 (no backend changes expected; if a backend change becomes necessary, document why and keep ≥595).
-7. Playwright config + first script wired into `frontend/package.json` (`npm run e2e`) and a CI hook in `.github/workflows/ci.yml` (if present) so the suite runs on PR.
+7. Playwright config + first script wired into `frontend/package.json` (`npm run e2e`). CI hook in `.github/workflows/ci.yml` — **DEFERRED to follow-up subgoal `e2e-ci-wiring` (backlog #B9)**. Rationale: a Postgres service container + backend boot + frontend boot + `playwright install --with-deps chromium` triples this PR's CI surface and the review burden. Local invocation contract is fully documented (`docs/goals/smart-collab/subgoals/member-cache-sync/progress.md` "Verification (Phase 3)" + `playwright.config.ts` header comment).
 8. `progress.md` documents: trace, root causes found, each fix mapped to a misfire it closes, and the e2e + unit tests that lock it.
 9. Manual smoke: a second-browser-session repro of #B4(b) (Daralmehrab task-create dropdown missing Demo Member) is fixed by the cross-tab sync.
 

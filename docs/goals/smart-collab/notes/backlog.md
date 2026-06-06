@@ -191,8 +191,39 @@
 
 ---
 
+## #B9 — Wire Playwright e2e into CI — **LOW / INFRA**
+
+**Captured 2026-06-06 during member-cache-sync Phase 4 Ralph (PM).**
+
+**Why:** `member-cache-sync` (PR #37) shipped Playwright config + first e2e spec (`frontend/e2e/member-cache-sync.spec.ts`) + npm scripts, but the suite is runnable LOCAL ONLY. Goal.md done-criteria item 7 originally mandated a CI hook; it was deferred because adding a Postgres service container + backend + frontend bootstrap + `playwright install --with-deps chromium` triples the existing CI surface and the PR review burden.
+
+**Scope:**
+- New job in `.github/workflows/ci.yml` (`e2e` matrix entry OR separate `e2e` job, eng-mgr's call).
+- Postgres service container (`postgres:16`) exposed on `:5433`.
+- `backend` started in background via `npm run dev` after `prisma migrate deploy` + `prisma db seed` against the service container.
+- `frontend` started in background via `npm run build && npm start` (or `next dev` — eng-mgr's call; production-mode catches build regressions but is slower).
+- `cd frontend && npx playwright install --with-deps chromium`.
+- `cd frontend && DEMO_PM_PW=$DEMO_PM_PW npm run e2e`.
+- Upload `frontend/playwright-report/` + `frontend/test-results/` as artifacts on failure.
+- Cache the Playwright browser binary across runs (`~/.cache/ms-playwright`).
+- Gate on PR + `develop` push, same triggers as the existing matrix.
+
+**Risks:**
+- Doubles wall-clock CI time. Mitigation: run only on PR (skip the duplicate `develop` push run via `if:`).
+- Flake on first runs while seed timing settles. Mitigation: `playwright.config.ts` already has `retries: 1` in CI, leave it.
+- Demo password env var must be wired as a repo secret.
+
+**Out of scope:** Visual-regression snapshots, mobile viewport coverage, other browsers (firefox/webkit). Add later if needed.
+
+**Estimate:** ~6-10 commits, mostly YAML.
+
+**Pre-requisite:** none — can run any time after PR #37 merges.
+
+---
+
 ## Notes
 - #B1 + #B2 surfaced 2026-06-05 during manual smoke of `progress-system` subgoal.
 - #B3 (org/team) captured 2026-06-05 in member-visibility Phase 1 brainstorm — deferred by user.
 - #B1 is the next subgoal (in progress). #B2 can be a `chore/*` branch any time. #B3 is a milestone-level conversation, not a subgoal.
 - #B4 (in progress as `feature/member-cache-sync`). #B8 captured 2026-06-06 during sidebar dogfooding; user noticed there was no way to @-mention a teammate from the comment box.
+- #B9 captured 2026-06-06 during Ralph review of PR #37; carved out from `member-cache-sync` so the cross-tab fix could land without dragging CI infra changes into review.
