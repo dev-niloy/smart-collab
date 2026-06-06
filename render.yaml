@@ -60,7 +60,7 @@ services:
       - key: EMAIL_PROVIDER
         value: resend
       - key: EMAIL_FROM
-        value: "Smart Collab <noreply@example.com>"   # replace with verified Resend sender
+        value: "Smart Collab <onboarding@resend.dev>" # Resend's pre-verified test sender; replace with your verified domain to send to non-signup recipients
       # User-provided in dashboard (sync: false hides them from the blueprint).
       - key: DATABASE_URL
         sync: false
