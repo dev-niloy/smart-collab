@@ -487,6 +487,32 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     expect(res.body.task.status).toBe('completed');
   });
 
+  describe('PATCH /tasks/:id hard-rejects assignee body keys (USE_ASSIGNEE_ENDPOINTS)', () => {
+    it('PATCH with assignedTo → 422 USE_ASSIGNEE_ENDPOINTS', async () => {
+      const adminAgent = await loginAs('admin');
+      const created = await adminAgent
+        .post('/api/v1/tasks')
+        .send({ projectId, title: 'PATCH-reject-1', dueDate: future(), assigneeIds: [] });
+      const res = await adminAgent
+        .patch(`/api/v1/tasks/${created.body.task.id}`)
+        .send({ assignedTo: memberId });
+      expect(res.status).toBe(422);
+      expect(res.body.error.code).toBe('USE_ASSIGNEE_ENDPOINTS');
+    });
+
+    it('PATCH with assigneeIds → 422 USE_ASSIGNEE_ENDPOINTS', async () => {
+      const adminAgent = await loginAs('admin');
+      const created = await adminAgent
+        .post('/api/v1/tasks')
+        .send({ projectId, title: 'PATCH-reject-2', dueDate: future(), assigneeIds: [] });
+      const res = await adminAgent
+        .patch(`/api/v1/tasks/${created.body.task.id}`)
+        .send({ assigneeIds: [memberId] });
+      expect(res.status).toBe(422);
+      expect(res.body.error.code).toBe('USE_ASSIGNEE_ENDPOINTS');
+    });
+  });
+
   describe('multi-assignee endpoints', () => {
     it('POST /:id/assignees adds an assignee (PM → 201)', async () => {
       const adminAgent = await loginAs('admin');

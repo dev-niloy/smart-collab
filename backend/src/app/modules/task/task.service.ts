@@ -5,7 +5,6 @@ import { type Actor, isAdmin, assertProjectAccess } from '../project/project.ser
 import {
   PAST_DEADLINE_MESSAGE,
   DUPLICATE_TASK_TITLE_MESSAGE,
-  REASSIGN_COMPLETED_MESSAGE,
   ASSIGNEE_NOT_PROJECT_MEMBER_MESSAGE,
   DEFAULT_LIMIT,
   DEFAULT_PAGE,
@@ -297,25 +296,8 @@ const update = async (
     );
   }
 
-  if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo) {
-    if (!canReassignTask({ actor, projectRole })) {
-      throw ApiError.forbidden(
-        'Only project managers can reassign tasks.',
-        'CANNOT_REASSIGN',
-      );
-    }
-  }
-
   if (input.title !== undefined && input.title.toLowerCase() !== current.title.toLowerCase()) {
     await ensureTitleUnique(current.projectId, input.title, id);
-  }
-
-  if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo) {
-    const finalStatus = input.status ?? current.status;
-    if (finalStatus === 'completed') {
-      throw ApiError.unprocessable(REASSIGN_COMPLETED_MESSAGE, 'REASSIGN_COMPLETED');
-    }
-    await ensureAssigneeIsProjectMember(current.projectId, input.assignedTo);
   }
 
   // Detect changed fields up-front so we can decide whether to emit task.updated.
@@ -324,22 +306,10 @@ const update = async (
     input.description !== undefined ||
     input.dueDate !== undefined ||
     (input.status !== undefined && input.status !== current.status) ||
-    (input.priority !== undefined && input.priority !== current.priority) ||
-    (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo);
+    (input.priority !== undefined && input.priority !== current.priority);
 
   try {
     return await prisma.$transaction(async (tx) => {
-      // Dual-write transition: if legacy PATCH `assignedTo` changes the assignee, also
-      // replace the TaskAssignee row(s) to match the new single-assignee shape.
-      // Removed in t21 once frontend is on the new endpoints + column drops.
-      if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo) {
-        await tx.taskAssignee.deleteMany({ where: { taskId: id } });
-        if (input.assignedTo) {
-          await tx.taskAssignee.create({
-            data: { taskId: id, userId: input.assignedTo, addedById: actorId ?? current.createdBy },
-          });
-        }
-      }
       const task = await tx.task.update({
         where: { id },
         data: {
@@ -348,7 +318,6 @@ const update = async (
           ...(input.dueDate !== undefined ? { dueDate: input.dueDate } : {}),
           ...(input.status !== undefined ? { status: input.status } : {}),
           ...(input.priority !== undefined ? { priority: input.priority } : {}),
-          ...(input.assignedTo !== undefined ? { assignedTo: input.assignedTo } : {}),
         },
         include: taskInclude,
       });
@@ -384,28 +353,6 @@ const update = async (
             recipientId,
             actorId,
             type: 'task.status_changed',
-            entityType: 'task',
-            entityId: task.id,
-            projectId: task.projectId,
-            payload: { taskTitle: task.title, taskId: task.id, projectId: task.projectId },
-          });
-        }
-      }
-
-      if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo) {
-        await recordActivity(tx, {
-          actorId,
-          action: 'task.assigned',
-          entityType: 'task',
-          entityId: task.id,
-          projectId: task.projectId,
-          meta: { from: current.assignedTo ?? undefined, to: task.assignedTo ?? undefined },
-        });
-        if (task.assignedTo) {
-          await enqueueNotification(tx, {
-            recipientId: task.assignedTo,
-            actorId,
-            type: 'task.assigned',
             entityType: 'task',
             entityId: task.id,
             projectId: task.projectId,

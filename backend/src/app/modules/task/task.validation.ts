@@ -46,7 +46,6 @@ export const updateTaskSchema = z
     dueDate: dueDateField.optional(),
     status: statusField.optional(),
     priority: priorityField.optional(),
-    assignedTo: uuidField.nullable().optional(),
   })
   .refine(
     (v) =>
@@ -54,10 +53,22 @@ export const updateTaskSchema = z
       v.description !== undefined ||
       v.dueDate !== undefined ||
       v.status !== undefined ||
-      v.priority !== undefined ||
-      v.assignedTo !== undefined,
+      v.priority !== undefined,
     { message: 'At least one field must be provided' },
   );
+
+/**
+ * PATCH /tasks/:id rejects assignedTo and assigneeIds — reassignment goes through
+ * POST/PUT/DELETE /tasks/:id/assignees endpoints (added in #B6, hard-rejected here in #B7).
+ */
+export const USE_ASSIGNEE_ENDPOINTS_MESSAGE =
+  'Use POST/PUT/DELETE /tasks/:id/assignees to change assignees.';
+
+export const hasAssigneeKeys = (body: unknown): boolean => {
+  if (!body || typeof body !== 'object') return false;
+  const b = body as Record<string, unknown>;
+  return 'assignedTo' in b || 'assigneeIds' in b;
+};
 
 
 const assignedToFilterField = z

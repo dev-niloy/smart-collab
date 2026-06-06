@@ -53,7 +53,7 @@ Steps:
 - 5. Assertions: `task.assignedTo === userId` → `task.assignees.some(a => a.userId === userId)` (or `[0].userId === userId`). Drop `expect(task.assignedTo).toBe(...)` style.
 - 6. Run full suite → expect 604 still passing (service still dual-writes, both shapes work).
 - 7. Commit `test: migrate backend fixtures to TaskAssignee shape`
-Status: [ ]
+Status: [x] 2026-06-06 (net -7 dropped REASSIGN_COMPLETED + back-compat redundant tests)
 
 ### Task 3: PATCH hard-reject `assignedTo` + `assigneeIds` body keys
 Files:
