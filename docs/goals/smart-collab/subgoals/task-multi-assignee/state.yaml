@@ -1,0 +1,108 @@
+feature: task-multi-assignee
+created: 2026-06-06
+updated: 2026-06-06
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 2                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+
+tasks:
+  - id: t1
+    name: baseline verification commit
+    status: pending
+  - id: t2
+    name: add TaskAssignee table + backfill migration
+    status: pending
+  - id: t3
+    name: helper getTaskAssignees + include
+    status: pending
+  - id: t4
+    name: canWriteTask predicate over assignees
+    status: pending
+  - id: t5
+    name: filter rewrite assignedTo query param
+    status: pending
+  - id: t6
+    name: task.create accepts assigneeIds[]
+    status: pending
+  - id: t7
+    name: legacy assignedTo back-compat write-path
+    status: pending
+  - id: t8
+    name: POST /tasks/:id/assignees endpoint
+    status: pending
+  - id: t9
+    name: DELETE /tasks/:id/assignees/:userId
+    status: pending
+  - id: t10
+    name: PUT /tasks/:id/assignees
+    status: pending
+  - id: t11
+    name: task.update rejects assignee body keys
+    status: pending
+  - id: t12
+    name: notification fan-out on status change
+    status: pending
+  - id: t13
+    name: notification on add/remove assignee
+    status: pending
+  - id: t14
+    name: cross-module refs dashboard + projectMember
+    status: pending
+  - id: t15
+    name: FE task schemas multi-assignee
+    status: pending
+  - id: t16
+    name: FE stacked-avatars + overflow badge
+    status: pending
+  - id: t17
+    name: FE new-task multi-select picker
+    status: pending
+  - id: t18
+    name: FE edit-task multi-select + new endpoints
+    status: pending
+  - id: t19
+    name: FE task detail multi-assignee
+    status: pending
+  - id: t20
+    name: FE inbox + filter compat sweep
+    status: pending
+  - id: t21
+    name: drop Task.assignedTo column + relation
+    status: pending
+  - id: t22
+    name: seed multi-assignee demo coverage
+    status: pending
+  - id: t23
+    name: smoke + close subgoal
+    status: pending
+
+blockers: []
+
+next_task: t1
+
+phase_completion:
+  gstack: true
+  gsd: true
+  superpowers: false
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 580
+  frontend_tests: 442
+  branched_off: develop@bd9d622
+
+decisions:
+  n_assignees: true
+  write_capability: any-assignee + PM/admin
+  reassign: PM/admin only
+  schema: TaskAssignee(taskId,userId,addedById,addedAt) unique(taskId,userId) cascade-on-task-delete
+  migration_strategy: split — add+backfill first, drop column last
+  assignee_validation: must be project member
+  filter_semantics: assignedTo=me → EXISTS; UNASSIGNED → NONE
+  comments_attachments: unchanged any-project-member
+  notifications: fan-out to assignees minus actor; notify add/remove targets
+  fe_overflow: stacked avatars up to 3 + "+N"
