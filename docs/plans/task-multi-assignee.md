@@ -230,7 +230,7 @@ Steps:
 - 2. GREEN: split form — fields PATCH as before, assignees through new mutation.
 - 3. REFACTOR: extract `useReplaceAssignees(taskId)` hook.
 - 4. Commit `feat(frontend): edit-task multi-assignee + new endpoints`
-Status: [x] 2026-06-06 (edit page dropped Assignee field entirely — reassign UI lives on detail page only)
+Status: [x] 2026-06-06 — edit page initially dropped Assignee field; 2026-06-06 (Ralph cycle 2) it now hosts the searchable multi-select picker via `AssigneesMultiSelect` (base-ui Popover + cmdk Command, search by name + email). PM/admin sees picker; non-PM members see read-only chip list. Detail-page `TaskAssigneesPanel` deleted (file removed). Save flow: PATCH fields, then PUT /tasks/:id/assignees when picker dirty. Partial-success path toasted explicitly. Goal #15 now satisfied as originally written.
 
 ### Task 19: detail page — all assignees + canEdit over assignees array
 Files:
