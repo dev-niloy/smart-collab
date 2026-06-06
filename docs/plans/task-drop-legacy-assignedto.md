@@ -25,7 +25,7 @@ Steps:
 - 1. `cd backend && npm test --silent` → expect 604 passing
 - 2. `cd frontend && npm test -- --run` → expect 457 passing
 - 3. Empty commit `chore: baseline before task-drop-legacy-assignedto work begins`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ### Task 2: backend test fixtures — migrate `assignedTo: x` → TaskAssignee
 Files (15 test files in goal.md "BE files w/ assignedTo:"):
@@ -67,7 +67,7 @@ Steps:
 - 4. Update any test that PATCHes `assignedTo` to instead call new endpoints OR expect 422 (where the legacy reassign-via-PATCH test was the point). The activity-diff "reassign via PATCH" test → either drop or rewrite via PUT.
 - 5. Full suite → expect 605+ (new regression test added; activity-diff test may convert or drop).
 - 6. Commit `feat(tasks): PATCH /tasks/:id rejects assignedTo + assigneeIds keys (422 USE_ASSIGNEE_ENDPOINTS)`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ---
 
@@ -90,7 +90,7 @@ Steps:
    - Delete `current.assignedTo` from select.
 - 4. Run suite → expect green (tests now use assigneeIds + endpoints).
 - 5. Commit `feat(tasks): create + update use TaskAssignee as sole assignee source`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ### Task 5: list filter + cross-module dual-read removal
 Files:
@@ -109,7 +109,7 @@ Steps:
 - 7. Delete `syncLegacyAssignedTo` helper. Grep `syncLegacyAssignedTo` returns 0 references.
 - 8. Run suite → green.
 - 9. Commit `feat(modules): drop legacy assignedTo dual-read from filters + dashboard + workload + comment`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ---
 
@@ -144,7 +144,7 @@ Steps:
 - 8. `npm run typecheck` clean.
 - 9. `npm test -- --run` green.
 - 10. Commit `refactor(frontend): Task type drops assignedTo + assignee; assignees becomes required`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ---
 
@@ -169,7 +169,7 @@ Steps:
 - 6. `npx tsx prisma/seed.ts` → succeeds; verify `task_assignees` row count matches expected.
 - 7. Full backend suite → green.
 - 8. Commit `feat(schema): drop Task.assignedTo column + relation`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ---
 
@@ -187,7 +187,7 @@ Steps:
 - 4. Backlog: mark #B7 RESOLVED.
 - 5. Commit `docs(task-drop-legacy-assignedto): close subgoal — all tasks done`
 - 6. Push + open PR vs develop.
-Status: [ ]
+Status: [x] 2026-06-06
 
 ---
 
