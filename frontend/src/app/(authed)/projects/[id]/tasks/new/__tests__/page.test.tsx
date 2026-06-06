@@ -82,7 +82,7 @@ describe('NewTaskPage', () => {
     expect(arg.projectId).toBe('p-1');
     expect(arg.title).toBe('Ship feature');
     expect(arg.dueDate).toBeInstanceOf(Date);
-    expect(arg.assignedTo).toBeNull();
+    expect(arg.assigneeIds).toEqual([]);
     expect(arg.status).toBe('todo');
     expect(arg.priority).toBe('medium');
     await waitFor(() => expect(pushSpy).toHaveBeenCalledWith('/projects/p-1/tasks/t-99'));

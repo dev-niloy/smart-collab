@@ -177,6 +177,104 @@ maybe('taskService CRUD', () => {
       );
       expect(t2.projectId).toBe(otherProjectId);
     });
+
+    describe('multi-assignee (assigneeIds)', () => {
+      it('creates TaskAssignee row per id + dual-writes legacy assignedTo to first', async () => {
+        const t = await taskService.create(
+          {
+            projectId,
+            title: 'Multi-1',
+            dueDate: future(),
+            status: TaskStatus.todo,
+            priority: TaskPriority.medium,
+            assigneeIds: [assigneeId],
+          },
+          actorId,
+        );
+        expect(t.assignees.length).toBe(1);
+        expect(t.assignees[0].userId).toBe(assigneeId);
+        expect(t.assignedTo).toBe(assigneeId);
+        const rows = await prisma.taskAssignee.findMany({ where: { taskId: t.id } });
+        expect(rows).toHaveLength(1);
+        expect(rows[0].userId).toBe(assigneeId);
+        expect(rows[0].addedById).toBe(actorId);
+      });
+
+      it('empty assigneeIds → zero rows + legacy null', async () => {
+        const t = await taskService.create(
+          {
+            projectId,
+            title: 'Multi-empty',
+            dueDate: future(),
+            status: TaskStatus.todo,
+            priority: TaskPriority.medium,
+            assigneeIds: [],
+          },
+          actorId,
+        );
+        expect(t.assignees).toEqual([]);
+        expect(t.assignedTo).toBeNull();
+      });
+
+      it('dedupes duplicate ids in assigneeIds', async () => {
+        const t = await taskService.create(
+          {
+            projectId,
+            title: 'Multi-dedupe',
+            dueDate: future(),
+            status: TaskStatus.todo,
+            priority: TaskPriority.medium,
+            assigneeIds: [assigneeId, assigneeId],
+          },
+          actorId,
+        );
+        expect(t.assignees.length).toBe(1);
+      });
+
+      it('rejects assignee who is not a project member (422)', async () => {
+        const outsider = await prisma.user.create({
+          data: {
+            email: `outsider-${TEST_EMAIL}-${Date.now()}`,
+            name: 'Outsider',
+            passwordHash: await bcrypt.hash('x', 4),
+            role: 'team_member',
+          },
+        });
+        await expect(
+          taskService.create(
+            {
+              projectId,
+              title: 'Multi-outsider',
+              dueDate: future(),
+              status: TaskStatus.todo,
+              priority: TaskPriority.medium,
+              assigneeIds: [outsider.id],
+            },
+            actorId,
+          ),
+        ).rejects.toMatchObject({ code: 'ASSIGNEE_NOT_PROJECT_MEMBER' });
+        await prisma.user.delete({ where: { id: outsider.id } });
+      });
+    });
+
+    describe('back-compat (legacy assignedTo)', () => {
+      it('legacy assignedTo → single TaskAssignee row created', async () => {
+        const t = await taskService.create(
+          {
+            projectId,
+            title: 'Legacy-assigned',
+            dueDate: future(),
+            status: TaskStatus.todo,
+            priority: TaskPriority.medium,
+            assignedTo: assigneeId,
+          },
+          actorId,
+        );
+        expect(t.assignedTo).toBe(assigneeId);
+        expect(t.assignees.length).toBe(1);
+        expect(t.assignees[0].userId).toBe(assigneeId);
+      });
+    });
   });
 
   describe('findById', () => {

@@ -20,15 +20,24 @@ const statusField = z.nativeEnum(TaskStatus);
 const priorityField = z.nativeEnum(TaskPriority);
 const uuidField = z.string().uuid('Invalid id');
 
-export const createTaskSchema = z.object({
-  projectId: uuidField,
-  title: titleField,
-  description: descriptionField,
-  dueDate: dueDateField,
-  status: statusField.default(TaskStatus.todo),
-  priority: priorityField.default(TaskPriority.medium),
-  assignedTo: uuidField.nullable().optional(),
-});
+export const createTaskSchema = z
+  .object({
+    projectId: uuidField,
+    title: titleField,
+    description: descriptionField,
+    dueDate: dueDateField,
+    status: statusField.default(TaskStatus.todo),
+    priority: priorityField.default(TaskPriority.medium),
+    assignedTo: uuidField.nullable().optional(),
+    assigneeIds: z.array(uuidField).max(50).optional(),
+  })
+  .refine(
+    (v) => !(v.assignedTo !== undefined && v.assigneeIds !== undefined),
+    {
+      message: 'Use assigneeIds (preferred) or legacy assignedTo, not both',
+      path: ['assigneeIds'],
+    },
+  );
 
 export const updateTaskSchema = z
   .object({
@@ -49,6 +58,7 @@ export const updateTaskSchema = z
       v.assignedTo !== undefined,
     { message: 'At least one field must be provided' },
   );
+
 
 const assignedToFilterField = z
   .string()
@@ -131,6 +141,19 @@ export const listTasksQuerySchema = z
 
 export const taskIdParamSchema = z.object({
   id: uuidField,
+});
+
+export const taskAssigneeAddSchema = z.object({
+  userId: uuidField,
+});
+
+export const taskAssigneeRemoveParamsSchema = z.object({
+  id: uuidField,
+  userId: uuidField,
+});
+
+export const taskAssigneesReplaceSchema = z.object({
+  userIds: z.array(uuidField).max(50),
 });
 
 export const projectIdParamSchema = z.object({

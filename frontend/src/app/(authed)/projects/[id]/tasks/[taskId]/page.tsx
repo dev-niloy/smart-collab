@@ -12,11 +12,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useTask } from '@/hooks/useTasks';
-import { useProjectMembers } from '@/hooks/useProjectMembers';
+import { useProjectMembers, useAssignableMembers } from '@/hooks/useProjectMembers';
 import { useUser } from '@/hooks/useUser';
 import { DeleteTaskButton } from '@/components/tasks/delete-task-button';
 import { TaskCommentsPanel } from '@/components/tasks/TaskCommentsPanel';
 import { TaskAttachmentsPanel } from '@/components/tasks/TaskAttachmentsPanel';
+import { TaskAssigneesPanel } from '@/components/tasks/TaskAssigneesPanel';
+import { TaskAssigneesAvatars } from '@/components/tasks/TaskAssigneesAvatars';
 import {
   STATUS_LABEL,
   STATUS_VARIANT,
@@ -39,11 +41,17 @@ export default function TaskDetailPage() {
   const isProjectPm =
     !!user && !!members?.some((m) => m.userId === user.id && m.role === 'pm');
   const isPrivileged = isAdmin || isProjectPm;
-  const isAssignee = !!user && !!task && task.assignedTo === user.id;
+  const isAssignee =
+    !!user &&
+    !!task &&
+    ((task.assignees && task.assignees.some((a) => a.userId === user.id)) ||
+      task.assignedTo === user.id);
   const isCreator = !!user && !!task && task.createdBy === user.id;
-  // Field write: PM/admin always; assignee only when task IS assigned to them.
-  // Unassigned tasks → PM/admin only.
-  const canEdit = isPrivileged || (isAssignee && !!task?.assignedTo);
+  const hasAnyAssignee =
+    !!task &&
+    ((task.assignees && task.assignees.length > 0) || !!task.assignedTo);
+  // Field write: PM/admin always; any assignee. Unassigned → PM/admin only.
+  const canEdit = isPrivileged || (isAssignee && hasAnyAssignee);
   // Delete: PM/admin or creator (any role).
   const canDelete = isPrivileged || isCreator;
 
@@ -103,16 +111,17 @@ export default function TaskDetailPage() {
                   <dd>{fmtDate(task.dueDate)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground">Assignee</dt>
+                  <dt className="text-xs text-muted-foreground">Assignees</dt>
                   <dd>
-                    {task.assignee ? (
-                      <span>
-                        {task.assignee.name}{' '}
-                        <span className="text-muted-foreground">({task.assignee.email})</span>
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground italic">Unassigned</span>
-                    )}
+                    <TaskAssigneesAvatars
+                      users={
+                        task.assignees && task.assignees.length > 0
+                          ? task.assignees.map((a) => a.user)
+                          : task.assignee
+                            ? [task.assignee]
+                            : []
+                      }
+                    />
                   </dd>
                 </div>
                 <div>
@@ -147,6 +156,19 @@ export default function TaskDetailPage() {
 
         {!isLoading && !isError && task ? (
           <div className="mt-6 space-y-8">
+            {isPrivileged ? (
+              <TaskAssigneesPanel
+                projectId={projectId}
+                taskId={task.id}
+                currentAssigneeIds={
+                  task.assignees && task.assignees.length > 0
+                    ? task.assignees.map((a) => a.userId)
+                    : task.assignedTo
+                      ? [task.assignedTo]
+                      : []
+                }
+              />
+            ) : null}
             <TaskCommentsPanel
               taskId={task.id}
               projectRole={role === 'admin' ? 'admin' : role === 'project_manager' ? 'pm' : 'member'}

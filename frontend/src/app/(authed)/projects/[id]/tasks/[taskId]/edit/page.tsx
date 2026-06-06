@@ -29,13 +29,11 @@ import {
 import {
   TASK_STATUSES,
   TASK_PRIORITIES,
-  UNASSIGNED,
   type TaskStatus,
   type TaskPriority,
 } from '@/lib/schemas/task';
 import { STATUS_LABEL, PRIORITY_LABEL } from '@/lib/task-format';
 import { useTask, useUpdateTask } from '@/hooks/useTasks';
-import { useAssignableMembers } from '@/hooks/useProjectMembers';
 import { ApiError } from '@/lib/api';
 
 const formSchema = z.object({
@@ -44,7 +42,6 @@ const formSchema = z.object({
   dueDate: z.string().min(1, 'Due date is required'),
   status: z.enum(TASK_STATUSES),
   priority: z.enum(TASK_PRIORITIES),
-  assignedTo: z.string(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -68,7 +65,6 @@ export default function EditTaskPage() {
   const taskId = routeParams?.taskId ?? '';
   const { data: task, isLoading, isError } = useTask(taskId);
   const updateMutation = useUpdateTask(taskId);
-  const assigneeQuery = useAssignableMembers(projectId);
   const [submitting, setSubmitting] = useState(false);
 
   const {
@@ -86,7 +82,6 @@ export default function EditTaskPage() {
       dueDate: '',
       status: 'todo',
       priority: 'medium',
-      assignedTo: UNASSIGNED,
     },
   });
 
@@ -98,14 +93,12 @@ export default function EditTaskPage() {
         dueDate: toDateInput(task.dueDate),
         status: task.status,
         priority: task.priority,
-        assignedTo: task.assignedTo ?? UNASSIGNED,
       });
     }
   }, [task, reset]);
 
   const statusValue = watch('status') ?? 'todo';
   const priorityValue = watch('priority') ?? 'medium';
-  const assignedToValue = watch('assignedTo') ?? UNASSIGNED;
 
   const onSubmit = async (data: FormValues) => {
     setSubmitting(true);
@@ -116,7 +109,6 @@ export default function EditTaskPage() {
         dueDate: new Date(data.dueDate),
         status: data.status,
         priority: data.priority,
-        assignedTo: data.assignedTo === UNASSIGNED ? null : data.assignedTo,
       });
       toast.success('Task updated');
       router.push(`/projects/${projectId}/tasks/${taskId}`);
@@ -219,35 +211,10 @@ export default function EditTaskPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Assignee</Label>
-                    <Select
-                      value={assignedToValue}
-                      onValueChange={(v) => setValue('assignedTo', v ?? UNASSIGNED)}
-                    >
-                      <SelectTrigger aria-label="Assignee">
-                        <SelectValue placeholder="Unassigned">
-                          {assignedToValue === UNASSIGNED
-                            ? 'Unassigned'
-                            : (() => {
-                                const u = (assigneeQuery.data ?? []).find(
-                                  (m) => m.id === assignedToValue,
-                                );
-                                return u ? `${u.name} (${u.email})` : 'Unassigned';
-                              })()}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
-                        {(assigneeQuery.data ?? []).map((u) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.name} ({u.email})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Assignees are managed from the task detail page (project managers only).
+                </p>
                 <div className="flex items-center gap-2">
                   <Button type="submit" disabled={submitting}>
                     {submitting ? 'Saving…' : 'Save changes'}

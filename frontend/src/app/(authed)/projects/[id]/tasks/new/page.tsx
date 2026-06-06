@@ -29,7 +29,6 @@ import {
 import {
   TASK_STATUSES,
   TASK_PRIORITIES,
-  UNASSIGNED,
   type TaskStatus,
   type TaskPriority,
 } from '@/lib/schemas/task';
@@ -44,7 +43,7 @@ const formSchema = z.object({
   dueDate: z.string().min(1, 'Due date is required'),
   status: z.enum(TASK_STATUSES),
   priority: z.enum(TASK_PRIORITIES),
-  assignedTo: z.string(),
+  assigneeIds: z.array(z.string()),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -71,13 +70,20 @@ export default function NewTaskPage() {
       dueDate: '',
       status: 'todo',
       priority: 'medium',
-      assignedTo: UNASSIGNED,
+      assigneeIds: [],
     },
   });
 
   const statusValue = watch('status') ?? 'todo';
   const priorityValue = watch('priority') ?? 'medium';
-  const assignedToValue = watch('assignedTo') ?? UNASSIGNED;
+  const assigneeIdsValue = watch('assigneeIds') ?? [];
+
+  const toggleAssignee = (id: string, on: boolean) => {
+    const current = new Set(assigneeIdsValue);
+    if (on) current.add(id);
+    else current.delete(id);
+    setValue('assigneeIds', Array.from(current));
+  };
 
   const onSubmit = async (data: FormValues) => {
     setSubmitting(true);
@@ -89,7 +95,7 @@ export default function NewTaskPage() {
         dueDate: new Date(data.dueDate),
         status: data.status,
         priority: data.priority,
-        assignedTo: data.assignedTo === UNASSIGNED ? null : data.assignedTo,
+        assigneeIds: data.assigneeIds,
       });
       toast.success('Task created');
       router.push(`/projects/${projectId}/tasks/${task.id}`);
@@ -178,32 +184,44 @@ export default function NewTaskPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Assignee</Label>
-                  <Select
-                    value={assignedToValue}
-                    onValueChange={(v) => setValue('assignedTo', v ?? UNASSIGNED)}
+                  <Label>Assignees</Label>
+                  <div
+                    className="max-h-40 overflow-y-auto rounded-md border bg-background p-2"
+                    role="group"
+                    aria-label="Assignees"
                   >
-                    <SelectTrigger aria-label="Assignee">
-                      <SelectValue placeholder="Unassigned">
-                        {assignedToValue === UNASSIGNED
-                          ? 'Unassigned'
-                          : (() => {
-                              const u = (assigneeQuery.data ?? []).find(
-                                (m) => m.id === assignedToValue,
-                              );
-                              return u ? `${u.name} (${u.email})` : 'Unassigned';
-                            })()}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
-                      {(assigneeQuery.data ?? []).map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name} ({u.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {(assigneeQuery.data ?? []).length === 0 ? (
+                      <p className="px-1 py-2 text-xs text-muted-foreground">
+                        No project members available
+                      </p>
+                    ) : (
+                      (assigneeQuery.data ?? []).map((u) => {
+                        const checked = assigneeIdsValue.includes(u.id);
+                        return (
+                          <label
+                            key={u.id}
+                            className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-accent"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => toggleAssignee(u.id, e.target.checked)}
+                              aria-label={u.name}
+                            />
+                            <span className="text-sm">
+                              {u.name}{' '}
+                              <span className="text-muted-foreground">({u.email})</span>
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {assigneeIdsValue.length === 0
+                      ? 'Unassigned'
+                      : `${assigneeIdsValue.length} selected`}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">

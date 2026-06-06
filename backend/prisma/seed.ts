@@ -144,7 +144,7 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
   ];
 
   for (const t of tasks) {
-    await client.task.upsert({
+    const created = await client.task.upsert({
       where: { tasks_projectId_title_unique: { projectId: projectA.id, title: t.title } },
       update: {},
       create: {
@@ -158,10 +158,48 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
         dueDate: dayFromNow(10),
       },
     });
+    // Multi-assignee: ensure a TaskAssignee row mirrors the legacy assignedTo.
+    if (t.assignedTo) {
+      await client.taskAssignee.upsert({
+        where: { taskId_userId: { taskId: created.id, userId: t.assignedTo } },
+        update: {},
+        create: {
+          taskId: created.id,
+          userId: t.assignedTo,
+          addedById: t.createdBy,
+        },
+      });
+    }
+  }
+
+  // ── Multi-assignee demo task: PM creates, both PM + Member as assignees ──
+  const multi = await client.task.upsert({
+    where: {
+      tasks_projectId_title_unique: { projectId: projectA.id, title: 'Co-owned launch checklist' },
+    },
+    update: {},
+    create: {
+      projectId: projectA.id,
+      title: 'Co-owned launch checklist',
+      description:
+        'Multi-assignee demo: PM + Member both assigned — either can flip status; PM can add/remove via detail page.',
+      status: TaskStatus.todo,
+      priority: TaskPriority.high,
+      assignedTo: member.id, // legacy column dual-written; first assignee
+      createdBy: pm.id,
+      dueDate: dayFromNow(7),
+    },
+  });
+  for (const userId of [member.id, pm.id]) {
+    await client.taskAssignee.upsert({
+      where: { taskId_userId: { taskId: multi.id, userId } },
+      update: {},
+      create: { taskId: multi.id, userId, addedById: pm.id },
+    });
   }
 
   // ── One task in Project B (member should not see this) ──────
-  await client.task.upsert({
+  const projectBTask = await client.task.upsert({
     where: {
       tasks_projectId_title_unique: { projectId: projectB.id, title: 'Set up CI for internal tooling' },
     },
@@ -176,6 +214,11 @@ export const seedDemoData = async (client: PrismaClient = prisma): Promise<void>
       createdBy: pm.id,
       dueDate: dayFromNow(15),
     },
+  });
+  await client.taskAssignee.upsert({
+    where: { taskId_userId: { taskId: projectBTask.id, userId: pm.id } },
+    update: {},
+    create: { taskId: projectBTask.id, userId: pm.id, addedById: pm.id },
   });
 };
 

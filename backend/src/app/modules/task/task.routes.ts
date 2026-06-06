@@ -9,6 +9,9 @@ import {
   updateTaskSchema,
   listTasksQuerySchema,
   taskIdParamSchema,
+  taskAssigneeAddSchema,
+  taskAssigneeRemoveParamsSchema,
+  taskAssigneesReplaceSchema,
 } from './task.validation';
 
 const router = Router();
@@ -33,6 +36,25 @@ router.post(
   '/:id/restore',
   validate({ params: taskIdParamSchema }),
   taskController.restore,
+);
+
+// Phase C — multi-assignee management (PM/admin only; enforced in service layer)
+router.post(
+  '/:id/assignees',
+  validate({ params: taskIdParamSchema }),
+  validate({ body: taskAssigneeAddSchema }),
+  taskController.addAssignee,
+);
+router.put(
+  '/:id/assignees',
+  validate({ params: taskIdParamSchema }),
+  validate({ body: taskAssigneesReplaceSchema }),
+  taskController.replaceAssignees,
+);
+router.delete(
+  '/:id/assignees/:userId',
+  validate({ params: taskAssigneeRemoveParamsSchema }),
+  taskController.removeAssignee,
 );
 
 export default router;

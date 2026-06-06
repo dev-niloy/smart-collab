@@ -86,6 +86,63 @@ describe('task permission predicates', () => {
         }),
       ).toBe(true); // still true — assignee check doesn't depend on project membership here; service-level RBAC catches that
     });
+
+    describe('multi-assignee', () => {
+      it('any assignee in `assignees` array → true', () => {
+        expect(
+          canWriteTask({
+            actor: member,
+            task: {
+              assignedTo: null,
+              createdBy: 'x',
+              assignees: [{ userId: otherMember.id }, { userId: member.id }],
+            },
+            projectRole: 'member',
+          }),
+        ).toBe(true);
+      });
+
+      it('non-assignee member → false even if assignees populated', () => {
+        expect(
+          canWriteTask({
+            actor: member,
+            task: {
+              assignedTo: null,
+              createdBy: 'x',
+              assignees: [{ userId: otherMember.id }],
+            },
+            projectRole: 'member',
+          }),
+        ).toBe(false);
+      });
+
+      it('empty assignees array (unassigned) + member → false', () => {
+        expect(
+          canWriteTask({
+            actor: member,
+            task: { assignedTo: null, createdBy: 'x', assignees: [] },
+            projectRole: 'member',
+          }),
+        ).toBe(false);
+      });
+
+      it('PM/admin override regardless of assignees', () => {
+        expect(
+          canWriteTask({
+            actor: pm,
+            task: { assignedTo: null, createdBy: 'x', assignees: [] },
+            projectRole: 'pm',
+          }),
+        ).toBe(true);
+        expect(
+          canWriteTask({
+            actor: admin,
+            task: { assignedTo: null, createdBy: 'x', assignees: [{ userId: otherMember.id }] },
+            projectRole: null,
+          }),
+        ).toBe(true);
+      });
+    });
   });
 
   describe('canDeleteTask', () => {

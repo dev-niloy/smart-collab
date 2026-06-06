@@ -1,4 +1,9 @@
-export const NOTIFICATION_TYPES = ['task.assigned', 'comment.created'] as const;
+export const NOTIFICATION_TYPES = [
+  'task.assigned',
+  'task.unassigned',
+  'task.status_changed',
+  'comment.created',
+] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export const isKnownNotificationType = (t: string): t is NotificationType =>

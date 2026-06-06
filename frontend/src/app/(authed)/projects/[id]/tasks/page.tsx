@@ -37,6 +37,7 @@ import {
   type Task,
 } from '@/lib/schemas/task';
 import { InlineStatusSelect } from '@/components/tasks/inline-status-select';
+import { TaskAssigneesAvatars } from '@/components/tasks/TaskAssigneesAvatars';
 import { parseCsv, toCsv, parseDateParam } from '@/lib/queryString';
 
 const SORT_LABEL: Record<SortKey, string> = {
@@ -85,8 +86,14 @@ function ProjectTasksPageInner() {
   const isProjectPm =
     !!user && !!members?.some((m) => m.userId === user.id && m.role === 'pm');
   const isPrivileged = isAdmin || isProjectPm;
-  const canWriteFor = (t: { assignedTo: string | null }): boolean =>
-    isPrivileged || (!!user && !!t.assignedTo && t.assignedTo === user.id);
+  const canWriteFor = (t: Task): boolean => {
+    if (isPrivileged) return true;
+    if (!user) return false;
+    if (t.assignees && t.assignees.length > 0) {
+      return t.assignees.some((a) => a.userId === user.id);
+    }
+    return !!t.assignedTo && t.assignedTo === user.id;
+  };
 
   const q = params.get('q') ?? '';
   const statusList = parseStatusList(params.get('status'));
@@ -188,8 +195,10 @@ function ProjectTasksPageInner() {
   };
 
   const assigneeMap = useMemo(() => {
-    const map = new Map<string, { name: string; email: string }>();
-    usersQuery.data?.forEach((u) => map.set(u.id, { name: u.name, email: u.email }));
+    const map = new Map<string, { id: string; name: string; email: string; role: 'admin' | 'project_manager' | 'team_member' }>();
+    usersQuery.data?.forEach((u) =>
+      map.set(u.id, { id: u.id, name: u.name, email: u.email, role: u.role }),
+    );
     return map;
   }, [usersQuery.data]);
 
@@ -458,8 +467,14 @@ function ProjectTasksPageInner() {
               data-testid="tasks-grid"
             >
               {items.map((t) => {
-                const assignee =
+                const fallbackSingle =
                   t.assignee ?? (t.assignedTo ? assigneeMap.get(t.assignedTo) ?? null : null);
+                const assigneeUsers =
+                  t.assignees && t.assignees.length > 0
+                    ? t.assignees.map((a) => a.user)
+                    : fallbackSingle
+                      ? [fallbackSingle]
+                      : [];
                 return (
                   <Card
                     key={t.id}
@@ -482,12 +497,12 @@ function ProjectTasksPageInner() {
                         <InlineStatusSelect task={t} canWrite={canWriteFor(t)} />
                       </div>
                     </CardHeader>
-                    <CardContent className="mt-auto space-y-1 text-xs text-muted-foreground">
+                    <CardContent className="mt-auto space-y-2 text-xs text-muted-foreground">
                       <p>Due {fmtDate(t.dueDate)}</p>
-                      <p>
-                        Assigned:{' '}
-                        {assignee ? assignee.name : <span className="italic">Unassigned</span>}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <span>Assignees:</span>
+                        <TaskAssigneesAvatars users={assigneeUsers} />
+                      </div>
                       {showDeleted ? (
                         <div className="relative z-10 pt-2">
                           <Button

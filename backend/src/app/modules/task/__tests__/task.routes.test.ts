@@ -516,6 +516,83 @@ maybe('task routes /api/v1/tasks (t7 happy paths)', () => {
     expect(res.body.task.status).toBe('completed');
   });
 
+  describe('multi-assignee endpoints', () => {
+    it('POST /:id/assignees adds an assignee (PM → 201)', async () => {
+      const adminAgent = await loginAs('admin');
+      const created = await adminAgent
+        .post('/api/v1/tasks')
+        .send({ projectId, title: 'MA-add', dueDate: future(), assigneeIds: [] });
+      expect(created.status).toBe(201);
+      const pmAgent = await loginAs('project_manager');
+      const res = await pmAgent
+        .post(`/api/v1/tasks/${created.body.task.id}/assignees`)
+        .send({ userId: memberId });
+      expect(res.status).toBe(201);
+      expect(res.body.task.assignees).toEqual(
+        expect.arrayContaining([expect.objectContaining({ userId: memberId })]),
+      );
+      // Legacy column dual-write set to the only assignee.
+      expect(res.body.task.assignedTo).toBe(memberId);
+    });
+
+    it('POST /:id/assignees by non-PM member → 403 CANNOT_REASSIGN', async () => {
+      const adminAgent = await loginAs('admin');
+      const created = await adminAgent
+        .post('/api/v1/tasks')
+        .send({ projectId, title: 'MA-add-403', dueDate: future(), assigneeIds: [] });
+      const memberAgent = await loginAs('team_member');
+      const res = await memberAgent
+        .post(`/api/v1/tasks/${created.body.task.id}/assignees`)
+        .send({ userId: memberId });
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('CANNOT_REASSIGN');
+    });
+
+    it('PUT /:id/assignees replaces full list (PM → 200, exact membership)', async () => {
+      const adminAgent = await loginAs('admin');
+      const created = await adminAgent
+        .post('/api/v1/tasks')
+        .send({ projectId, title: 'MA-put', dueDate: future(), assigneeIds: [memberId] });
+      const pmAgent = await loginAs('project_manager');
+      const res = await pmAgent
+        .put(`/api/v1/tasks/${created.body.task.id}/assignees`)
+        .send({ userIds: [pmId, adminId] });
+      expect(res.status).toBe(200);
+      const ids = res.body.task.assignees.map((a: { userId: string }) => a.userId);
+      expect(ids).toEqual(expect.arrayContaining([pmId, adminId]));
+      expect(ids).not.toContain(memberId);
+    });
+
+    it('PUT /:id/assignees w/ empty list → zero assignees + legacy null', async () => {
+      const adminAgent = await loginAs('admin');
+      const created = await adminAgent
+        .post('/api/v1/tasks')
+        .send({ projectId, title: 'MA-put-empty', dueDate: future(), assigneeIds: [memberId] });
+      const pmAgent = await loginAs('project_manager');
+      const res = await pmAgent
+        .put(`/api/v1/tasks/${created.body.task.id}/assignees`)
+        .send({ userIds: [] });
+      expect(res.status).toBe(200);
+      expect(res.body.task.assignees).toEqual([]);
+      expect(res.body.task.assignedTo).toBeNull();
+    });
+
+    it('DELETE /:id/assignees/:userId removes (PM → 200)', async () => {
+      const adminAgent = await loginAs('admin');
+      const created = await adminAgent
+        .post('/api/v1/tasks')
+        .send({ projectId, title: 'MA-del', dueDate: future(), assigneeIds: [memberId, pmId] });
+      const pmAgent = await loginAs('project_manager');
+      const res = await pmAgent.delete(
+        `/api/v1/tasks/${created.body.task.id}/assignees/${memberId}`,
+      );
+      expect(res.status).toBe(200);
+      const ids = res.body.task.assignees.map((a: { userId: string }) => a.userId);
+      expect(ids).not.toContain(memberId);
+      expect(ids).toContain(pmId);
+    });
+  });
+
   it('list pagination cap: limit=999 coerced to MAX_LIMIT=50', async () => {
     const agent = await loginAs('admin');
     await agent

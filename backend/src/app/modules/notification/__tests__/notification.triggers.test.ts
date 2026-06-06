@@ -153,4 +153,98 @@ maybe('notification triggers (task.assigned + comment.created)', () => {
     const notifs = await prisma.notification.findMany({ where: { entityId: t.id, type: 'task.assigned' } });
     expect(notifs.length).toBe(0);
   });
+
+  describe('multi-assignee fan-out', () => {
+    it('status change fans out task.status_changed to all assignees except actor', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: `${tag} fanout-${Math.random()}`,
+          dueDate: future(),
+          status: TaskStatus.todo,
+          priority: TaskPriority.medium,
+          assigneeIds: [aId, bId, creatorId],
+        },
+        actorId,
+      );
+      await prisma.notification.deleteMany({});
+      await taskService.update(
+        t.id,
+        { status: TaskStatus.in_progress },
+        actorId,
+        { id: actorId, role: 'admin' },
+      );
+      const notifs = await prisma.notification.findMany({
+        where: { entityId: t.id, type: 'task.status_changed' },
+      });
+      const recipients = notifs.map((n) => n.recipientId).sort();
+      expect(recipients).toEqual([aId, bId, creatorId].sort());
+    });
+
+    it('status change by an assignee skips that assignee', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: `${tag} skip-self-${Math.random()}`,
+          dueDate: future(),
+          status: TaskStatus.todo,
+          priority: TaskPriority.medium,
+          assigneeIds: [aId, bId],
+        },
+        actorId,
+      );
+      await prisma.notification.deleteMany({});
+      // aId updates status — should notify bId only, not aId
+      await taskService.update(
+        t.id,
+        { status: TaskStatus.in_progress },
+        aId,
+        { id: aId, role: 'team_member' },
+      );
+      const notifs = await prisma.notification.findMany({
+        where: { entityId: t.id, type: 'task.status_changed' },
+      });
+      expect(notifs.map((n) => n.recipientId)).toEqual([bId]);
+    });
+
+    it('addAssignee notifies the added user', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: `${tag} add-${Math.random()}`,
+          dueDate: future(),
+          status: TaskStatus.todo,
+          priority: TaskPriority.medium,
+          assigneeIds: [],
+        },
+        actorId,
+      );
+      await prisma.notification.deleteMany({});
+      await taskService.addAssignee(t.id, aId, actorId, { id: actorId, role: 'admin' });
+      const notifs = await prisma.notification.findMany({
+        where: { entityId: t.id, type: 'task.assigned' },
+      });
+      expect(notifs.map((n) => n.recipientId)).toEqual([aId]);
+    });
+
+    it('removeAssignee notifies the removed user', async () => {
+      const t = await taskService.create(
+        {
+          projectId,
+          title: `${tag} remove-${Math.random()}`,
+          dueDate: future(),
+          status: TaskStatus.todo,
+          priority: TaskPriority.medium,
+          assigneeIds: [aId, bId],
+        },
+        actorId,
+      );
+      await prisma.notification.deleteMany({});
+      await taskService.removeAssignee(t.id, aId, actorId, { id: actorId, role: 'admin' });
+      const notifs = await prisma.notification.findMany({
+        where: { entityId: t.id, type: 'task.unassigned' },
+      });
+      expect(notifs.map((n) => n.recipientId)).toEqual([aId]);
+    });
+  });
 });

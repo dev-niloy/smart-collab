@@ -109,7 +109,7 @@ describe('TaskDetailPage', () => {
     await waitFor(() => expect(screen.getByText('Launch site')).toBeInTheDocument());
     expect(screen.getByText(/marketing rebuild/i)).toBeInTheDocument();
     expect(screen.getByText(/alice@x\.y/)).toBeInTheDocument();
-    expect(screen.getByText(/unassigned/i)).toBeInTheDocument();
+    expect(screen.getByTestId('task-unassigned')).toBeInTheDocument();
   });
 
   it('admin: shows Edit link + Delete button', async () => {

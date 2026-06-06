@@ -1,0 +1,108 @@
+feature: task-multi-assignee
+created: 2026-06-06
+updated: 2026-06-06
+
+mode:
+  type: brownfield
+  scope: feature
+  session: new
+
+phase: 3                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+
+tasks:
+  - id: t1
+    name: baseline verification commit
+    status: completed
+  - id: t2
+    name: add TaskAssignee table + backfill migration
+    status: completed
+  - id: t3
+    name: helper getTaskAssignees + include
+    status: completed
+  - id: t4
+    name: canWriteTask predicate over assignees
+    status: completed
+  - id: t5
+    name: filter rewrite assignedTo query param
+    status: completed
+  - id: t6
+    name: task.create accepts assigneeIds[]
+    status: completed
+  - id: t7
+    name: legacy assignedTo back-compat write-path
+    status: completed
+  - id: t8
+    name: POST /tasks/:id/assignees endpoint
+    status: completed
+  - id: t9
+    name: DELETE /tasks/:id/assignees/:userId
+    status: completed
+  - id: t10
+    name: PUT /tasks/:id/assignees
+    status: completed
+  - id: t11
+    name: task.update rejects assignee body keys
+    status: deferred  # → rolled into #B7 alongside column drop
+  - id: t12
+    name: notification fan-out on status change
+    status: completed
+  - id: t13
+    name: notification on add/remove assignee
+    status: completed
+  - id: t14
+    name: cross-module refs dashboard + projectMember
+    status: completed
+  - id: t15
+    name: FE task schemas multi-assignee
+    status: completed
+  - id: t16
+    name: FE stacked-avatars + overflow badge
+    status: completed
+  - id: t17
+    name: FE new-task multi-select picker
+    status: completed
+  - id: t18
+    name: FE edit-task multi-select + new endpoints
+    status: completed
+  - id: t19
+    name: FE task detail multi-assignee
+    status: completed
+  - id: t20
+    name: FE inbox + filter compat sweep
+    status: completed
+  - id: t21
+    name: drop Task.assignedTo column + relation
+    status: deferred  # → follow-up subgoal #B7
+  - id: t22
+    name: seed multi-assignee demo coverage
+    status: completed
+  - id: t23
+    name: smoke + close subgoal
+    status: completed
+
+blockers: []
+
+next_task: null  # all in-scope tasks complete; t11+t21 deferred to #B7
+
+phase_completion:
+  gstack: true
+  gsd: true
+  superpowers: true
+  ralph_wiggum: false
+
+baseline:
+  backend_tests: 580
+  frontend_tests: 442
+  branched_off: develop@bd9d622
+
+decisions:
+  n_assignees: true
+  write_capability: any-assignee + PM/admin
+  reassign: PM/admin only
+  schema: TaskAssignee(taskId,userId,addedById,addedAt) unique(taskId,userId) cascade-on-task-delete
+  migration_strategy: split — add+backfill first, drop column last
+  assignee_validation: must be project member
+  filter_semantics: assignedTo=me → EXISTS; UNASSIGNED → NONE
+  comments_attachments: unchanged any-project-member
+  notifications: fan-out to assignees minus actor; notify add/remove targets
+  fe_overflow: stacked avatars up to 3 + "+N"
