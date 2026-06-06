@@ -55,8 +55,54 @@ services:
         generateValue: true
       - key: DEMO_MEMBER_PW
         generateValue: true
+      # Email pipeline — Resend chosen as default provider (1 API key + EMAIL_FROM).
+      # To swap to SMTP, set EMAIL_PROVIDER=smtp and add SMTP_HOST/PORT/USER/PASS instead.
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: EMAIL_FROM
+        value: "Smart Collab <noreply@example.com>"   # replace with verified Resend sender
       # User-provided in dashboard (sync: false hides them from the blueprint).
       - key: DATABASE_URL
         sync: false
       - key: CORS_ORIGINS
         sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+
+  # Email worker — drains BullMQ jobs queued by the API service. Shares
+  # DATABASE_URL, REDIS_URL, RESEND_API_KEY, EMAIL_FROM with the web service.
+  # Must run as a separate process so HTTP request lifecycle never blocks on
+  # SMTP latency.
+  - type: worker
+    name: smart-collab-email-worker
+    runtime: node
+    plan: free
+    region: virginia
+    branch: develop
+    rootDir: backend
+    autoDeploy: true
+    buildCommand: npm ci --include=dev && npm run build:prod
+    startCommand: node dist/src/worker.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: EMAIL_PROVIDER
+        value: resend
+      - fromService:
+          type: web
+          name: smart-collab-api
+          envVarKey: EMAIL_FROM
+      - fromService:
+          type: web
+          name: smart-collab-api
+          envVarKey: DATABASE_URL
+      - fromService:
+          type: web
+          name: smart-collab-api
+          envVarKey: REDIS_URL
+      - fromService:
+          type: web
+          name: smart-collab-api
+          envVarKey: RESEND_API_KEY
