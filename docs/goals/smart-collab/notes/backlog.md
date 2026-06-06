@@ -1,6 +1,38 @@
 # Backlog — captured during progress-system smoke (2026-06-05)
 
-## #B6 — Multi-assignee on tasks — **NEXT SUBGOAL after task-assignee-write merges**
+## #B6 — Multi-assignee on tasks — **RESOLVED 2026-06-06 (subgoal `task-multi-assignee` complete, PR pending)**
+
+**Shipped:**
+- New `TaskAssignee(taskId, userId, addedById, addedAt)` join table + backfill migration.
+- `canWriteTask` predicate over `assignees[]`.
+- `task.create` accepts `assigneeIds: string[]`; legacy `assignedTo` still accepted (back-compat).
+- New endpoints: `POST/PUT/DELETE /tasks/:id/assignees` (PM/admin only).
+- Notifications: status-change fan-out to all assignees (except actor); `task.assigned`/`task.unassigned` on add/remove.
+- Dashboard + projectMember workload: dual-read TaskAssignee + legacy.
+- Frontend: stacked avatars + `+N` overflow on cards + detail; new-task multi-select picker; detail-page `TaskAssigneesPanel` (PM-only PUT).
+- 580 → 601 backend tests, 442 → 447 frontend tests.
+
+**NOT shipped (deferred — see #B7):**
+- Drop legacy `Task.assignedTo` column — ~20 test files reference it directly; cleanup is its own subgoal.
+
+---
+
+## #B7 — Drop legacy `Task.assignedTo` column — **NEW, captured 2026-06-06**
+
+**Why:** finish the t21 cleanup deferred from `task-multi-assignee`. The column is dual-written but functionally inert; tests still seed via `assignedTo` directly. Until it's dropped + tests migrated, schema carries dead weight.
+
+**Scope:**
+- Migrate ~20 backend test files from `prisma.task.create({ assignedTo: x })` → `prisma.task.create({ assignees: { create: { userId: x, addedById: y } } })`.
+- Service layer: remove dual-write paths (`task.create` legacy branch, `task.update` legacy `assignedTo` branch, `syncLegacyAssignedTo`, dashboard/workload `OR` clauses, comment service legacy merge).
+- Frontend: `Task.assignedTo` + `Task.assignee` removed from schema; bump `assignees` from optional → required.
+- Migration: `ALTER TABLE tasks DROP COLUMN "assignedTo"; DROP INDEX tasks_assignedTo_idx;`.
+- Hard-reject PATCH `assignedTo` / `assigneeIds` (t11 promise).
+
+**Estimate:** 5-8 tasks; mostly mechanical churn + the column drop migration at the end.
+
+---
+
+## #B6 — Multi-assignee — ORIGINAL DECISIONS (for reference)
 
 **User-locked decisions (2026-06-05):**
 - Task can have **N assignees**, not just one. Industry standard (Linear/Jira/Asana).

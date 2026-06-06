@@ -279,7 +279,7 @@ Steps:
 - 1. Update seed: 2+ tasks w/ 2+ assignees each; one unassigned; one w/ assignee who is also creator.
 - 2. `npx tsx prisma/seed.ts` on local DB → verify shape.
 - 3. Commit `chore(seed): multi-assignee demo coverage`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ### Task 23: smoke + close
 Files:
@@ -292,4 +292,4 @@ Steps:
 - 3. Backlog: mark #B6 RESOLVED.
 - 4. Commit `docs(task-multi-assignee): close subgoal — all tasks done`
 - 5. Open PR vs develop.
-Status: [ ]
+Status: [x] 2026-06-06
