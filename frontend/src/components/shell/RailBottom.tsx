@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useUser, useLogout } from '@/hooks/useUser';
+import { avatarUrlFor } from '@/lib/auth';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const HELP_HREF = 'https://github.com/dev-niloy/smart-collab#smart-project--task-collaboration-system';
@@ -85,9 +86,18 @@ export function RailBottom() {
                     <button
                       type="button"
                       aria-label={`Account menu (${user.email})`}
-                      className="mt-1 grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground ring-1 ring-foreground/15 hover:opacity-90"
+                      className="mt-1 grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-primary text-xs font-semibold text-primary-foreground ring-1 ring-foreground/15 hover:opacity-90"
                     >
-                      {(user.name || user.email || '?').slice(0, 1).toUpperCase()}
+                      {avatarUrlFor(user) ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={avatarUrlFor(user)!}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span>{(user.name || user.email || '?').slice(0, 1).toUpperCase()}</span>
+                      )}
                     </button>
                   }
                 />
@@ -114,6 +124,7 @@ export function RailBottom() {
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            <DropdownMenuItem render={<Link href="/profile">Profile</Link>} />
             <DropdownMenuItem onClick={onLogout} disabled={logout.isPending}>
               {logout.isPending ? 'Logging out…' : 'Log out'}
             </DropdownMenuItem>
