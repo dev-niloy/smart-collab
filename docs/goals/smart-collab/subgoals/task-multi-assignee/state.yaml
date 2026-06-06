@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 3                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+phase: DONE             # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
 
 tasks:
   - id: t1
@@ -88,7 +88,7 @@ phase_completion:
   gstack: true
   gsd: true
   superpowers: true
-  ralph_wiggum: false
+  ralph_wiggum: true
 
 baseline:
   backend_tests: 580
