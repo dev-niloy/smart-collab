@@ -40,8 +40,9 @@ export const projectMemberController = {
     try {
       const projectId = req.params.id;
       const memberId = req.params.memberId;
+      const actorId = req.user?.id ?? null;
       const { role } = req.body;
-      const member = await projectMemberService.updateRole(projectId, memberId, role);
+      const member = await projectMemberService.updateRole(projectId, memberId, role, actorId);
       res.status(200).json({ member });
     } catch (err) {
       next(err);

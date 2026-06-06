@@ -330,13 +330,61 @@ const updateRole = async (
   projectId: string,
   memberId: string,
   role: ProjectRole,
+  actorId: string | null = null,
 ): Promise<MemberWithUser> => {
   try {
-    return await prisma.projectMember.update({
-      where: { id: memberId, projectId },
-      data: { role },
-      include: memberInclude,
+    const result = await prisma.$transaction(async (tx) => {
+      const current = await tx.projectMember.findUnique({
+        where: { id: memberId },
+        select: { id: true, projectId: true, userId: true, role: true },
+      });
+      if (!current || current.projectId !== projectId) {
+        throw ApiError.notFound(MEMBER_NOT_FOUND_MESSAGE, ERR_MEMBER_NOT_FOUND);
+      }
+      // Idempotent PATCH guard — no role transition means no notif/email.
+      if (current.role === role) {
+        const unchanged = await tx.projectMember.findUnique({
+          where: { id: memberId },
+          include: memberInclude,
+        });
+        return { member: unchanged as MemberWithUser, changed: false, previousRole: current.role, recipientId: current.userId };
+      }
+      const updated = await tx.projectMember.update({
+        where: { id: memberId, projectId },
+        data: { role },
+        include: memberInclude,
+      });
+      await enqueueNotification(tx, {
+        recipientId: current.userId,
+        actorId,
+        type: 'project.member_role_changed',
+        entityType: 'member',
+        entityId: updated.id,
+        projectId,
+        payload: {
+          projectName: undefined,
+          memberId: updated.id,
+          newRole: updated.role,
+          previousRole: current.role,
+        },
+      });
+      return { member: updated, changed: true, previousRole: current.role, recipientId: current.userId };
     });
+
+    if (result.changed && actorId) {
+      await fanoutProjectMemberEmails({
+        projectId,
+        recipientId: result.recipientId,
+        actorId,
+        type: 'project.member_role_changed',
+        extraPayload: {
+          memberId: result.member.id,
+          newRole: result.member.role,
+          previousRole: result.previousRole,
+        },
+      });
+    }
+    return result.member;
   } catch (err) {
     if (isRecordNotFound(err)) {
       throw ApiError.notFound(MEMBER_NOT_FOUND_MESSAGE, ERR_MEMBER_NOT_FOUND);

@@ -150,4 +150,54 @@ maybe('projectMemberService — notifications on member events', () => {
     });
     expect(after).toBe(before);
   });
+
+  it('updateRole writes a project.member_role_changed notification with previousRole + newRole', async () => {
+    const memberEmail = (await prisma.user.findUnique({ where: { id: recipientId } }))!
+      .email;
+    const member = await projectMemberService.addMember(
+      projectId,
+      memberEmail,
+      'member',
+      actorId,
+    );
+    await prisma.notification.deleteMany({
+      where: { projectId, recipientId, type: 'project.member_role_changed' },
+    });
+
+    await projectMemberService.updateRole(projectId, member.id, 'pm', actorId);
+
+    const rows = await prisma.notification.findMany({
+      where: { projectId, recipientId, type: 'project.member_role_changed' },
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+    });
+    expect(rows).toHaveLength(1);
+    const payload = rows[0].payload as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      memberId: member.id,
+      newRole: 'pm',
+      previousRole: 'member',
+    });
+  });
+
+  it('updateRole is idempotent — no notification when newRole equals current role', async () => {
+    const memberEmail = (await prisma.user.findUnique({ where: { id: recipientId } }))!
+      .email;
+    const member = await projectMemberService.addMember(
+      projectId,
+      memberEmail,
+      'member',
+      actorId,
+    );
+    await prisma.notification.deleteMany({
+      where: { projectId, recipientId, type: 'project.member_role_changed' },
+    });
+
+    await projectMemberService.updateRole(projectId, member.id, 'member', actorId);
+
+    const count = await prisma.notification.count({
+      where: { projectId, recipientId, type: 'project.member_role_changed' },
+    });
+    expect(count).toBe(0);
+  });
 });
