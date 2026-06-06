@@ -27,6 +27,12 @@ import type { CommentDTO } from '@/lib/schemas/comment';
 import type { Role } from '@/lib/schemas/auth';
 import { CommentBody } from './CommentBody';
 import { MentionTextarea } from './MentionTextarea';
+import { MENTION_TOKEN_RE } from '@/lib/mentions';
+
+const bodyHasMention = (s: string): boolean => {
+  // RegExp.test on a /g regex advances lastIndex — clone to keep this pure.
+  return new RegExp(MENTION_TOKEN_RE.source, MENTION_TOKEN_RE.flags).test(s);
+};
 
 const MAX_BODY = MAX_COMMENT_BODY;
 
@@ -188,6 +194,17 @@ export function TaskCommentsPanel({ taskId, projectId, projectRole }: Props) {
           aria-label="New comment body"
           maxLength={MAX_BODY + 50}
         />
+        {bodyHasMention(body) ? (
+          <div
+            data-testid="composer-preview"
+            className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2"
+          >
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Preview
+            </p>
+            <CommentBody body={body} />
+          </div>
+        ) : null}
         <div className="flex items-center justify-between">
           <span className={`text-xs ${overLimit ? 'text-destructive' : 'text-muted-foreground'}`}>
             {body.length} / {MAX_BODY}
