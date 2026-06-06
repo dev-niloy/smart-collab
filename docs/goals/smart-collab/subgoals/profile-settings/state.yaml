@@ -7,7 +7,7 @@ mode:
   scope: feature
   session: new
 
-phase: 1                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
+phase: 4                # 1=GStack 2=GSD 3=Superpowers 4=Ralph DONE=closed
 
 intake:
   original_request: "Add profile page so a signed-in user can update name, email, password, and avatar."
@@ -24,9 +24,9 @@ blockers: []
 next_task: null
 
 phase_completion:
-  gstack: false
-  gsd: false
-  superpowers: false
+  gstack: true
+  gsd: true
+  superpowers: true
   ralph_wiggum: false
 
 baseline:
