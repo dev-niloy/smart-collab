@@ -106,7 +106,21 @@
 
 ---
 
-## #B5 — Task assignee-write + soft-delete — **NEXT SUBGOAL after member-visibility merges**
+## #B5 — Task assignee-write + soft-delete — **RESOLVED 2026-06-06 (shipped via #B6 multi-assignee + #B7 column drop + earlier task work; verified by backlog audit)**
+
+**Resolution evidence:**
+- Assignee field-write enforcement → `canWriteTask` (`task.service.ts`) checks `task.assignees.some(a => a.userId === actor.id)` w/ PM/admin override.
+- PM/admin-only reassign → `canReassignTask` + assignee endpoints `POST/PUT/DELETE /tasks/:id/assignees`.
+- Delete: PM/admin or creator → `canDeleteTask` checks `createdBy === actor.id`.
+- Soft-delete: `Task.deletedAt` column + index; `list` filters `deletedAt: null` by default; `canSeeDeleted` gates `includeDeleted=true` to PM/admin.
+- Restore endpoint: `POST /tasks/:id/restore` (PM/admin only).
+- Unassigned tasks: `canWriteTask` returns false when no assignees + non-PM.
+- Comments + attachments: `comment.service` uses project-access predicate, not assignee gating.
+- FE Deleted tab: `frontend/src/app/(authed)/projects/[id]/tasks/page.tsx:146` `showDeleted = isPrivileged && params.get('tab') === 'deleted'` gated on PM/admin; `useTasks` passes `includeDeleted: showDeleted`.
+
+---
+
+## #B5 — ORIGINAL DECISIONS (for reference)
 
 **User-locked decisions (2026-06-05):**
 - Only the **assignee** can update task status + edit fields (title/desc/priority/due).
@@ -127,7 +141,17 @@
 
 ---
 
-## #B4 — Members count + assignable list mismatch — **MEDIUM / DATA CONSISTENCY**
+## #B4 — Members count + assignable list mismatch — **RESOLVED 2026-06-06 (PR #37 merged — subgoal `member-cache-sync`)**
+
+**Resolution evidence:**
+- Same-tab leg falsified during Phase 2 scout: `useProjectMembers(id).data?.length` powers both the project detail header count and the members page list (shared key `['project-members', projectId]`), and `useAddMember.onSuccess` already prefix-invalidates that key. User smoke confirmed no reproduction on `develop@5b6af5b`.
+- Cross-tab leg fixed by `useBroadcastInvalidation` hook (`frontend/src/hooks/useBroadcastInvalidation.ts`) wired inside `Providers` via the `CacheBroadcastBridge` sibling. Mirrors local `invalidateQueries` to peer tabs over `BroadcastChannel('smart-collab-cache')` with per-tab `senderId` + `replaying` set echo-loop guard.
+- Playwright e2e covers both legs: `frontend/e2e/member-cache-sync.spec.ts`.
+- CI hook deferred to backlog #B9 (Postgres + dev-stack bootstrap is a separate scope).
+
+---
+
+## #B4 — ORIGINAL OBSERVATION (for reference)
 
 **Observed during member-visibility smoke (2026-06-05):**
 - (a) PM views project detail header showing `Members (2)` but the linked members page renders only 1 row (PM themselves). User added a member via the form but list does not reflect it consistently across views.
@@ -225,5 +249,6 @@
 - #B1 + #B2 surfaced 2026-06-05 during manual smoke of `progress-system` subgoal.
 - #B3 (org/team) captured 2026-06-05 in member-visibility Phase 1 brainstorm — deferred by user.
 - #B1 is the next subgoal (in progress). #B2 can be a `chore/*` branch any time. #B3 is a milestone-level conversation, not a subgoal.
-- #B4 (in progress as `feature/member-cache-sync`). #B8 captured 2026-06-06 during sidebar dogfooding; user noticed there was no way to @-mention a teammate from the comment box.
+- #B4 RESOLVED 2026-06-06 via PR #37 (subgoal `member-cache-sync`). #B8 captured 2026-06-06 during sidebar dogfooding; user noticed there was no way to @-mention a teammate from the comment box.
 - #B9 captured 2026-06-06 during Ralph review of PR #37; carved out from `member-cache-sync` so the cross-tab fix could land without dragging CI infra changes into review.
+- #B5 RESOLVED 2026-06-06 via backlog audit — confirmed every locked decision had already been shipped across the multi-assignee (#B6), column-drop (#B7), and earlier task subgoals; flipped to RESOLVED to keep the pending list accurate.
