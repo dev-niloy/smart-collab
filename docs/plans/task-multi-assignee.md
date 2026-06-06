@@ -156,7 +156,7 @@ Steps:
 - 2. GREEN: read assignees, fan-out skipping actor.
 - 3. REFACTOR: dedupe if actor is also creator/PM.
 - 4. Commit `feat(notifications): fan-out status change to all assignees`
-Status: [ ]
+Status: [x] 2026-06-06 (combined w/ t13+t14 — single Phase D commit)
 
 ### Task 13: notification on add/remove assignee
 Files: same as t12
@@ -165,7 +165,7 @@ Steps:
 - 2. GREEN: hook into service methods.
 - 3. REFACTOR: -.
 - 4. Commit `feat(notifications): assignee add/remove notify target`
-Status: [ ]
+Status: [x] 2026-06-06 (combined w/ t12 — landed in Phase C addAssignee/removeAssignee)
 
 ### Task 14: cross-module refs — dashboard + comment + projectMember
 Files:
@@ -179,7 +179,7 @@ Steps:
 - 2. GREEN: rewrite dashboard `where` to `taskAssignees.some`. Add cleanup of TaskAssignee rows when project member removed.
 - 3. REFACTOR: shared `taskAssigneeFilter(userId)` util if duplication appears.
 - 4. Commit `feat(modules): dashboard + projectMember multi-assignee`
-Status: [ ]
+Status: [x] 2026-06-06 (combined w/ t12)
 
 ---
 

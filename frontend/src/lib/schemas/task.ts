@@ -35,6 +35,7 @@ export const createTaskSchema = z.object({
   status: statusField.default('todo'),
   priority: priorityField.default('medium'),
   assignedTo: uuidField.nullable().optional(),
+  assigneeIds: z.array(uuidField).max(50).optional(),
 });
 
 export const updateTaskSchema = z
@@ -84,6 +85,13 @@ export type TaskUser = {
   role: 'admin' | 'project_manager' | 'team_member';
 };
 
+export type TaskAssigneeRel = {
+  userId: string;
+  addedById: string;
+  addedAt: string;
+  user: TaskUser;
+};
+
 export type Task = {
   id: string;
   projectId: string;
@@ -92,10 +100,15 @@ export type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   dueDate: string;
+  // Legacy single-assignee fields kept during transition (backend dual-writes).
+  // Removed in t21 when backend column drops.
   assignedTo: string | null;
+  assignee: TaskUser | null;
+  // Multi-assignee: ordered by addedAt asc. New canonical field. Optional during
+  // transition window to keep older fixtures + cached responses compatible.
+  assignees?: TaskAssigneeRel[];
   createdBy: string;
   creator: TaskUser;
-  assignee: TaskUser | null;
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
