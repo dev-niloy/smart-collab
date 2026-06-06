@@ -102,7 +102,7 @@ export function Rail({ bottom, onSearchClick }: RailProps) {
                         <span
                           data-testid="inbox-unread-count"
                           aria-hidden
-                          className="absolute -right-1 -top-1 grid min-w-[16px] h-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground ring-2 ring-card"
+                          className="absolute -right-1 -top-1 grid min-w-[16px] h-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-[#fff] ring-2 ring-card"
                         >
                           {badgeLabel}
                         </span>
