@@ -5,6 +5,7 @@ import { ApiError } from '../../errors/ApiError';
 import { recordActivity } from '../activityLog/activityLog.service';
 import { decodeCursor, encodeCursor } from '../activityLog/activityLog.validation';
 import { enqueueMany as enqueueNotifications } from '../notification/notification.service';
+import { fanoutEmailJobs } from '../email/email.enqueue';
 import { parseMentions, MAX_MENTIONS_PER_COMMENT } from './comment.mentions';
 
 export type CommentDTO = {
@@ -144,7 +145,15 @@ const create = async (
   }
   const validMentionSet = await resolveValidMentionMembers(task.projectId, parsedMentionIds);
 
-  return prisma.$transaction(async (tx) => {
+  // Captured inside the tx so we can drive email fan-out AFTER commit. Email
+  // sends MUST NOT be triggered from inside the tx — a rollback after the
+  // queue.add would leave mail referencing a comment that never existed.
+  let createdRecipientList: string[] = [];
+  const mentionRecipientList: string[] = Array.from(validMentionSet);
+  let createdRowId = '';
+  let authorName = '';
+
+  const dto = await prisma.$transaction(async (tx) => {
     const row = await tx.comment.create({
       data: { taskId, authorId, body },
       include: { author: { select: { id: true, name: true } } },
@@ -202,8 +211,41 @@ const create = async (
       );
     }
 
+    createdRecipientList = Array.from(createdRecipients);
+    createdRowId = row.id;
+    authorName = row.author.name;
     return toDTO(row);
   });
+
+  // POST-COMMIT email fan-out. Both calls swallow their own errors via the
+  // queue producer; nothing in this block should surface to the API caller.
+  const emailPayload = {
+    taskTitle: task.title,
+    taskId,
+    projectId: task.projectId,
+    commentId: createdRowId,
+    commentExcerpt: body.slice(0, 140),
+  };
+  if (createdRecipientList.length > 0) {
+    await fanoutEmailJobs({
+      recipientIds: createdRecipientList,
+      actorId: authorId,
+      actorName: authorName,
+      type: 'comment.created',
+      payload: emailPayload,
+    });
+  }
+  if (mentionRecipientList.length > 0) {
+    await fanoutEmailJobs({
+      recipientIds: mentionRecipientList,
+      actorId: authorId,
+      actorName: authorName,
+      type: 'comment.mention',
+      payload: emailPayload,
+    });
+  }
+
+  return dto;
 };
 
 const list = async (
