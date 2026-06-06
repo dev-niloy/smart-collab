@@ -195,7 +195,7 @@ Steps:
 - 2. GREEN: zod schema + TS types updated. `useTasks({ assignedTo })` query-param compat preserved (still a string).
 - 3. REFACTOR: rename `assigneeMap` → `assigneesById`.
 - 4. Commit `refactor(frontend): task schema multi-assignee`
-Status: [ ]
+Status: [x] 2026-06-06
 
 ### Task 16: card UI — stacked avatars + "+N" overflow
 Files:
