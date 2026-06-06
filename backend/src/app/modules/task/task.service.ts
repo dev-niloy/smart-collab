@@ -736,7 +736,7 @@ const removeAssignee = async (
     await syncLegacyAssignedTo(tx, taskId);
     await recordActivity(tx, {
       actorId,
-      action: 'task.assigned',
+      action: 'task.unassigned',
       entityType: 'task',
       entityId: taskId,
       projectId: existing.projectId,
