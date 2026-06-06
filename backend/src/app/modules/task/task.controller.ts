@@ -2,11 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../../errors/ApiError';
 import { taskService } from './task.service';
 import type { Actor } from '../project/project.service';
-import {
-  hasAssigneeKeys,
-  USE_ASSIGNEE_ENDPOINTS_MESSAGE,
-  type ListTasksQuery,
-} from './task.validation';
+import { type ListTasksQuery } from './task.validation';
 
 const getActor = (req: Request): Actor | undefined =>
   req.user ? { id: req.user.id, role: req.user.role } : undefined;
@@ -48,9 +44,6 @@ export const taskController = {
 
   update: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (hasAssigneeKeys(req.body)) {
-        throw ApiError.unprocessable(USE_ASSIGNEE_ENDPOINTS_MESSAGE, 'USE_ASSIGNEE_ENDPOINTS');
-      }
       const actorId = req.user?.id ?? null;
       const task = await taskService.update(req.params.id, req.body, actorId, getActor(req));
       res.status(200).json({ task });
