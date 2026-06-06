@@ -5,6 +5,12 @@ import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useBroadcastInvalidation } from '@/hooks/useBroadcastInvalidation';
+
+function CacheBroadcastBridge({ client }: { client: QueryClient }) {
+  useBroadcastInvalidation(client);
+  return null;
+}
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -23,6 +29,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={client}>
+        <CacheBroadcastBridge client={client} />
         <TooltipProvider delay={300}>{children}</TooltipProvider>
         <Toaster richColors closeButton />
       </QueryClientProvider>
