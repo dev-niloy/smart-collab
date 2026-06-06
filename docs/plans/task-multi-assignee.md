@@ -253,7 +253,7 @@ Steps:
 - 2. GREEN: no FE API change; verify rendering w/ new `assignees`. Remove dead `t.assignedTo` refs.
 - 3. REFACTOR: cleanup of `assigneeMap` if obsolete.
 - 4. Commit `refactor(frontend): inbox + filter sweep multi-assignee`
-Status: [ ]
+Status: [x] 2026-06-06 (canWriteFor migrated; inbox `assignedTo=me` query unchanged, backend dual-reads)
 
 ---
 
@@ -271,7 +271,7 @@ Steps:
 - 3. Remove all legacy dual-write code. Verify no compile errors.
 - 4. Run full suites — expect ≥615/≥460 passing.
 - 5. Commit `feat(schema): drop Task.assignedTo column — multi-assignee complete`
-Status: [ ]
+Status: [DEFERRED → follow-up subgoal `task-drop-legacy-assignedTo`] Multi-assignee works end-to-end; column is dual-written but functionally inert. Dropping requires migrating ~20 test files + Prisma test fixtures from `assignedTo: x` to TaskAssignee creates. Out-of-scope churn for this subgoal — backlog #B7 (new).
 
 ### Task 22: seed update — demo tasks w/ multi-assignee
 Files: `backend/prisma/seed.ts`
