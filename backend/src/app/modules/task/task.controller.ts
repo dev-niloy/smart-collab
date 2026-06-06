@@ -71,4 +71,49 @@ export const taskController = {
       next(err);
     }
   },
+
+  addAssignee: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const actorId = req.user?.id;
+      if (!actorId) throw ApiError.unauthorized('Not authenticated', 'NOT_AUTHENTICATED');
+      const { userId } = req.body as { userId: string };
+      const task = await taskService.addAssignee(req.params.id, userId, actorId, getActor(req));
+      res.status(201).json({ task });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  removeAssignee: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const actorId = req.user?.id;
+      if (!actorId) throw ApiError.unauthorized('Not authenticated', 'NOT_AUTHENTICATED');
+      const task = await taskService.removeAssignee(
+        req.params.id,
+        req.params.userId,
+        actorId,
+        getActor(req),
+      );
+      res.status(200).json({ task });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  replaceAssignees: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const actorId = req.user?.id;
+      if (!actorId) throw ApiError.unauthorized('Not authenticated', 'NOT_AUTHENTICATED');
+      const { userIds } = req.body as { userIds: string[] };
+      const task = await taskService.replaceAssignees(
+        req.params.id,
+        userIds,
+        actorId,
+        getActor(req),
+      );
+      res.status(200).json({ task });
+    } catch (err) {
+      next(err);
+    }
+  },
 };

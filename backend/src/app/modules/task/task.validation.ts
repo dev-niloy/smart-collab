@@ -59,6 +59,7 @@ export const updateTaskSchema = z
     { message: 'At least one field must be provided' },
   );
 
+
 const assignedToFilterField = z
   .string()
   .optional()
@@ -140,6 +141,19 @@ export const listTasksQuerySchema = z
 
 export const taskIdParamSchema = z.object({
   id: uuidField,
+});
+
+export const taskAssigneeAddSchema = z.object({
+  userId: uuidField,
+});
+
+export const taskAssigneeRemoveParamsSchema = z.object({
+  id: uuidField,
+  userId: uuidField,
+});
+
+export const taskAssigneesReplaceSchema = z.object({
+  userIds: z.array(uuidField).max(50),
 });
 
 export const projectIdParamSchema = z.object({

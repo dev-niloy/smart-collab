@@ -324,6 +324,17 @@ const update = async (
 
   try {
     return await prisma.$transaction(async (tx) => {
+      // Dual-write transition: if legacy PATCH `assignedTo` changes the assignee, also
+      // replace the TaskAssignee row(s) to match the new single-assignee shape.
+      // Removed in t21 once frontend is on the new endpoints + column drops.
+      if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo) {
+        await tx.taskAssignee.deleteMany({ where: { taskId: id } });
+        if (input.assignedTo) {
+          await tx.taskAssignee.create({
+            data: { taskId: id, userId: input.assignedTo, addedById: actorId ?? current.createdBy },
+          });
+        }
+      }
       const task = await tx.task.update({
         where: { id },
         data: {
@@ -607,6 +618,202 @@ const list = async (args: ListArgs): Promise<ListResult> => {
   return { data, total, page, limit };
 };
 
+// ──────────────────────────────────────────────────────────
+// Assignee management endpoints (Phase C — multi-assignee)
+// PM/admin only. Reassign via add/remove/replace, not via PATCH /tasks/:id.
+// ──────────────────────────────────────────────────────────
+
+const loadTaskForAssigneeOp = async (taskId: string) => {
+  const t = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: {
+      id: true,
+      projectId: true,
+      title: true,
+      deletedAt: true,
+      assignees: { select: { userId: true } },
+    },
+  });
+  if (!t || t.deletedAt) throw ApiError.notFound('Task not found', 'TASK_NOT_FOUND');
+  return t;
+};
+
+const ensureCanReassign = async (actor: Actor | undefined, projectId: string) => {
+  const projectRole = await getProjectRoleFor(actor, projectId);
+  if (!canReassignTask({ actor, projectRole })) {
+    throw ApiError.forbidden(
+      'Only project managers can change task assignees.',
+      'CANNOT_REASSIGN',
+    );
+  }
+};
+
+const syncLegacyAssignedTo = async (
+  tx: Prisma.TransactionClient,
+  taskId: string,
+): Promise<void> => {
+  // During the dual-write transition (Phase A m1 → Phase F m2), keep legacy `assignedTo`
+  // synced to the first assignee (by addedAt). Removed in t21 when column drops.
+  const first = await tx.taskAssignee.findFirst({
+    where: { taskId },
+    orderBy: { addedAt: 'asc' },
+    select: { userId: true },
+  });
+  await tx.task.update({
+    where: { id: taskId },
+    data: { assignedTo: first?.userId ?? null },
+  });
+};
+
+const addAssignee = async (
+  taskId: string,
+  userId: string,
+  actorId: string,
+  actor?: Actor,
+): Promise<TaskWithRelations> => {
+  const existing = await loadTaskForAssigneeOp(taskId);
+  await ensureCanReassign(actor, existing.projectId);
+  await ensureAssigneeIsProjectMember(existing.projectId, userId);
+  return prisma.$transaction(async (tx) => {
+    await tx.taskAssignee.upsert({
+      where: { taskId_userId: { taskId, userId } },
+      create: { taskId, userId, addedById: actorId },
+      update: {}, // idempotent: re-adding existing assignee is a no-op
+    });
+    await syncLegacyAssignedTo(tx, taskId);
+    await recordActivity(tx, {
+      actorId,
+      action: 'task.assigned',
+      entityType: 'task',
+      entityId: taskId,
+      projectId: existing.projectId,
+      meta: { added: userId },
+    });
+    if (userId !== actorId) {
+      await enqueueNotification(tx, {
+        recipientId: userId,
+        actorId,
+        type: 'task.assigned',
+        entityType: 'task',
+        entityId: taskId,
+        projectId: existing.projectId,
+        payload: { taskTitle: existing.title, taskId, projectId: existing.projectId },
+      });
+    }
+    const task = await tx.task.findUniqueOrThrow({ where: { id: taskId }, include: taskInclude });
+    return task;
+  });
+};
+
+const removeAssignee = async (
+  taskId: string,
+  userId: string,
+  actorId: string,
+  actor?: Actor,
+): Promise<TaskWithRelations> => {
+  const existing = await loadTaskForAssigneeOp(taskId);
+  await ensureCanReassign(actor, existing.projectId);
+  return prisma.$transaction(async (tx) => {
+    await tx.taskAssignee
+      .delete({ where: { taskId_userId: { taskId, userId } } })
+      .catch((err) => {
+        if (isRecordNotFound(err)) return; // idempotent: removing non-assignee = no-op
+        throw err;
+      });
+    await syncLegacyAssignedTo(tx, taskId);
+    await recordActivity(tx, {
+      actorId,
+      action: 'task.assigned',
+      entityType: 'task',
+      entityId: taskId,
+      projectId: existing.projectId,
+      meta: { removed: userId },
+    });
+    if (userId !== actorId) {
+      await enqueueNotification(tx, {
+        recipientId: userId,
+        actorId,
+        type: 'task.unassigned',
+        entityType: 'task',
+        entityId: taskId,
+        projectId: existing.projectId,
+        payload: { taskTitle: existing.title, taskId, projectId: existing.projectId },
+      });
+    }
+    const task = await tx.task.findUniqueOrThrow({ where: { id: taskId }, include: taskInclude });
+    return task;
+  });
+};
+
+const replaceAssignees = async (
+  taskId: string,
+  userIds: string[],
+  actorId: string,
+  actor?: Actor,
+): Promise<TaskWithRelations> => {
+  const existing = await loadTaskForAssigneeOp(taskId);
+  await ensureCanReassign(actor, existing.projectId);
+  const next = Array.from(new Set(userIds));
+  // Atomic membership validation BEFORE any write — partial apply not allowed.
+  for (const id of next) {
+    await ensureAssigneeIsProjectMember(existing.projectId, id);
+  }
+  const current = new Set(existing.assignees.map((a) => a.userId));
+  const nextSet = new Set(next);
+  const toAdd = next.filter((id) => !current.has(id));
+  const toRemove = Array.from(current).filter((id) => !nextSet.has(id));
+  return prisma.$transaction(async (tx) => {
+    if (toRemove.length > 0) {
+      await tx.taskAssignee.deleteMany({
+        where: { taskId, userId: { in: toRemove } },
+      });
+    }
+    if (toAdd.length > 0) {
+      await tx.taskAssignee.createMany({
+        data: toAdd.map((userId) => ({ taskId, userId, addedById: actorId })),
+        skipDuplicates: true,
+      });
+    }
+    await syncLegacyAssignedTo(tx, taskId);
+    if (toAdd.length > 0 || toRemove.length > 0) {
+      await recordActivity(tx, {
+        actorId,
+        action: 'task.assigned',
+        entityType: 'task',
+        entityId: taskId,
+        projectId: existing.projectId,
+        meta: { added: toAdd, removed: toRemove },
+      });
+    }
+    for (const userId of toAdd) {
+      if (userId === actorId) continue;
+      await enqueueNotification(tx, {
+        recipientId: userId,
+        actorId,
+        type: 'task.assigned',
+        entityType: 'task',
+        entityId: taskId,
+        projectId: existing.projectId,
+        payload: { taskTitle: existing.title, taskId, projectId: existing.projectId },
+      });
+    }
+    for (const userId of toRemove) {
+      if (userId === actorId) continue;
+      await enqueueNotification(tx, {
+        recipientId: userId,
+        actorId,
+        type: 'task.unassigned',
+        entityType: 'task',
+        entityId: taskId,
+        projectId: existing.projectId,
+        payload: { taskTitle: existing.title, taskId, projectId: existing.projectId },
+      });
+    }
+    const task = await tx.task.findUniqueOrThrow({ where: { id: taskId }, include: taskInclude });
+    return task;
+  });
+};
+
 export const taskService = {
   create,
   findById,
@@ -614,5 +821,8 @@ export const taskService = {
   remove,
   restore,
   list,
+  addAssignee,
+  removeAssignee,
+  replaceAssignees,
   ensureFutureDeadline,
 };

@@ -83,7 +83,7 @@ Steps:
 - 2. GREEN: zod — `assigneeIds: z.array(z.string().uuid()).optional()`. Service validates each is project member (reuse `ensureAssigneeIsProjectMember`). Insert TaskAssignee rows in same transaction. Dual-write legacy `assignedTo = assigneeIds[0] ?? null`.
 - 3. REFACTOR: extract `createAssigneeRows(tx, taskId, userIds, addedById)`.
 - 4. Commit `feat(tasks): create accepts assigneeIds[]`
-Status: [ ]
+Status: [x] 2026-06-06 (combined w/ t7 — `feat(tasks): create accepts assigneeIds[] + dual-write legacy assignedTo`)
 
 ### Task 7: legacy `assignedTo` write-path (back-compat layer)
 Files:
@@ -95,7 +95,7 @@ Steps:
 - 2. GREEN: validation rejects both fields together. If only legacy, treat as `assigneeIds: [assignedTo]`.
 - 3. REFACTOR: normalize at controller boundary.
 - 4. Commit `feat(tasks): create back-compat for single assignedTo`
-Status: [ ]
+Status: [x] 2026-06-06 (combined w/ t6)
 
 ---
 
