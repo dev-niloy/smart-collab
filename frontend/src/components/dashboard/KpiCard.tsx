@@ -21,27 +21,27 @@ const fmtNum = (v: number | string | undefined): string => {
 export function KpiCard({ title, value, sub, progressPercent, loading, error }: KpiCardProps) {
   return (
     <Card data-testid={`kpi-card-${title.replace(/\s+/g, '-').toLowerCase()}`}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xs font-medium text-muted-foreground">{title}</CardTitle>
+      <CardHeader className="pb-1.5">
+        <CardTitle className="text-[10px] uppercase tracking-[0.08em] font-medium text-muted-foreground">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="h-8 w-20 animate-pulse rounded bg-muted" />
+          <div className="h-9 w-24 animate-pulse rounded bg-muted" />
         ) : error ? (
           <p className="text-sm text-destructive" role="alert">
             Failed to load
           </p>
         ) : (
           <>
-            <div className="text-3xl font-semibold tabular-nums">{fmtNum(value)}</div>
+            <div className="text-[32px] leading-none font-semibold tabular-nums tracking-[-0.025em]">{fmtNum(value)}</div>
             {typeof progressPercent === 'number' ? (
               <Progress
                 value={progressPercent}
                 aria-label={`${title} progress ${progressPercent} percent`}
-                className="mt-2 flex-row [&_[data-slot=progress-track]]:h-1"
+                className="mt-3 flex-row [&_[data-slot=progress-track]]:h-1"
               />
             ) : null}
-            {sub ? <p className="text-xs text-muted-foreground">{sub}</p> : null}
+            {sub ? <p className="mt-2 text-xs text-muted-foreground">{sub}</p> : null}
           </>
         )}
       </CardContent>
