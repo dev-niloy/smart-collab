@@ -19,6 +19,7 @@ import { DeleteProjectButton } from '@/components/projects/delete-project-button
 import { ProjectProgress } from '@/components/projects/ProjectProgress';
 import { ProjectMembersDialog } from '@/components/projects/ProjectMembersDialog';
 import { ProjectActivityDialog } from '@/components/projects/ProjectActivityDialog';
+import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { ApiError } from '@/lib/api';
 import { STATUS_LABEL, STATUS_VARIANT, fmtDate, fmtDateTime } from '@/lib/project-format';
 
@@ -118,9 +119,6 @@ export default function ProjectDetailPage() {
                 <Button variant="secondary" onClick={() => setMembersOpen(true)}>
                   Members{typeof memberCount === 'number' ? ` (${memberCount})` : ''}
                 </Button>
-                <Link href={`/projects/${project.id}/dashboard`}>
-                  <Button variant="secondary">Dashboard →</Button>
-                </Link>
                 <Button variant="secondary" onClick={() => setActivityOpen(true)}>
                   Activity
                 </Button>
@@ -148,6 +146,16 @@ export default function ProjectDetailPage() {
             </CardContent>
           </Card>
         )}
+
+        {project && !isLoading && !isError && !isForbidden ? (
+          <section className="mt-8">
+            <div className="mb-4 flex items-baseline justify-between">
+              <h2 className="text-headline">Dashboard</h2>
+              <span className="text-eyebrow">Project activity</span>
+            </div>
+            <DashboardGrid projectId={id} />
+          </section>
+        ) : null}
       </main>
     </div>
   );
