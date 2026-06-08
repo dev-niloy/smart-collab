@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import {
   ShellLayout,
   RailBottom,
@@ -23,6 +25,23 @@ const extractIds = (pathname: string | null): { projectId?: string; taskId?: str
   const m = pathname.match(/^\/projects\/([^/]+)(?:\/tasks\/([^/]+))?/);
   if (!m) return {};
   return { projectId: m[1], taskId: m[2] };
+};
+
+// Where to navigate back from common nested routes.
+const pickBackHref = (
+  pathname: string | null,
+  ids: { projectId?: string; taskId?: string },
+): string | null => {
+  if (!pathname) return null;
+  if (ids.projectId && ids.taskId) return `/projects/${ids.projectId}/tasks`;
+  if (
+    ids.projectId &&
+    /^\/projects\/[^/]+\/(tasks|members|activity|edit|dashboard)/.test(pathname)
+  ) {
+    return `/projects/${ids.projectId}`;
+  }
+  if (ids.projectId && /^\/projects\/[^/]+$/.test(pathname)) return '/projects';
+  return null;
 };
 
 const PANELS: PanelMap = {
@@ -47,12 +66,29 @@ export default function AuthedLayout({ children }: { children: ReactNode }) {
   });
   const [paletteOpen, setPaletteOpen] = useState(false);
 
+  const backHref = pickBackHref(pathname, { projectId, taskId });
+
   return (
     <>
       <ShellLayout
         panel={panel}
         railBottom={<RailBottom />}
-        topbar={<Topbar segments={crumbs} />}
+        topbar={
+          <Topbar
+            segments={crumbs}
+            leading={
+              backHref ? (
+                <Link
+                  href={backHref}
+                  aria-label="Back"
+                  className="mr-1 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-card hover:text-foreground"
+                >
+                  <ArrowLeft className="size-4" />
+                </Link>
+              ) : null
+            }
+          />
+        }
         onSearchClick={() => setPaletteOpen(true)}
       >
         {children}

@@ -19,6 +19,8 @@ import { DeleteProjectButton } from '@/components/projects/delete-project-button
 import { ProjectProgress } from '@/components/projects/ProjectProgress';
 import { ProjectMembersDialog } from '@/components/projects/ProjectMembersDialog';
 import { ProjectActivityDialog } from '@/components/projects/ProjectActivityDialog';
+import { ProjectEditDialog } from '@/components/projects/ProjectEditDialog';
+import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { ApiError } from '@/lib/api';
 import { STATUS_LABEL, STATUS_VARIANT, fmtDate, fmtDateTime } from '@/lib/project-format';
 
@@ -33,6 +35,7 @@ export default function ProjectDetailPage() {
   const isForbidden = error instanceof ApiError && error.status === 403;
   const [membersOpen, setMembersOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -118,9 +121,6 @@ export default function ProjectDetailPage() {
                 <Button variant="secondary" onClick={() => setMembersOpen(true)}>
                   Members{typeof memberCount === 'number' ? ` (${memberCount})` : ''}
                 </Button>
-                <Link href={`/projects/${project.id}/dashboard`}>
-                  <Button variant="secondary">Dashboard →</Button>
-                </Link>
                 <Button variant="secondary" onClick={() => setActivityOpen(true)}>
                   Activity
                 </Button>
@@ -139,15 +139,39 @@ export default function ProjectDetailPage() {
 
               {canMutate ? (
                 <div className="flex gap-2 pt-2">
-                  <Link href={`/projects/${project.id}/edit`}>
-                    <Button variant="outline">Edit</Button>
-                  </Link>
+                  <Button variant="outline" onClick={() => setEditOpen(true)}>
+                    Edit
+                  </Button>
                   <DeleteProjectButton projectId={project.id} projectName={project.name} />
                 </div>
               ) : null}
+
+              <ProjectEditDialog
+                project={project}
+                open={editOpen}
+                onOpenChange={setEditOpen}
+              />
             </CardContent>
           </Card>
         )}
+
+        {project && !isLoading && !isError && !isForbidden ? (
+          <section className="mt-10">
+            <div className="mb-5 flex items-baseline justify-between border-b border-border/60 pb-3">
+              <div>
+                <span className="text-eyebrow">Overview</span>
+                <h2 className="mt-1 text-headline">Project dashboard</h2>
+              </div>
+              <Link
+                href={`/projects/${project.id}/activity`}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                View all activity →
+              </Link>
+            </div>
+            <DashboardGrid projectId={id} embedded />
+          </section>
+        ) : null}
       </main>
     </div>
   );

@@ -51,7 +51,6 @@ export default function TaskDetailPage() {
   return (
     <div className="flex flex-1 flex-col">
       <main className="w-full flex-1 px-8 py-10">
-
         {isLoading ? (
           <Card className="mt-4">
             <CardContent className="py-8">
