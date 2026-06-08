@@ -10,7 +10,10 @@ const { pushSpy, signupSpy, toastErrorSpy } = vi.hoisted(() => ({
   toastErrorSpy: vi.fn(),
 }));
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: pushSpy }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: pushSpy }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock('@/lib/auth', () => ({
   signup: (...args: unknown[]) => signupSpy(...args),
   login: vi.fn(),

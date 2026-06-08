@@ -66,15 +66,14 @@ describe('ProjectActivityPage', () => {
     expect(screen.getByRole('heading', { name: /^activity$/i })).toBeInTheDocument();
   });
 
-  it('back link points to project detail', async () => {
+  it('renders page eyebrow + summary copy (topbar owns breadcrumbs)', async () => {
     projectActivitySpy.mockResolvedValue({ items: [], nextCursor: null });
     render(
       <Providers>
         <ProjectActivityPage />
       </Providers>,
     );
-    const back = screen.getByRole('link', { name: /back to project/i });
-    expect(back).toHaveAttribute('href', '/projects/p-42');
+    expect(screen.getByText(/recent events across this project/i)).toBeInTheDocument();
   });
 
   it('shows "Load more" when nextCursor present and advances on click', async () => {

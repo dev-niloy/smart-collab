@@ -38,6 +38,23 @@ export const processEmailJob = async (
   const prisma = deps.prisma ?? defaultPrisma;
   const provider = deps.provider ?? getEmailProvider();
 
+  // Invitations target an email that may not have a User row yet, so we
+  // skip the opt-out + user-lookup gates and send directly to the address
+  // captured at enqueue time.
+  if (data.type === 'project.invitation') {
+    const rendered = renderEmail(data);
+    const result = await provider.send({
+      to: data.recipientEmail,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
+    });
+    if (!result.ok) {
+      throw new Error(`provider ${result.provider} send failed: ${result.error ?? 'unknown'}`);
+    }
+    return { status: 'sent', providerMessageId: result.id };
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: data.recipientId },
     select: { id: true, email: true, name: true, emailNotifications: true },

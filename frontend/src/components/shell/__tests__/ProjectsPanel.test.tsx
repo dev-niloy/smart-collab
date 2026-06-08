@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ProjectsPanel, PINNED_STORAGE_KEY } from '../ProjectsPanel';
 import type { Project } from '@/lib/schemas/project';
 
 const useProjectsMock = vi.fn();
@@ -8,6 +7,18 @@ const useProjectsMock = vi.fn();
 vi.mock('@/hooks/useProjects', () => ({
   useProjects: (params: unknown) => useProjectsMock(params),
 }));
+
+vi.mock('@/hooks/useUser', () => ({
+  useRole: () => ({ role: 'admin', isLoading: false }),
+}));
+
+// Dialog mount pulls a QueryClient + zod resolver chain that's not relevant
+// to the panel surface under test. Stub it to a no-op.
+vi.mock('@/components/projects/NewProjectDialog', () => ({
+  NewProjectDialog: () => null,
+}));
+
+import { ProjectsPanel, PINNED_STORAGE_KEY } from '../ProjectsPanel';
 
 const project = (over: Partial<Project> = {}): Project => ({
   id: 'p1',
@@ -46,7 +57,7 @@ describe('ProjectsPanel', () => {
     render(<ProjectsPanel />);
 
     expect(screen.getByRole('heading', { level: 2, name: /^projects$/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /new project/i })).toHaveAttribute('href', '/projects/new');
+    expect(screen.getByRole('button', { name: /new project/i })).toBeInTheDocument();
 
     const tabs = screen.getAllByRole('tab');
     expect(tabs).toHaveLength(4);

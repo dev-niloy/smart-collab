@@ -13,6 +13,7 @@ const { pushSpy, loginSpy, demoLoginSpy, toastErrorSpy } = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: pushSpy }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // Login + demoLogin are now consumed via useLogin/useDemoLogin hooks (TanStack
@@ -50,9 +51,9 @@ describe('LoginPage', () => {
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /demo admin/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /demo project manager/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /demo team member/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^admin/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^project manager/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^team member/i })).toBeInTheDocument();
   });
 
   it('validates required fields on submit', async () => {
@@ -82,7 +83,7 @@ describe('LoginPage', () => {
     demoLoginSpy.mockResolvedValue({ user: { id: 'u', email: 'admin@demo.local', name: 'A', role: 'admin' } });
     const user = userEvent.setup();
     render(wrap(<LoginPage />));
-    await user.click(screen.getByRole('button', { name: /demo admin/i }));
+    await user.click(screen.getByRole('button', { name: /^admin/i }));
     await waitFor(() => expect(demoLoginSpy).toHaveBeenCalled());
     expect(demoLoginSpy.mock.calls[0][0]).toBe('admin');
     await waitFor(() => expect(pushSpy).toHaveBeenCalledWith('/dashboard'));

@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense } from 'react';
+import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 export type InboxTab = 'unread' | 'mentions' | 'assigned';
 
@@ -10,47 +12,78 @@ const TABS: { key: InboxTab; label: string }[] = [
   { key: 'assigned', label: 'Assigned to me' },
 ];
 
+const VALID: ReadonlySet<InboxTab> = new Set(['unread', 'mentions', 'assigned']);
+
+const readTab = (params: URLSearchParams | null): InboxTab => {
+  const raw = params?.get('tab');
+  return raw && VALID.has(raw as InboxTab) ? (raw as InboxTab) : 'unread';
+};
+
 export interface InboxPanelProps {
   initialTab?: InboxTab;
   onTabChange?: (tab: InboxTab) => void;
 }
 
-export function InboxPanel({ initialTab = 'unread', onTabChange }: InboxPanelProps) {
-  const [active, setActive] = useState<InboxTab>(initialTab);
+// useSearchParams() forces CSR bailout at build time unless it sits inside a
+// Suspense boundary. The panel renders inside the authed layout — which is
+// pre-rendered for static routes like /inbox — so we wrap the inner reader.
+function InboxPanelInner() {
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const active = readTab(params);
+  const onInbox = pathname === '/inbox' || pathname?.startsWith('/inbox/');
 
-  const select = (tab: InboxTab) => {
-    setActive(tab);
-    onTabChange?.(tab);
-  };
+  return (
+    <nav aria-label="Inbox filter" className="flex flex-col gap-1 p-2">
+      {TABS.map((t) => {
+        const selected = onInbox && t.key === active;
+        return (
+          <Link
+            key={t.key}
+            href={`/inbox?tab=${t.key}`}
+            data-active={selected ? 'true' : 'false'}
+            className={
+              'flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors ' +
+              (selected
+                ? 'bg-accent text-foreground shadow-[inset_2px_0_0_var(--primary)]'
+                : 'text-foreground hover:bg-accent')
+            }
+          >
+            <span>{t.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
 
+function InboxPanelFallback() {
+  return (
+    <nav aria-label="Inbox filter" className="flex flex-col gap-1 p-2">
+      {TABS.map((t) => (
+        <Link
+          key={t.key}
+          href={`/inbox?tab=${t.key}`}
+          data-active="false"
+          className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-accent"
+        >
+          <span>{t.label}</span>
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+export function InboxPanel() {
   return (
     <div data-testid="inbox-panel" className="flex h-full flex-col">
       <div className="border-b border-border px-4 py-3">
+        <span className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Workspace</span>
         <h2 className="text-sm font-semibold">Inbox</h2>
       </div>
-      <div role="tablist" aria-label="Inbox filter" className="flex flex-col gap-1 p-2">
-        {TABS.map((t) => {
-          const selected = t.key === active;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              data-selected={selected ? 'true' : 'false'}
-              onClick={() => select(t.key)}
-              className={
-                'flex items-center justify-between rounded-md px-2 py-1.5 text-sm ' +
-                (selected
-                  ? 'bg-accent text-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground')
-              }
-            >
-              <span>{t.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <Suspense fallback={<InboxPanelFallback />}>
+        <InboxPanelInner />
+      </Suspense>
     </div>
   );
 }

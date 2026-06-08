@@ -2,6 +2,7 @@ export { Rail, type RailProps } from './Rail';
 export { RailBottom } from './RailBottom';
 export { ProjectsPanel, PINNED_STORAGE_KEY } from './ProjectsPanel';
 export { DashboardPanel } from './DashboardPanel';
+export { ProfilePanel } from './ProfilePanel';
 export { InboxPanel, type InboxTab, type InboxPanelProps } from './InboxPanel';
 export { CommandPalette, type CommandPaletteProps } from './CommandPalette';
 export { MobileDrawer, type MobileDrawerProps } from './MobileDrawer';

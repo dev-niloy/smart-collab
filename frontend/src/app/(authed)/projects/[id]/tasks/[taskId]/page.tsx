@@ -50,13 +50,7 @@ export default function TaskDetailPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
-        <Link
-          href={`/projects/${projectId}/tasks`}
-          className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-        >
-          ← Back to tasks
-        </Link>
+      <main className="w-full flex-1 px-8 py-10">
 
         {isLoading ? (
           <Card className="mt-4">

@@ -141,6 +141,42 @@ export const renderEmail = (data: EmailJobData): RenderedEmail => {
       );
       return { subject, text, html };
     }
+    case 'project.invitation': {
+      const projectName = data.payload.projectName ?? 'a project';
+      const inviter = data.payload.inviterName ?? actor;
+      const acceptUrl = data.payload.invitationAcceptUrl ?? '';
+      const expiresAt = data.payload.invitationExpiresAt
+        ? formatDeadline(data.payload.invitationExpiresAt)
+        : '';
+      const role = data.payload.newRole ?? 'member';
+      const subject = `${inviter} invited you to "${projectName}"`;
+      const text =
+        `Hi,\n\n` +
+        `${inviter} invited you to join the project "${projectName}" on Smart Collab as ${role}.\n\n` +
+        (data.payload.projectDescription
+          ? `About this project: ${data.payload.projectDescription}\n\n`
+          : '') +
+        `Accept the invitation: ${acceptUrl}\n` +
+        (expiresAt ? `This invitation expires on ${expiresAt}.\n` : '') +
+        `\nIf you don't have a Smart Collab account yet, the link will guide you through signup.\n`;
+      const html = wrap(
+        `${inviter} invited you to "${projectName}"`,
+        `<p>${escapeHtml(inviter)} invited you to join the project ` +
+          `<strong>${escapeHtml(projectName)}</strong> on Smart Collab as ` +
+          `<strong>${escapeHtml(role)}</strong>.</p>` +
+          (data.payload.projectDescription
+            ? `<p><strong>About this project:</strong> ${escapeHtml(data.payload.projectDescription)}</p>`
+            : '') +
+          (acceptUrl
+            ? `<p style="margin-top:16px"><a href="${escapeHtml(acceptUrl)}" style="display:inline-block;background:#5e6ad2;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:500">Accept invitation</a></p>`
+            : '') +
+          (expiresAt
+            ? `<p style="color:#666;font-size:12px">This invitation expires on ${escapeHtml(expiresAt)}.</p>`
+            : '') +
+          `<p style="color:#666;font-size:12px">If you don't have a Smart Collab account yet, the link will guide you through signup.</p>`,
+      );
+      return { subject, text, html };
+    }
     case 'project.member_role_changed': {
       const projectName = data.payload.projectName ?? 'a project';
       const previousRole = data.payload.previousRole ?? 'member';
