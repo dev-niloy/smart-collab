@@ -1,7 +1,6 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useProjectMembers } from '@/hooks/useProjectMembers';
@@ -23,24 +22,23 @@ export default function ProjectMembersPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
-        <Link
-          href={`/projects/${projectId}`}
-          className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-        >
-          ← Back to project
-        </Link>
-
-        <div className="mt-4 mb-4 flex flex-col gap-3">
-          <h1 className="text-xl font-semibold">Team members</h1>
-          {isPrivileged ? (
-            <Card>
-              <CardContent className="py-4">
-                <AddMemberForm projectId={projectId} />
-              </CardContent>
-            </Card>
-          ) : null}
+      <main className="w-full flex-1 px-8 py-10">
+        <div className="border-b border-border pb-6">
+          <span className="text-eyebrow">Project · People</span>
+          <h1 className="mt-2 text-display-md">Team members</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Manage who can read or change this project.
+          </p>
         </div>
+
+        {isPrivileged ? (
+          <Card className="mt-6">
+            <CardContent className="py-4">
+              <AddMemberForm projectId={projectId} />
+            </CardContent>
+          </Card>
+        ) : null}
+        <div className="mt-6" />
 
         {isLoading ? (
           <div className="space-y-3" data-testid="members-loading">

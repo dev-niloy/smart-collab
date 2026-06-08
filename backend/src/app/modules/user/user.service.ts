@@ -79,6 +79,55 @@ const list = async (): Promise<
   }));
 };
 
+/**
+ * Lightweight prefix search across email + name for the "add member"
+ * typeahead. Optionally excludes users that are already members of the
+ * given project so the dropdown only shows actionable suggestions.
+ */
+const search = async (
+  q: string,
+  opts: { excludeProjectId?: string; limit?: number } = {},
+): Promise<Array<{ id: string; email: string; name: string; avatarUrl: string | null }>> => {
+  const trimmed = q.trim();
+  if (trimmed.length === 0) return [];
+  const limit = Math.min(opts.limit ?? 10, 25);
+
+  let excludeUserIds: string[] = [];
+  if (opts.excludeProjectId) {
+    const members = await prisma.projectMember.findMany({
+      where: { projectId: opts.excludeProjectId },
+      select: { userId: true },
+    });
+    excludeUserIds = members.map((m) => m.userId);
+  }
+
+  const rows = await prisma.user.findMany({
+    where: {
+      AND: [
+        excludeUserIds.length > 0 ? { id: { notIn: excludeUserIds } } : {},
+        {
+          OR: [
+            { email: { startsWith: trimmed, mode: 'insensitive' } },
+            { name: { startsWith: trimmed, mode: 'insensitive' } },
+            { email: { contains: trimmed, mode: 'insensitive' } },
+            { name: { contains: trimmed, mode: 'insensitive' } },
+          ],
+        },
+      ],
+    },
+    select: { id: true, email: true, name: true, avatarPath: true },
+    orderBy: [{ name: 'asc' }],
+    take: limit,
+  });
+
+  return rows.map((r) => ({
+    id: r.id,
+    email: r.email,
+    name: r.name,
+    avatarUrl: r.avatarPath ? AVATAR_URL : null,
+  }));
+};
+
 const getMe = async (userId: string): Promise<PublicUser> => {
   return toPublicUser(await findUserOr404(userId));
 };
@@ -214,6 +263,7 @@ const getAvatarFile = async (
 
 export const userService = {
   list,
+  search,
   getMe,
   updateMe,
   changePassword,

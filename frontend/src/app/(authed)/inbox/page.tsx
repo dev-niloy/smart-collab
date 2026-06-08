@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo } from 'react';
 import Link from 'next/link';
-import { Topbar } from '@/components/shell/Topbar';
+import { useSearchParams } from 'next/navigation';
 import {
   useNotifications,
   useMarkAllNotificationsRead,
@@ -14,11 +14,13 @@ import type { Task } from '@/lib/schemas/task';
 
 type Tab = 'unread' | 'mentions' | 'assigned';
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'unread', label: 'Unread' },
-  { key: 'mentions', label: 'Mentions' },
-  { key: 'assigned', label: 'Assigned to me' },
-];
+const VALID: ReadonlySet<Tab> = new Set(['unread', 'mentions', 'assigned']);
+
+const TAB_LABEL: Record<Tab, string> = {
+  unread: 'Unread',
+  mentions: 'Mentions',
+  assigned: 'Assigned to me',
+};
 
 const formatNotificationLine = (n: NotificationDTO): string => {
   const actor = n.actorName ?? 'Someone';
@@ -152,7 +154,17 @@ function TaskList({ tasks }: { tasks: Task[] }) {
 }
 
 export default function InboxPage() {
-  const [active, setActive] = useState<Tab>('unread');
+  return (
+    <Suspense fallback={null}>
+      <InboxPageInner />
+    </Suspense>
+  );
+}
+
+function InboxPageInner() {
+  const params = useSearchParams();
+  const tabParam = params.get('tab');
+  const active: Tab = tabParam && VALID.has(tabParam as Tab) ? (tabParam as Tab) : 'unread';
 
   // Single source of truth: always pull the full list. The tab filter is
   // local, so switching tabs never re-fetches and 'Mentions' / 'Assigned'
@@ -183,44 +195,21 @@ export default function InboxPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <Topbar
-        segments={['Inbox']}
-        actions={
-          active === 'unread' && unreadItems.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => markAllRead.mutate()}
-              disabled={markAllRead.isPending}
-              className="rounded-md border border-border px-2 py-1 text-xs hover:bg-accent"
-            >
-              Mark all read
-            </button>
-          ) : null
-        }
-      />
-
-      <div role="tablist" aria-label="Inbox tabs" className="flex gap-1 border-b border-border px-4 py-2">
-        {TABS.map((t) => {
-          const selected = t.key === active;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              data-selected={selected ? 'true' : 'false'}
-              onClick={() => setActive(t.key)}
-              className={
-                'rounded-md px-3 py-1 text-sm ' +
-                (selected
-                  ? 'bg-accent text-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground')
-              }
-            >
-              {t.label}
-            </button>
-          );
-        })}
+      <div className="flex items-end justify-between gap-3 border-b border-border px-6 py-4">
+        <div>
+          <span className="text-eyebrow">Workspace</span>
+          <h1 className="mt-1 text-headline">{TAB_LABEL[active]}</h1>
+        </div>
+        {active === 'unread' && unreadItems.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => markAllRead.mutate()}
+            disabled={markAllRead.isPending}
+            className="rounded-md border border-border bg-card px-2.5 h-7 text-xs hover:bg-accent"
+          >
+            Mark all read
+          </button>
+        ) : null}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">

@@ -6,12 +6,13 @@ export type BreadcrumbSegment = string | { label: string; href?: string };
 export interface TopbarProps {
   segments?: BreadcrumbSegment[];
   actions?: ReactNode;
+  leading?: ReactNode;
 }
 
 const normalize = (seg: BreadcrumbSegment): { label: string; href?: string } =>
   typeof seg === 'string' ? { label: seg } : seg;
 
-export function Topbar({ segments = [], actions }: TopbarProps) {
+export function Topbar({ segments = [], actions, leading }: TopbarProps) {
   const items = segments.map(normalize);
 
   return (
@@ -19,6 +20,7 @@ export function Topbar({ segments = [], actions }: TopbarProps) {
       data-testid="shell-topbar"
       className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-background px-4 text-sm"
     >
+      {leading ? <div className="flex items-center">{leading}</div> : null}
       <nav aria-label="Breadcrumbs" className="flex items-center gap-2 text-muted-foreground">
         {items.map((seg, i) => {
           const isLast = i === items.length - 1;

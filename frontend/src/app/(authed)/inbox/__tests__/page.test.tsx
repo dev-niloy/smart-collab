@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import InboxPage from '../page';
 import type { Task } from '@/lib/schemas/task';
 import type { NotificationDTO } from '@/lib/schemas/notification';
 
@@ -8,6 +7,12 @@ const useNotificationsMock = vi.fn();
 const useTasksMock = vi.fn();
 const markAllMutate = vi.fn();
 const markReadMutate = vi.fn();
+
+let mockSearch = new URLSearchParams();
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => mockSearch,
+}));
 
 vi.mock('@/hooks/useNotifications', () => ({
   useNotifications: (opts: unknown) => useNotificationsMock(opts),
@@ -18,6 +23,8 @@ vi.mock('@/hooks/useNotifications', () => ({
 vi.mock('@/hooks/useTasks', () => ({
   useTasks: (params: unknown) => useTasksMock(params),
 }));
+
+import InboxPage from '../page';
 
 const notif = (over: Partial<NotificationDTO> = {}): NotificationDTO => ({
   id: 'n1',
@@ -58,6 +65,7 @@ const task = (over: Partial<Task> = {}): Task => ({
 
 describe('InboxPage', () => {
   beforeEach(() => {
+    mockSearch = new URLSearchParams();
     markAllMutate.mockReset();
     markReadMutate.mockReset();
     useNotificationsMock.mockReset();
@@ -70,20 +78,13 @@ describe('InboxPage', () => {
     });
   });
 
-  it('renders Inbox topbar + 3 tabs with Unread selected', () => {
+  it('Unread is the default header when no tab param is set', () => {
     render(<InboxPage />);
-
-    expect(screen.getByText('Inbox')).toBeInTheDocument();
-    const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(3);
-    expect(tabs.map((t) => t.textContent)).toEqual(['Unread', 'Mentions', 'Assigned to me']);
-    expect(screen.getByRole('tab', { name: /^unread$/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('heading', { name: /^unread$/i })).toBeInTheDocument();
   });
 
   it('Unread tab pulls the full list (locally filtered) and renders it', () => {
     render(<InboxPage />);
-    // Inbox page pulls the full list once and filters tabs locally so that
-    // switching tabs never produces a blank tab during a cache miss.
     expect(useNotificationsMock).toHaveBeenLastCalledWith({ limit: 20, unread: false });
     expect(screen.getByText(/PM Dev assigned you to Wire up auth/i)).toBeInTheDocument();
   });
@@ -97,8 +98,7 @@ describe('InboxPage', () => {
   });
 
   it('clicking a read notification on Mentions tab does not double-mark', () => {
-    // Defense in depth: Mentions tab can display read items too, but clicking
-    // one should be a no-op against markRead since it's already read.
+    mockSearch = new URLSearchParams('tab=mentions');
     useNotificationsMock.mockReturnValue({
       data: {
         pages: [
@@ -117,23 +117,21 @@ describe('InboxPage', () => {
       },
     });
     render(<InboxPage />);
-    fireEvent.click(screen.getByRole('tab', { name: /mentions/i }));
     const link = screen.getByRole('link', { name: /mentioned you on Old mention/i });
     fireEvent.click(link);
     expect(markReadMutate).not.toHaveBeenCalled();
   });
 
-  it('switching to Assigned tab shows tasks assigned to me', () => {
+  it('Assigned tab shows tasks assigned to me', () => {
+    mockSearch = new URLSearchParams('tab=assigned');
     render(<InboxPage />);
-
-    fireEvent.click(screen.getByRole('tab', { name: /assigned to me/i }));
-
     expect(useTasksMock).toHaveBeenLastCalledWith({ assignedTo: 'me', limit: 50 });
     expect(screen.getByText('Wire up auth')).toBeInTheDocument();
     expect(screen.getByText(/todo · due/i)).toBeInTheDocument();
   });
 
   it('Mentions tab filters notifications to mention types only', () => {
+    mockSearch = new URLSearchParams('tab=mentions');
     useNotificationsMock.mockReturnValue({
       data: {
         pages: [
@@ -148,26 +146,27 @@ describe('InboxPage', () => {
       },
     });
     render(<InboxPage />);
-    fireEvent.click(screen.getByRole('tab', { name: /mentions/i }));
-
     expect(screen.queryByText(/assigned you to A/i)).not.toBeInTheDocument();
     expect(screen.getByText(/mentioned you on B/i)).toBeInTheDocument();
   });
 
-  it('shows "Mark all read" only in Unread tab and triggers the mutation', () => {
+  it('shows "Mark all read" only on Unread tab and triggers the mutation', () => {
     render(<InboxPage />);
     const btn = screen.getByRole('button', { name: /mark all read/i });
     fireEvent.click(btn);
     expect(markAllMutate).toHaveBeenCalledTimes(1);
+  });
 
-    fireEvent.click(screen.getByRole('tab', { name: /assigned to me/i }));
+  it('Assigned tab hides "Mark all read"', () => {
+    mockSearch = new URLSearchParams('tab=assigned');
+    render(<InboxPage />);
     expect(screen.queryByRole('button', { name: /mark all read/i })).not.toBeInTheDocument();
   });
 
   it('Assigned tab shows "No tasks assigned" when list is empty', () => {
+    mockSearch = new URLSearchParams('tab=assigned');
     useTasksMock.mockReturnValue({ data: { data: [], total: 0, page: 1, limit: 50 } });
     render(<InboxPage />);
-    fireEvent.click(screen.getByRole('tab', { name: /assigned to me/i }));
     expect(screen.getByText(/no tasks assigned to you/i)).toBeInTheDocument();
   });
 

@@ -123,36 +123,34 @@ describe('ProjectDetailPage', () => {
     expect(link).toHaveAttribute('href', '/projects/p-1/tasks');
   });
 
-  it('renders Members link (all authed) — E21', async () => {
+  it('renders Members button (all authed) — E21', async () => {
     setUser('team_member');
     getSpy.mockResolvedValue(sampleProject);
     membersSpy.mockResolvedValue([]);
     renderPage();
     await waitFor(() => expect(screen.getByText('Launch Site')).toBeInTheDocument());
-    const link = screen.getByRole('link', { name: /members/i });
-    expect(link).toHaveAttribute('href', '/projects/p-1/members');
+    expect(screen.getByRole('button', { name: /members/i })).toBeInTheDocument();
   });
 
-  it('renders Dashboard link to /projects/:id/dashboard — E15', async () => {
+  it('renders embedded dashboard section on project detail — E15', async () => {
     setUser('team_member');
     getSpy.mockResolvedValue(sampleProject);
     membersSpy.mockResolvedValue([]);
     renderPage();
     await waitFor(() => expect(screen.getByText('Launch Site')).toBeInTheDocument());
-    const links = screen.getAllByRole('link', { name: /dashboard/i });
-    const scopedLink = links.find((l) => l.getAttribute('href') === '/projects/p-1/dashboard');
-    expect(scopedLink).toBeTruthy();
+    // Dashboard moved inline beneath the project card.
+    expect(
+      screen.getByRole('heading', { level: 2, name: /project dashboard/i }),
+    ).toBeInTheDocument();
   });
 
-  it('renders Activity link to /projects/:id/activity', async () => {
+  it('renders Activity button on project detail', async () => {
     setUser('team_member');
     getSpy.mockResolvedValue(sampleProject);
     membersSpy.mockResolvedValue([]);
     renderPage();
     await waitFor(() => expect(screen.getByText('Launch Site')).toBeInTheDocument());
-    const links = screen.getAllByRole('link', { name: /activity/i });
-    const scoped = links.find((l) => l.getAttribute('href') === '/projects/p-1/activity');
-    expect(scoped).toBeTruthy();
+    expect(screen.getByRole('button', { name: /activity/i })).toBeInTheDocument();
   });
 
   it('Members button shows count when members are loaded — PM done-criterion #14', async () => {
@@ -171,7 +169,7 @@ describe('ProjectDetailPage', () => {
     ]);
     renderPage();
     await waitFor(() =>
-      expect(screen.getByRole('link', { name: /members \(3\)/i })).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: /members \(3\)/i })).toBeInTheDocument(),
     );
   });
 
@@ -179,8 +177,9 @@ describe('ProjectDetailPage', () => {
     setUser('admin');
     getSpy.mockResolvedValue(sampleProject);
     renderPage();
+    // Edit moved from Link → Button that opens a modal.
     await waitFor(() =>
-      expect(screen.getByRole('link', { name: /edit/i })).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument(),
     );
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
   });

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,10 @@ import { useProjectMembers } from '@/hooks/useProjectMembers';
 import { useRole } from '@/hooks/useUser';
 import { DeleteProjectButton } from '@/components/projects/delete-project-button';
 import { ProjectProgress } from '@/components/projects/ProjectProgress';
+import { ProjectMembersDialog } from '@/components/projects/ProjectMembersDialog';
+import { ProjectActivityDialog } from '@/components/projects/ProjectActivityDialog';
+import { ProjectEditDialog } from '@/components/projects/ProjectEditDialog';
+import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { ApiError } from '@/lib/api';
 import { STATUS_LABEL, STATUS_VARIANT, fmtDate, fmtDateTime } from '@/lib/project-format';
 
@@ -28,16 +33,13 @@ export default function ProjectDetailPage() {
   const { data: members } = useProjectMembers(id);
   const memberCount = members?.length;
   const isForbidden = error instanceof ApiError && error.status === 403;
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   return (
     <div className="flex flex-1 flex-col">
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
-        <Link
-          href="/projects"
-          className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-        >
-          ← Back to projects
-        </Link>
+      <main className="w-full flex-1 px-8 py-10">
 
         {isLoading ? (
           <Card className="mt-4">
@@ -73,10 +75,11 @@ export default function ProjectDetailPage() {
         ) : (
           <Card className="mt-4">
             <CardHeader className="flex flex-row items-start justify-between gap-3">
-              <div>
-                <CardTitle className="text-xl">{project.name}</CardTitle>
-                <CardDescription>
-                  Created by {project.creator.name} ({project.creator.email})
+              <div className="space-y-1.5 min-w-0">
+                <span className="text-eyebrow">Project</span>
+                <CardTitle className="text-display-md">{project.name}</CardTitle>
+                <CardDescription className="text-xs">
+                  Created by {project.creator.name} · {project.creator.email}
                 </CardDescription>
               </div>
               <Badge variant={STATUS_VARIANT[project.status]}>
@@ -115,30 +118,60 @@ export default function ProjectDetailPage() {
                 <Link href={`/projects/${project.id}/tasks`}>
                   <Button variant="secondary">View tasks →</Button>
                 </Link>
-                <Link href={`/projects/${project.id}/members`}>
-                  <Button variant="secondary">
-                    Members{typeof memberCount === 'number' ? ` (${memberCount})` : ''} →
-                  </Button>
-                </Link>
-                <Link href={`/projects/${project.id}/dashboard`}>
-                  <Button variant="secondary">Dashboard →</Button>
-                </Link>
-                <Link href={`/projects/${project.id}/activity`}>
-                  <Button variant="secondary">Activity →</Button>
-                </Link>
+                <Button variant="secondary" onClick={() => setMembersOpen(true)}>
+                  Members{typeof memberCount === 'number' ? ` (${memberCount})` : ''}
+                </Button>
+                <Button variant="secondary" onClick={() => setActivityOpen(true)}>
+                  Activity
+                </Button>
               </div>
+
+              <ProjectMembersDialog
+                projectId={project.id}
+                open={membersOpen}
+                onOpenChange={setMembersOpen}
+              />
+              <ProjectActivityDialog
+                projectId={project.id}
+                open={activityOpen}
+                onOpenChange={setActivityOpen}
+              />
 
               {canMutate ? (
                 <div className="flex gap-2 pt-2">
-                  <Link href={`/projects/${project.id}/edit`}>
-                    <Button variant="outline">Edit</Button>
-                  </Link>
+                  <Button variant="outline" onClick={() => setEditOpen(true)}>
+                    Edit
+                  </Button>
                   <DeleteProjectButton projectId={project.id} projectName={project.name} />
                 </div>
               ) : null}
+
+              <ProjectEditDialog
+                project={project}
+                open={editOpen}
+                onOpenChange={setEditOpen}
+              />
             </CardContent>
           </Card>
         )}
+
+        {project && !isLoading && !isError && !isForbidden ? (
+          <section className="mt-10">
+            <div className="mb-5 flex items-baseline justify-between border-b border-border/60 pb-3">
+              <div>
+                <span className="text-eyebrow">Overview</span>
+                <h2 className="mt-1 text-headline">Project dashboard</h2>
+              </div>
+              <Link
+                href={`/projects/${project.id}/activity`}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                View all activity →
+              </Link>
+            </div>
+            <DashboardGrid projectId={id} embedded />
+          </section>
+        ) : null}
       </main>
     </div>
   );

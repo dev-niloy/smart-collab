@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useProjectTasks } from '@/hooks/useTasks';
+import { useInfiniteProjectTasks } from '@/hooks/useTasks';
 import { useAssignableMembers, useProjectMembers } from '@/hooks/useProjectMembers';
 import { useUser } from '@/hooks/useUser';
 import { useRestoreTask } from '@/hooks/useTasks';
@@ -29,7 +29,6 @@ import {
   TASK_STATUSES,
   TASK_PRIORITIES,
   SORT_KEYS,
-  TASK_DEFAULT_LIMIT,
   UNASSIGNED,
   type TaskStatus,
   type TaskPriority,
@@ -38,7 +37,9 @@ import {
 } from '@/lib/schemas/task';
 import { InlineStatusSelect } from '@/components/tasks/inline-status-select';
 import { TaskAssigneesAvatars } from '@/components/tasks/TaskAssigneesAvatars';
+import { KanbanBoard } from '@/components/tasks/KanbanBoard';
 import { parseCsv, toCsv, parseDateParam } from '@/lib/queryString';
+import { LayoutGrid, Columns3 } from 'lucide-react';
 
 const SORT_LABEL: Record<SortKey, string> = {
   created: 'Newest',
@@ -61,11 +62,6 @@ const parsePriorityList = (v: string | null): TaskPriority[] => {
 
 const parseSort = (v: string | null): SortKey =>
   v && (SORT_KEYS as readonly string[]).includes(v) ? (v as SortKey) : 'created';
-
-const parsePage = (v: string | null): number => {
-  const n = v ? parseInt(v, 10) : 1;
-  return Number.isFinite(n) && n > 0 ? n : 1;
-};
 
 export default function ProjectTasksPage() {
   return (
@@ -98,7 +94,6 @@ function ProjectTasksPageInner() {
   const assignedToRaw = params.get('assignedTo') ?? undefined;
   const assignedToMe = assignedToRaw === 'me';
   const sort = parseSort(params.get('sort'));
-  const page = parsePage(params.get('page'));
   const dueFrom = parseDateParam(params.get('dueFrom'));
   const dueTo = parseDateParam(params.get('dueTo'));
   const createdByMe = params.get('createdBy') === 'me';
@@ -116,18 +111,7 @@ function ProjectTasksPageInner() {
       if (v === null || v === '') next.delete(k);
       else next.set(k, v);
     }
-    if (
-      'q' in patch ||
-      'status' in patch ||
-      'priority' in patch ||
-      'assignedTo' in patch ||
-      'createdBy' in patch ||
-      'dueFrom' in patch ||
-      'dueTo' in patch ||
-      'sort' in patch
-    ) {
-      next.delete('page');
-    }
+    next.delete('page');
     const qs = next.toString();
     router.replace(`/projects/${projectId}/tasks${qs ? `?${qs}` : ''}`);
   };
@@ -144,6 +128,8 @@ function ProjectTasksPageInner() {
   const statusCsv = useMemo(() => toCsv(statusList), [statusList]);
   const priorityCsv = useMemo(() => toCsv(priorityList), [priorityList]);
   const showDeleted = isPrivileged && params.get('tab') === 'deleted';
+  const view: 'grid' | 'board' = params.get('view') === 'board' ? 'board' : 'grid';
+  const PAGE_LIMIT = 25;
   const queryParams = useMemo(
     () => ({
       q: q || undefined,
@@ -154,21 +140,55 @@ function ProjectTasksPageInner() {
       dueFrom,
       dueTo,
       sort,
-      page,
-      limit: TASK_DEFAULT_LIMIT,
+      limit: PAGE_LIMIT,
       includeDeleted: showDeleted,
     }),
-    [q, statusCsv, priorityCsv, assignedToRaw, createdByMe, dueFrom, dueTo, sort, page, showDeleted],
+    [q, statusCsv, priorityCsv, assignedToRaw, createdByMe, dueFrom, dueTo, sort, showDeleted],
   );
 
-  const { data, isLoading, isError, refetch } = useProjectTasks(projectId, queryParams);
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteProjectTasks(projectId, queryParams);
   const restoreMutation = useRestoreTask();
   const usersQuery = useAssignableMembers(projectId);
 
-  const total = data?.total ?? 0;
-  const limit = data?.limit ?? TASK_DEFAULT_LIMIT;
-  const totalPages = total === 0 ? 1 : Math.ceil(total / limit);
-  const items: Task[] = data?.data ?? [];
+  const items: Task[] = useMemo(
+    () => (data?.pages ?? []).flatMap((p) => p.data),
+    [data],
+  );
+  const total = data?.pages[0]?.total ?? 0;
+
+  // Board view needs ALL tasks — eagerly fetch every remaining page.
+  useEffect(() => {
+    if (view !== 'board') return;
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [view, hasNextPage, isFetchingNextPage, fetchNextPage, items.length]);
+
+  // Grid view: infinite scroll sentinel.
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (view !== 'grid') return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: '300px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [view, hasNextPage, isFetchingNextPage, fetchNextPage, items.length]);
   const hasFilters =
     !!q ||
     statusList.length > 0 ||
@@ -193,20 +213,14 @@ function ProjectTasksPageInner() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <Link
-          href={`/projects/${projectId}`}
-          className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-        >
-          ← Back to project
-        </Link>
-
-        <div className="mt-3 flex items-center justify-between gap-4">
+      <main className="w-full flex-1 px-8 py-10">
+        <div className="flex items-end justify-between gap-4 border-b border-border pb-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <span className="text-eyebrow">Project · Work</span>
+            <h1 className="mt-2 text-display-md">Tasks</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {total === 0 ? 'No results' : `${total} task${total === 1 ? '' : 's'}`}
-              {showDeleted ? ' (showing deleted)' : ''}
+              {showDeleted ? ' · showing deleted' : ''}
             </p>
           </div>
           <Button onClick={() => router.push(`/projects/${projectId}/tasks/new`)}>
@@ -214,34 +228,77 @@ function ProjectTasksPageInner() {
           </Button>
         </div>
 
-        {isPrivileged ? (
-          <div className="mt-4 inline-flex rounded-md border border-border p-0.5" role="tablist" aria-label="Task view">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {isPrivileged ? (
+            <div
+              className="inline-flex rounded-md border border-border p-0.5"
+              role="tablist"
+              aria-label="Task view"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!showDeleted}
+                onClick={() => setParam({ tab: null, page: null })}
+                className={
+                  'rounded px-3 py-1 text-xs ' +
+                  (!showDeleted ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground')
+                }
+              >
+                Active
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={showDeleted}
+                onClick={() => setParam({ tab: 'deleted', page: null })}
+                className={
+                  'rounded px-3 py-1 text-xs ' +
+                  (showDeleted ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground')
+                }
+              >
+                Deleted
+              </button>
+            </div>
+          ) : null}
+
+          <div
+            className="inline-flex rounded-md border border-border p-0.5"
+            role="tablist"
+            aria-label="Layout"
+          >
             <button
               type="button"
               role="tab"
-              aria-selected={!showDeleted}
-              onClick={() => setParam({ tab: null, page: null })}
+              aria-selected={view === 'grid'}
+              onClick={() => setParam({ view: null })}
               className={
-                'rounded px-3 py-1 text-xs ' +
-                (!showDeleted ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground')
+                'inline-flex items-center gap-1.5 rounded px-3 py-1 text-xs ' +
+                (view === 'grid'
+                  ? 'bg-accent text-foreground'
+                  : 'text-muted-foreground hover:text-foreground')
               }
             >
-              Active
+              <LayoutGrid className="size-3.5" />
+              Grid
             </button>
             <button
               type="button"
               role="tab"
-              aria-selected={showDeleted}
-              onClick={() => setParam({ tab: 'deleted', page: null })}
+              aria-selected={view === 'board'}
+              onClick={() => setParam({ view: 'board' })}
               className={
-                'rounded px-3 py-1 text-xs ' +
-                (showDeleted ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground')
+                'inline-flex items-center gap-1.5 rounded px-3 py-1 text-xs ' +
+                (view === 'board'
+                  ? 'bg-accent text-foreground'
+                  : 'text-muted-foreground hover:text-foreground')
               }
             >
-              Deleted
+              <Columns3 className="size-3.5" />
+              Board
             </button>
           </div>
-        ) : null}
+        </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Input
@@ -450,6 +507,12 @@ function ProjectTasksPageInner() {
                 )}
               </CardContent>
             </Card>
+          ) : view === 'board' && !showDeleted ? (
+            <KanbanBoard
+              tasks={items}
+              projectId={projectId}
+              canWriteFor={canWriteFor}
+            />
           ) : (
             <div
               className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
@@ -510,30 +573,19 @@ function ProjectTasksPageInner() {
           )}
         </div>
 
-        {items.length > 0 ? (
-          <div className="mt-6 flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">
-              Page {page} of {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setParam({ page: String(page - 1) })}
-              >
-                Prev
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setParam({ page: String(page + 1) })}
-              >
-                Next
-              </Button>
-            </div>
+        {/* Infinite scroll sentinel (grid view) */}
+        {view === 'grid' && hasNextPage ? (
+          <div ref={sentinelRef} className="mt-6 flex justify-center py-4">
+            <span className="text-xs text-muted-foreground">
+              {isFetchingNextPage ? 'Loading more…' : ''}
+            </span>
           </div>
+        ) : null}
+        {items.length > 0 && !hasNextPage && total > items.length ? null : null}
+        {items.length > 0 && !hasNextPage ? (
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Showing {items.length} of {total}
+          </p>
         ) : null}
       </main>
     </div>

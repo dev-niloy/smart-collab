@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation, useInfiniteQuery } from '@tanstack/react-query';
 import {
   listTasks,
   listTasksForProject,
@@ -39,6 +39,23 @@ export const useProjectTasks = (
   useQuery<TaskListResponse>({
     queryKey: [...projectTasksKey(projectId ?? ''), params ?? {}] as const,
     queryFn: () => listTasksForProject(projectId as string, params),
+    enabled: !!projectId,
+    staleTime: 10_000,
+  });
+
+export const useInfiniteProjectTasks = (
+  projectId: string | undefined,
+  params?: Omit<ListTasksParams, 'projectId' | 'page'>,
+) =>
+  useInfiniteQuery<TaskListResponse>({
+    queryKey: [...projectTasksKey(projectId ?? ''), 'infinite', params ?? {}] as const,
+    queryFn: ({ pageParam }) =>
+      listTasksForProject(projectId as string, { ...params, page: pageParam as number }),
+    initialPageParam: 1,
+    getNextPageParam: (last) => {
+      const fetched = last.page * last.limit;
+      return fetched < last.total ? last.page + 1 : undefined;
+    },
     enabled: !!projectId,
     staleTime: 10_000,
   });

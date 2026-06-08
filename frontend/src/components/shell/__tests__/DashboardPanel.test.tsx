@@ -2,6 +2,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/dashboard',
+}));
+
 import { DashboardPanel } from '../DashboardPanel';
 
 const wrap = (qc: QueryClient) => {
@@ -46,16 +51,18 @@ describe('DashboardPanel', () => {
     qc.clear();
   });
 
-  it('renders Dashboard header + 2 shortcut links', async () => {
+  it('renders Dashboard header + Overview + 2 shortcut subroutes', async () => {
     globalThis.fetch = fetchOk({}) as typeof globalThis.fetch;
     render(<DashboardPanel />, { wrapper: wrap(qc) });
     expect(screen.getByRole('heading', { level: 2, name: /dashboard/i })).toBeInTheDocument();
 
+    expect(screen.getByRole('link', { name: /overview/i })).toHaveAttribute('href', '/dashboard');
+
     const myTasks = screen.getByRole('link', { name: /my open tasks/i });
-    expect(myTasks).toHaveAttribute('href', '/dashboard#my-open-tasks');
+    expect(myTasks).toHaveAttribute('href', '/dashboard/my-tasks');
 
     const deadlines = screen.getByRole('link', { name: /today's deadlines/i });
-    expect(deadlines).toHaveAttribute('href', '/dashboard#upcoming-deadlines');
+    expect(deadlines).toHaveAttribute('href', '/dashboard/deadlines');
   });
 
   it('shows myOpenTasks count badge when > 0', async () => {

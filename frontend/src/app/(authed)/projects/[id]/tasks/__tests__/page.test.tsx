@@ -149,22 +149,19 @@ describe('ProjectTasksPage', () => {
     expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
   }, 10000);
 
-  it('pagination: Next advances page=2 in URL; Prev disabled on page 1', async () => {
+  it('infinite scroll: first page loads + total reflects remaining', async () => {
     setUser('admin');
     listTasksForProjectSpy.mockResolvedValue({
       data: [sampleTask()],
       total: 25,
       page: 1,
-      limit: 10,
+      limit: 25,
     });
-    const user = userEvent.setup();
     renderPage();
     await waitFor(() => expect(screen.getByText('Ship docs')).toBeInTheDocument());
-    expect(screen.getByText(/page 1 of 3/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /prev/i })).toBeDisabled();
-    await user.click(screen.getByRole('button', { name: /next/i }));
-    const lastUrl = String(replaceSpy.mock.calls.at(-1)?.[0]);
-    expect(lastUrl).toContain('page=2');
+    // No legacy Prev/Next buttons in the new infinite-scroll layout.
+    expect(screen.queryByRole('button', { name: /^prev$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^next$/i })).not.toBeInTheDocument();
   });
 
   it('inline status select fires updateTask', async () => {

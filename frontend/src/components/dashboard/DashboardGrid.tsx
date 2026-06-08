@@ -19,9 +19,12 @@ import { ActivityFeed } from '@/components/activity/ActivityFeed';
 
 export interface DashboardGridProps {
   projectId?: string;
+  /** When true, skip the outer page chrome (header + main padding).
+   * Use when embedding inside another page that already owns the section header. */
+  embedded?: boolean;
 }
 
-export function DashboardGrid({ projectId }: DashboardGridProps) {
+export function DashboardGrid({ projectId, embedded = false }: DashboardGridProps) {
   const kpis = useKpis(projectId);
   const status = useStatusCounts(projectId);
   const priority = usePriorityCounts(projectId);
@@ -30,14 +33,11 @@ export function DashboardGrid({ projectId }: DashboardGridProps) {
   const highPriority = useHighPriority(projectId);
   const activityQuery = useScopedActivity(projectId, { limit: 10 });
 
-  return (
-    <div className="flex flex-1 flex-col">
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {projectId ? 'Project dashboard' : 'Dashboard'}
-        </h1>
+  const Wrapper = embedded ? EmbeddedWrapper : PageWrapper;
 
-        <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+  return (
+    <Wrapper projectId={projectId}>
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             title="Projects"
             value={kpis.data?.totalProjects}
@@ -57,18 +57,20 @@ export function DashboardGrid({ projectId }: DashboardGridProps) {
             loading={kpis.isLoading}
             error={kpis.isError}
           />
-          <KpiCard
-            title="My open tasks"
-            value={kpis.data?.myOpenTasks}
-            sub={
-              kpis.data
-                ? `${kpis.data.myCompletionPct}% of your tasks done`
-                : undefined
-            }
-            progressPercent={kpis.data?.myCompletionPct}
-            loading={kpis.isLoading}
-            error={kpis.isError}
-          />
+          <div id="my-open-tasks" className="scroll-mt-24">
+            <KpiCard
+              title="My open tasks"
+              value={kpis.data?.myOpenTasks}
+              sub={
+                kpis.data
+                  ? `${kpis.data.myCompletionPct}% of your tasks done`
+                  : undefined
+              }
+              progressPercent={kpis.data?.myCompletionPct}
+              loading={kpis.isLoading}
+              error={kpis.isError}
+            />
+          </div>
         </section>
 
         <section className="mt-6 grid gap-3 lg:grid-cols-2">
@@ -84,7 +86,7 @@ export function DashboardGrid({ projectId }: DashboardGridProps) {
           />
         </section>
 
-        <section className="mt-6 grid gap-3 lg:grid-cols-2">
+        <section id="upcoming-deadlines" className="mt-6 grid scroll-mt-24 gap-3 lg:grid-cols-2">
           <UpcomingList
             data={upcoming.data}
             days={7}
@@ -98,9 +100,12 @@ export function DashboardGrid({ projectId }: DashboardGridProps) {
           />
         </section>
 
-        <section className="mt-6 rounded-lg border p-4">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold tracking-tight">Recent activity</h2>
+        <section className="mt-6 rounded-lg border border-border bg-card surface-edge-highlight p-5">
+          <div className="mb-4 flex items-baseline justify-between border-b border-border pb-3">
+            <div>
+              <span className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Activity</span>
+              <h2 className="text-sm font-semibold tracking-tight">Recent activity</h2>
+            </div>
             {projectId ? (
               <a
                 href={`/projects/${projectId}/activity`}
@@ -112,7 +117,37 @@ export function DashboardGrid({ projectId }: DashboardGridProps) {
           </div>
           <ActivityFeed query={activityQuery} hideLoadMore />
         </section>
+    </Wrapper>
+  );
+}
+
+function PageWrapper({
+  projectId,
+  children,
+}: {
+  projectId?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <main className="w-full flex-1 px-8 py-10">
+        <div className="mb-6 border-b border-border pb-6">
+          <span className="text-eyebrow">
+            {projectId ? 'Project · Overview' : 'Workspace · Overview'}
+          </span>
+          <h1 className="mt-2 text-display-md">
+            {projectId ? 'Project dashboard' : 'Dashboard'}
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Live KPIs, velocity, and what needs attention next.
+          </p>
+        </div>
+        {children}
       </main>
     </div>
   );
+}
+
+function EmbeddedWrapper({ children }: { projectId?: string; children: React.ReactNode }) {
+  return <div>{children}</div>;
 }

@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/hooks/useUser';
 import {
-  useChangePassword,
   useDeleteAvatar,
   useUpdateProfile,
   useUploadAvatar,
@@ -24,63 +23,19 @@ const identitySchema = z.object({
   email: z.string().trim().email('Invalid email'),
 });
 
-const passwordSchema = z
-  .object({
-    currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
-    confirmPassword: z.string().min(1, 'Please retype the new password'),
-  })
-  .refine((v) => v.newPassword === v.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'Passwords do not match',
-  });
-
 type IdentityForm = z.infer<typeof identitySchema>;
-type PasswordForm = z.infer<typeof passwordSchema>;
 
 export default function ProfilePage() {
   const { user, isLoading } = useUser();
   const updateProfile = useUpdateProfile();
-  const changePassword = useChangePassword();
   const uploadAvatar = useUploadAvatar();
   const deleteAvatar = useDeleteAvatar();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarBust, setAvatarBust] = useState<number>(0);
-  // Optimistic override of the server flag — null means "trust whatever
-  // useUser() last returned". Flips immediately on click, gets cleared on
-  // mutation success (so we fall back to the fresh server value) or
-  // restored to its previous value on failure. Deriving the displayed
-  // value instead of mirroring via useEffect keeps the lint rule against
-  // synchronous setState-in-effect happy.
-  const [emailNotificationsOverride, setEmailNotificationsOverride] = useState<boolean | null>(
-    null,
-  );
-  const emailNotificationsValue =
-    emailNotificationsOverride ?? user?.emailNotifications ?? true;
-  const emailNotificationsReady = !isLoading && user !== null && user !== undefined;
-
-  const onEmailNotificationsToggle = async (next: boolean) => {
-    const prev = emailNotificationsOverride;
-    setEmailNotificationsOverride(next);
-    try {
-      await updateProfile.mutateAsync({ emailNotifications: next });
-      toast.success(next ? 'Email notifications turned on.' : 'Email notifications turned off.');
-      // Server is authoritative now — drop the override so the next render
-      // reads straight from useUser().
-      setEmailNotificationsOverride(null);
-    } catch (err) {
-      setEmailNotificationsOverride(prev);
-      toast.error(err instanceof ApiError ? err.message : 'Could not update preference.');
-    }
-  };
 
   const identityForm = useForm<IdentityForm>({
     resolver: zodResolver(identitySchema),
     defaultValues: { name: '', email: '' },
-  });
-  const passwordForm = useForm<PasswordForm>({
-    resolver: zodResolver(passwordSchema),
-    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   });
 
   useEffect(() => {
@@ -102,19 +57,6 @@ export default function ProfilePage() {
       toast.success('Profile updated.');
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Update failed.');
-    }
-  };
-
-  const onPasswordSubmit = async (data: PasswordForm) => {
-    try {
-      await changePassword.mutateAsync({
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-      });
-      passwordForm.reset({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      toast.success('Password changed. Other sessions have been signed out.');
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Password change failed.');
     }
   };
 
@@ -147,54 +89,59 @@ export default function ProfilePage() {
   const avatarSrc = baseAvatarUrl ? `${baseAvatarUrl}&bust=${avatarBust}` : null;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-8">
-      <h1 className="text-2xl font-semibold">Your profile</h1>
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-6 py-10">
+      <div className="border-b border-border pb-6">
+        <span className="text-eyebrow">Account · Profile</span>
+        <h1 className="mt-2 text-display-md">Profile</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">Avatar, display name, and email address.</p>
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Avatar</CardTitle>
-          <CardDescription>PNG, JPEG, WebP, or GIF — max 2 MB.</CardDescription>
+          <CardTitle>Profile</CardTitle>
+          <CardDescription>Avatar, display name, and email address.</CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center gap-4">
-          <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-primary text-3xl font-semibold text-primary-foreground ring-1 ring-foreground/15">
-            {avatarSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <span>{(user?.name || user?.email || '?').slice(0, 1).toUpperCase()}</span>
-            )}
+        <CardContent className="space-y-5">
+          <div className="flex items-center gap-4 border-b border-border pb-5">
+            <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-3xl font-semibold text-primary-foreground ring-1 ring-foreground/15">
+              {avatarSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span>{(user?.name || user?.email || '?').slice(0, 1).toUpperCase()}</span>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Avatar</div>
+                <div className="text-xs text-muted-foreground">PNG, JPEG, WebP, or GIF — max 2 MB.</div>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  onChange={onAvatarChange}
+                />
+                <Button type="button" size="sm" onClick={onPickAvatar} disabled={uploadAvatar.isPending}>
+                  {uploadAvatar.isPending ? 'Uploading…' : 'Upload'}
+                </Button>
+                {user?.avatarPath ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={onAvatarDelete}
+                    disabled={deleteAvatar.isPending}
+                  >
+                    {deleteAvatar.isPending ? 'Removing…' : 'Remove'}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              className="hidden"
-              onChange={onAvatarChange}
-            />
-            <Button type="button" onClick={onPickAvatar} disabled={uploadAvatar.isPending}>
-              {uploadAvatar.isPending ? 'Uploading…' : 'Upload'}
-            </Button>
-            {user?.avatarPath ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onAvatarDelete}
-                disabled={deleteAvatar.isPending}
-              >
-                {deleteAvatar.isPending ? 'Removing…' : 'Remove'}
-              </Button>
-            ) : null}
-          </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Identity</CardTitle>
-          <CardDescription>Display name + email address.</CardDescription>
-        </CardHeader>
-        <CardContent>
           <form
             className="space-y-3"
             onSubmit={identityForm.handleSubmit(onIdentitySubmit)}
@@ -220,94 +167,6 @@ export default function ProfilePage() {
             </div>
             <Button type="submit" disabled={updateProfile.isPending}>
               {updateProfile.isPending ? 'Saving…' : 'Save changes'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Notifications</CardTitle>
-          <CardDescription>
-            Email delivery for mentions, comment replies, task assignments, and status changes.
-            In-app notifications stay on regardless.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <label className="flex cursor-pointer items-center gap-3">
-            <input
-              type="checkbox"
-              role="switch"
-              aria-label="Send me transactional emails"
-              className="h-4 w-4 cursor-pointer accent-primary"
-              checked={emailNotificationsValue}
-              disabled={isLoading || updateProfile.isPending || !emailNotificationsReady}
-              onChange={(e) => void onEmailNotificationsToggle(e.target.checked)}
-            />
-            <span className="text-sm">
-              Send me transactional emails when someone mentions, assigns, or replies to me
-            </span>
-          </label>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Password</CardTitle>
-          <CardDescription>
-            Changing your password signs out every other tab and device, but keeps this one active.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="space-y-3"
-            onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
-            noValidate
-          >
-            <div className="space-y-1">
-              <Label htmlFor="profile-current-pw">Current password</Label>
-              <Input
-                id="profile-current-pw"
-                type="password"
-                autoComplete="current-password"
-                {...passwordForm.register('currentPassword')}
-              />
-              {passwordForm.formState.errors.currentPassword ? (
-                <p role="alert" className="text-xs text-destructive">
-                  {passwordForm.formState.errors.currentPassword.message}
-                </p>
-              ) : null}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="profile-new-pw">New password</Label>
-              <Input
-                id="profile-new-pw"
-                type="password"
-                autoComplete="new-password"
-                {...passwordForm.register('newPassword')}
-              />
-              {passwordForm.formState.errors.newPassword ? (
-                <p role="alert" className="text-xs text-destructive">
-                  {passwordForm.formState.errors.newPassword.message}
-                </p>
-              ) : null}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="profile-confirm-pw">Confirm new password</Label>
-              <Input
-                id="profile-confirm-pw"
-                type="password"
-                autoComplete="new-password"
-                {...passwordForm.register('confirmPassword')}
-              />
-              {passwordForm.formState.errors.confirmPassword ? (
-                <p role="alert" className="text-xs text-destructive">
-                  {passwordForm.formState.errors.confirmPassword.message}
-                </p>
-              ) : null}
-            </div>
-            <Button type="submit" disabled={changePassword.isPending}>
-              {changePassword.isPending ? 'Saving…' : 'Change password'}
             </Button>
           </form>
         </CardContent>
