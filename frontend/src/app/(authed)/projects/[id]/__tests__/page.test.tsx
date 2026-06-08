@@ -177,8 +177,9 @@ describe('ProjectDetailPage', () => {
     setUser('admin');
     getSpy.mockResolvedValue(sampleProject);
     renderPage();
+    // Edit moved from Link → Button that opens a modal.
     await waitFor(() =>
-      expect(screen.getByRole('link', { name: /edit/i })).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument(),
     );
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
   });
