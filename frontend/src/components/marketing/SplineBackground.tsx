@@ -7,12 +7,14 @@ export function SplineBackground() {
       aria-hidden
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
     >
+      {/* iframe is oversized + shifted so the "Built with Spline" badge
+       * sits below the viewport. Scene still fills the screen. */}
       <iframe
         src={SPLINE_URL}
         title="background"
         loading="lazy"
-        className="absolute inset-0 h-full w-full border-0"
-        // Spline scenes render full-bleed; size matches the wrapper.
+        className="absolute left-0 top-0 w-full border-0"
+        style={{ height: 'calc(100% + 80px)' }}
       />
       {/* Dimmer keeps body text readable on top of the scene. */}
       <div className="absolute inset-0 bg-background/55" />
