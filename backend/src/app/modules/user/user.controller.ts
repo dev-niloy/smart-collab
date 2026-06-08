@@ -37,6 +37,20 @@ export const userController = {
     }
   },
 
+  search: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const q = typeof req.query.q === 'string' ? req.query.q : '';
+      const excludeProjectId =
+        typeof req.query.excludeProjectId === 'string' ? req.query.excludeProjectId : undefined;
+      const limitRaw = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : NaN;
+      const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 25) : 10;
+      const users = await userService.search(q, { excludeProjectId, limit });
+      res.status(200).json({ data: users });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   me: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = await userService.getMe(requireActorId(req));

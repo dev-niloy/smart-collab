@@ -19,28 +19,30 @@ enum Role {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
-  name         String
-  passwordHash String
-  role         Role     @default(team_member)
-  avatarPath   String?
-  emailNotifications Boolean @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(uuid()) @db.Uuid
+  email              String   @unique
+  name               String
+  passwordHash       String
+  role               Role     @default(team_member)
+  avatarPath         String?
+  emailNotifications Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   sessions                Session[]
   activities              ActivityLog[]
-  projects                Project[]        @relation("ProjectCreatedBy")
-  tasksCreated            Task[]           @relation("TaskCreatedBy")
-  projectMemberships      ProjectMember[]  @relation("ProjectMemberUser")
-  projectMembershipsAdded ProjectMember[]  @relation("ProjectMemberAddedBy")
-  comments                Comment[]        @relation("CommentAuthor")
-  attachments             Attachment[]     @relation("AttachmentUploader")
-  notificationsReceived   Notification[]   @relation("NotificationRecipient")
-  notificationsSent       Notification[]   @relation("NotificationActor")
-  taskAssignments         TaskAssignee[]   @relation("TaskAssigneeUser")
-  taskAssignmentsAdded    TaskAssignee[]   @relation("TaskAssigneeAddedBy")
+  projects                Project[]           @relation("ProjectCreatedBy")
+  tasksCreated            Task[]              @relation("TaskCreatedBy")
+  projectMemberships      ProjectMember[]     @relation("ProjectMemberUser")
+  projectMembershipsAdded ProjectMember[]     @relation("ProjectMemberAddedBy")
+  comments                Comment[]           @relation("CommentAuthor")
+  attachments             Attachment[]        @relation("AttachmentUploader")
+  notificationsReceived   Notification[]      @relation("NotificationRecipient")
+  notificationsSent       Notification[]      @relation("NotificationActor")
+  taskAssignments         TaskAssignee[]      @relation("TaskAssigneeUser")
+  taskAssignmentsAdded    TaskAssignee[]      @relation("TaskAssigneeAddedBy")
+  invitationsCreated      ProjectInvitation[] @relation("InvitationCreatedBy")
+  invitationsAccepted     ProjectInvitation[] @relation("InvitationAcceptedBy")
 
   @@index([role])
   @@map("users")
@@ -62,10 +64,11 @@ model Project {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  creator    User            @relation("ProjectCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
-  tasks      Task[]
-  members    ProjectMember[]
-  activities ActivityLog[]
+  creator     User                @relation("ProjectCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  tasks       Task[]
+  members     ProjectMember[]
+  activities  ActivityLog[]
+  invitations ProjectInvitation[]
 
   @@index([status, createdAt])
   @@index([deadline])
@@ -98,8 +101,8 @@ model Task {
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
 
-  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  creator     User         @relation("TaskCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator     User           @relation("TaskCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
   comments    Comment[]
   attachments Attachment[]
   assignees   TaskAssignee[]
@@ -134,13 +137,45 @@ enum ProjectRole {
   @@map("project_role")
 }
 
+enum InvitationStatus {
+  pending
+  accepted
+  expired
+  revoked
+
+  @@map("invitation_status")
+}
+
+model ProjectInvitation {
+  id           String           @id @default(uuid()) @db.Uuid
+  projectId    String           @db.Uuid
+  email        String
+  role         ProjectRole      @default(member)
+  token        String           @unique
+  status       InvitationStatus @default(pending)
+  createdById  String           @db.Uuid
+  createdAt    DateTime         @default(now())
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  acceptedById String?          @db.Uuid
+
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy  User    @relation("InvitationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  acceptedBy User?   @relation("InvitationAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  @@index([projectId, status])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("project_invitations")
+}
+
 model ProjectMember {
-  id          String      @id @default(uuid()) @db.Uuid
-  projectId   String      @db.Uuid
-  userId      String      @db.Uuid
-  role        ProjectRole @default(member)
-  addedAt     DateTime    @default(now())
-  addedById   String?     @db.Uuid
+  id        String      @id @default(uuid()) @db.Uuid
+  projectId String      @db.Uuid
+  userId    String      @db.Uuid
+  role      ProjectRole @default(member)
+  addedAt   DateTime    @default(now())
+  addedById String?     @db.Uuid
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user    User    @relation("ProjectMemberUser", fields: [userId], references: [id], onDelete: Cascade)

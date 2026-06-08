@@ -8,6 +8,7 @@ import activityLogRoutes from '../modules/activityLog/activityLog.routes';
 import searchRoutes from '../modules/search/search.routes';
 import { attachmentDownloadRouter } from '../modules/attachment/attachment.routes';
 import notificationRoutes from '../modules/notification/notification.routes';
+import { invitationRouter } from '../modules/invitation/invitation.routes';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/api/v1/activity', activityLogRoutes);
 router.use('/api/v1/search', searchRoutes);
 router.use('/api/v1/attachments', attachmentDownloadRouter);
 router.use('/api/v1/notifications', notificationRoutes);
+router.use('/api/v1/invitations', invitationRouter);
 
 export default router;

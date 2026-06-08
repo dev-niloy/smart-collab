@@ -11,6 +11,7 @@ import {
 } from './project.validation';
 import { listTasksQuerySchema } from '../task/task.validation';
 import projectMemberRouter from '../projectMember/projectMember.routes';
+import { projectInvitationsRouter } from '../invitation/invitation.routes';
 import { buildDashboardRouter } from '../dashboard/dashboard.routes';
 import { buildProjectActivityRouter } from '../activityLog/activityLog.routes';
 import { requireProjectRole } from '../../middlewares/requireProjectRole';
@@ -18,6 +19,7 @@ import { requireProjectRole } from '../../middlewares/requireProjectRole';
 const router = Router();
 
 router.use('/:id/members', projectMemberRouter);
+router.use('/:id/invitations', projectInvitationsRouter);
 router.use(
   '/:id/dashboard',
   requireAuth,

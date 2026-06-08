@@ -26,6 +26,11 @@ router.post(
 router.delete('/me/avatar', userController.removeAvatar);
 router.get('/me/avatar', userController.getAvatar);
 
+// Typeahead search for the "add member" / "invite" UX. Any authed user can
+// hit it, but the result set is intentionally minimal (id, email, name,
+// avatarUrl) so it's safe even outside admin/PM contexts.
+router.get('/search', userController.search);
+
 // Existing admin-style listing (kept intact)
 router.get('/', userController.list);
 

@@ -20,7 +20,8 @@ export type EmailJobName =
   | 'comment.created'
   | 'comment.mention'
   | 'project.member_added'
-  | 'project.member_role_changed';
+  | 'project.member_role_changed'
+  | 'project.invitation';
 
 // Pre-rendered context fed to the template renderer. The producer ALWAYS
 // supplies the context the rendered email needs — the processor + worker
@@ -58,6 +59,10 @@ export type EmailJobData = {
     memberId?: string;
     newRole?: string;
     previousRole?: string;
+    invitationToken?: string;
+    invitationAcceptUrl?: string;
+    invitationExpiresAt?: string;
+    inviterName?: string;
   };
 };
 
