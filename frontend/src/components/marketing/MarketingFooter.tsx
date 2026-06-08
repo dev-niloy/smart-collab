@@ -30,7 +30,7 @@ const COLS = [
 export function MarketingFooter() {
   return (
     <footer className="border-t border-border/60 bg-background/60 backdrop-blur">
-      <div className="mx-auto max-w-[1280px] px-6 py-16">
+      <div className="mx-auto max-w-[1080px] px-6 py-16">
         <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2">
