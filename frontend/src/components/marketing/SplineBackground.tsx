@@ -1,5 +1,5 @@
 const SPLINE_URL =
-  'https://my.spline.design/retrofuturismbganimation-V1PugBbrj6hnBcvMJhYyLq1D/';
+  'https://my.spline.design/liquidgradientabstractbackground-2MLLKMUNNElHMN2YpOPnNAzi/';
 
 export function SplineBackground() {
   return (
