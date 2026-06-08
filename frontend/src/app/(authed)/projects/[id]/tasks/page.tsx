@@ -38,7 +38,9 @@ import {
 } from '@/lib/schemas/task';
 import { InlineStatusSelect } from '@/components/tasks/inline-status-select';
 import { TaskAssigneesAvatars } from '@/components/tasks/TaskAssigneesAvatars';
+import { KanbanBoard } from '@/components/tasks/KanbanBoard';
 import { parseCsv, toCsv, parseDateParam } from '@/lib/queryString';
+import { LayoutGrid, Columns3 } from 'lucide-react';
 
 const SORT_LABEL: Record<SortKey, string> = {
   created: 'Newest',
@@ -124,7 +126,8 @@ function ProjectTasksPageInner() {
       'createdBy' in patch ||
       'dueFrom' in patch ||
       'dueTo' in patch ||
-      'sort' in patch
+      'sort' in patch ||
+      'view' in patch
     ) {
       next.delete('page');
     }
@@ -144,6 +147,7 @@ function ProjectTasksPageInner() {
   const statusCsv = useMemo(() => toCsv(statusList), [statusList]);
   const priorityCsv = useMemo(() => toCsv(priorityList), [priorityList]);
   const showDeleted = isPrivileged && params.get('tab') === 'deleted';
+  const view: 'grid' | 'board' = params.get('view') === 'board' ? 'board' : 'grid';
   const queryParams = useMemo(
     () => ({
       q: q || undefined,
@@ -208,34 +212,77 @@ function ProjectTasksPageInner() {
           </Button>
         </div>
 
-        {isPrivileged ? (
-          <div className="mt-4 inline-flex rounded-md border border-border p-0.5" role="tablist" aria-label="Task view">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {isPrivileged ? (
+            <div
+              className="inline-flex rounded-md border border-border p-0.5"
+              role="tablist"
+              aria-label="Task view"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!showDeleted}
+                onClick={() => setParam({ tab: null, page: null })}
+                className={
+                  'rounded px-3 py-1 text-xs ' +
+                  (!showDeleted ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground')
+                }
+              >
+                Active
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={showDeleted}
+                onClick={() => setParam({ tab: 'deleted', page: null })}
+                className={
+                  'rounded px-3 py-1 text-xs ' +
+                  (showDeleted ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground')
+                }
+              >
+                Deleted
+              </button>
+            </div>
+          ) : null}
+
+          <div
+            className="inline-flex rounded-md border border-border p-0.5"
+            role="tablist"
+            aria-label="Layout"
+          >
             <button
               type="button"
               role="tab"
-              aria-selected={!showDeleted}
-              onClick={() => setParam({ tab: null, page: null })}
+              aria-selected={view === 'grid'}
+              onClick={() => setParam({ view: null })}
               className={
-                'rounded px-3 py-1 text-xs ' +
-                (!showDeleted ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground')
+                'inline-flex items-center gap-1.5 rounded px-3 py-1 text-xs ' +
+                (view === 'grid'
+                  ? 'bg-accent text-foreground'
+                  : 'text-muted-foreground hover:text-foreground')
               }
             >
-              Active
+              <LayoutGrid className="size-3.5" />
+              Grid
             </button>
             <button
               type="button"
               role="tab"
-              aria-selected={showDeleted}
-              onClick={() => setParam({ tab: 'deleted', page: null })}
+              aria-selected={view === 'board'}
+              onClick={() => setParam({ view: 'board' })}
               className={
-                'rounded px-3 py-1 text-xs ' +
-                (showDeleted ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground')
+                'inline-flex items-center gap-1.5 rounded px-3 py-1 text-xs ' +
+                (view === 'board'
+                  ? 'bg-accent text-foreground'
+                  : 'text-muted-foreground hover:text-foreground')
               }
             >
-              Deleted
+              <Columns3 className="size-3.5" />
+              Board
             </button>
           </div>
-        ) : null}
+        </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Input
@@ -444,6 +491,12 @@ function ProjectTasksPageInner() {
                 )}
               </CardContent>
             </Card>
+          ) : view === 'board' && !showDeleted ? (
+            <KanbanBoard
+              tasks={items}
+              projectId={projectId}
+              canWriteFor={canWriteFor}
+            />
           ) : (
             <div
               className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
