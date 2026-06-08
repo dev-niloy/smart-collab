@@ -148,12 +148,20 @@ export default function ProjectDetailPage() {
         )}
 
         {project && !isLoading && !isError && !isForbidden ? (
-          <section className="mt-8">
-            <div className="mb-4 flex items-baseline justify-between">
-              <h2 className="text-headline">Dashboard</h2>
-              <span className="text-eyebrow">Project activity</span>
+          <section className="mt-10">
+            <div className="mb-5 flex items-baseline justify-between border-b border-border/60 pb-3">
+              <div>
+                <span className="text-eyebrow">Overview</span>
+                <h2 className="mt-1 text-headline">Project dashboard</h2>
+              </div>
+              <Link
+                href={`/projects/${project.id}/activity`}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                View all activity →
+              </Link>
             </div>
-            <DashboardGrid projectId={id} />
+            <DashboardGrid projectId={id} embedded />
           </section>
         ) : null}
       </main>
