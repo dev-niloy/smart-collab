@@ -1,37 +1,53 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+
+let mockPathname = '/inbox';
+let mockSearch = new URLSearchParams();
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => mockPathname,
+  useSearchParams: () => mockSearch,
+}));
+
 import { InboxPanel } from '../InboxPanel';
 
 describe('InboxPanel', () => {
-  it('renders Inbox header + 3 tabs (Unread / Mentions / Assigned to me)', () => {
+  it('renders Inbox header + 3 sidebar links', () => {
+    mockPathname = '/inbox';
+    mockSearch = new URLSearchParams();
     render(<InboxPanel />);
 
     expect(screen.getByRole('heading', { level: 2, name: /inbox/i })).toBeInTheDocument();
 
-    const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(3);
-    expect(tabs.map((t) => t.textContent)).toEqual(['Unread', 'Mentions', 'Assigned to me']);
+    const links = screen.getAllByRole('link');
+    expect(links.map((a) => a.textContent)).toEqual(['Unread', 'Mentions', 'Assigned to me']);
   });
 
-  it('Unread is selected by default and Mentions switches selection', () => {
+  it('marks Unread active when no tab query is set', () => {
+    mockPathname = '/inbox';
+    mockSearch = new URLSearchParams();
     render(<InboxPanel />);
-    expect(screen.getByRole('tab', { name: /unread/i })).toHaveAttribute('aria-selected', 'true');
-
-    fireEvent.click(screen.getByRole('tab', { name: /mentions/i }));
-    expect(screen.getByRole('tab', { name: /mentions/i })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tab', { name: /unread/i })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByRole('link', { name: /unread/i })).toHaveAttribute('data-active', 'true');
+    expect(screen.getByRole('link', { name: /mentions/i })).toHaveAttribute('data-active', 'false');
   });
 
-  it('fires onTabChange callback when a tab is clicked', () => {
-    const onTabChange = vi.fn();
-    render(<InboxPanel onTabChange={onTabChange} />);
-
-    fireEvent.click(screen.getByRole('tab', { name: /assigned to me/i }));
-    expect(onTabChange).toHaveBeenCalledWith('assigned');
+  it('marks Mentions active when ?tab=mentions', () => {
+    mockPathname = '/inbox';
+    mockSearch = new URLSearchParams('tab=mentions');
+    render(<InboxPanel />);
+    expect(screen.getByRole('link', { name: /mentions/i })).toHaveAttribute('data-active', 'true');
+    expect(screen.getByRole('link', { name: /unread/i })).toHaveAttribute('data-active', 'false');
   });
 
-  it('respects initialTab prop', () => {
-    render(<InboxPanel initialTab="mentions" />);
-    expect(screen.getByRole('tab', { name: /mentions/i })).toHaveAttribute('aria-selected', 'true');
+  it('links carry the correct hrefs', () => {
+    mockPathname = '/inbox';
+    mockSearch = new URLSearchParams();
+    render(<InboxPanel />);
+    expect(screen.getByRole('link', { name: /unread/i })).toHaveAttribute('href', '/inbox?tab=unread');
+    expect(screen.getByRole('link', { name: /mentions/i })).toHaveAttribute('href', '/inbox?tab=mentions');
+    expect(screen.getByRole('link', { name: /assigned to me/i })).toHaveAttribute(
+      'href',
+      '/inbox?tab=assigned',
+    );
   });
 });

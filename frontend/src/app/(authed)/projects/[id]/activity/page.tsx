@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ActivityFeed } from '@/components/activity/ActivityFeed';
 import { useProjectActivity } from '@/hooks/useActivity';

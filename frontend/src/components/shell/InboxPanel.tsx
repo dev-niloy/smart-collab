@@ -19,12 +19,11 @@ const readTab = (params: URLSearchParams | null): InboxTab => {
 };
 
 export interface InboxPanelProps {
-  // Kept for back-compat w/ existing call-sites; unused now since URL drives state.
   initialTab?: InboxTab;
   onTabChange?: (tab: InboxTab) => void;
 }
 
-export function InboxPanel(_props: InboxPanelProps = {}) {
+export function InboxPanel() {
   const pathname = usePathname();
   const params = useSearchParams();
   const active = readTab(params);

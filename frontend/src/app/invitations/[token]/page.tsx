@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -23,7 +23,7 @@ export default function InvitationAcceptPage() {
   const lookup = useInvitationLookup(token);
   const accept = useAcceptInvitation();
   const { user, isLoading: userLoading } = useUser();
-  const [autoAttempted, setAutoAttempted] = useState(false);
+  const autoAttemptedRef = useRef(false);
 
   const inv = lookup.data;
   const matchesUser = useMemo(() => {
@@ -32,14 +32,16 @@ export default function InvitationAcceptPage() {
   }, [user, inv]);
 
   // Auto-accept once: when invitation is pending AND a logged-in user has the
-  // matching email, fire the accept mutation and redirect on success.
+  // matching email, fire the accept mutation and redirect on success. We use
+  // a ref guard (not state) because setState-in-effect cascades a render and
+  // is flagged by lint — the value never needs to be visible to the JSX.
   useEffect(() => {
-    if (autoAttempted) return;
+    if (autoAttemptedRef.current) return;
     if (!inv || userLoading) return;
     if (inv.status !== 'pending') return;
     if (!user) return;
     if (!matchesUser) return;
-    setAutoAttempted(true);
+    autoAttemptedRef.current = true;
     accept
       .mutateAsync(token)
       .then((data) => {
@@ -49,7 +51,7 @@ export default function InvitationAcceptPage() {
       .catch((err) => {
         toast.error(err instanceof ApiError ? err.message : 'Could not accept invitation.');
       });
-  }, [inv, user, userLoading, matchesUser, autoAttempted, accept, router, token]);
+  }, [inv, user, userLoading, matchesUser, accept, router, token]);
 
   return (
     <main className="flex flex-1 min-h-screen w-full items-center justify-center px-6 py-12">
@@ -104,8 +106,8 @@ export default function InvitationAcceptPage() {
         ) : (
           <div className="space-y-5">
             <div className="space-y-1.5">
-              <span className="text-eyebrow">You're invited</span>
-              <h1 className="text-headline">Join "{inv.project.name}"</h1>
+              <span className="text-eyebrow">You&rsquo;re invited</span>
+              <h1 className="text-headline">Join &ldquo;{inv.project.name}&rdquo;</h1>
               <p className="text-sm text-muted-foreground">
                 {inv.inviter.name} invited <strong>{inv.email}</strong> to collaborate as{' '}
                 <strong>{inv.role === 'pm' ? 'Project Manager' : 'Member'}</strong>.
@@ -130,7 +132,7 @@ export default function InvitationAcceptPage() {
                 <Button
                   className="w-full"
                   onClick={() => {
-                    setAutoAttempted(true);
+                    autoAttemptedRef.current = true;
                     accept
                       .mutateAsync(token)
                       .then((data) => router.replace(`/projects/${data.projectId}`))
@@ -146,7 +148,7 @@ export default function InvitationAcceptPage() {
             ) : user && !matchesUser ? (
               <div className="space-y-2">
                 <p className="text-sm text-destructive">
-                  You're signed in as <strong>{user.email}</strong>, but this invitation was sent to{' '}
+                  You&rsquo;re signed in as <strong>{user.email}</strong>, but this invitation was sent to{' '}
                   <strong>{inv.email}</strong>.
                 </p>
                 <p className="text-xs text-muted-foreground">

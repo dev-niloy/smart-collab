@@ -210,7 +210,7 @@ export function AddMemberForm({ projectId }: AddMemberFormProps) {
                     <span className="grow">
                       <span className="block text-sm text-foreground">Invite {query.trim()}</span>
                       <span className="block text-[11px] text-muted-foreground">
-                        Send an email invitation. They'll join after accepting.
+                        Send an email invitation. They&rsquo;ll join after accepting.
                       </span>
                     </span>
                     <UserPlus className="h-4 w-4 text-muted-foreground" aria-hidden />
