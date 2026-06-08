@@ -193,20 +193,14 @@ function ProjectTasksPageInner() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <Link
-          href={`/projects/${projectId}`}
-          className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-        >
-          ← Back to project
-        </Link>
-
-        <div className="mt-3 flex items-center justify-between gap-4">
+      <main className="w-full flex-1 px-8 py-10">
+        <div className="flex items-end justify-between gap-4 border-b border-border pb-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <span className="text-eyebrow">Project · Work</span>
+            <h1 className="mt-2 text-display-md">Tasks</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {total === 0 ? 'No results' : `${total} task${total === 1 ? '' : 's'}`}
-              {showDeleted ? ' (showing deleted)' : ''}
+              {showDeleted ? ' · showing deleted' : ''}
             </p>
           </div>
           <Button onClick={() => router.push(`/projects/${projectId}/tasks/new`)}>

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProjectProgress } from '@/components/projects/ProjectProgress';
+import { NewProjectDialog } from '@/components/projects/NewProjectDialog';
 import {
   Select,
   SelectContent,
@@ -71,6 +72,7 @@ function ProjectsPageInner() {
 
   const [queryInput, setQueryInput] = useState(q);
   const [lastSyncedQ, setLastSyncedQ] = useState(q);
+  const [newOpen, setNewOpen] = useState(false);
   if (q !== lastSyncedQ) {
     setLastSyncedQ(q);
     setQueryInput(q);
@@ -143,114 +145,123 @@ function ProjectsPageInner() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <div className="flex items-center justify-between gap-4">
+      <main className="w-full flex-1 px-8 py-10">
+        <div className="flex items-end justify-between gap-4 border-b border-border pb-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <span className="text-eyebrow">Workspace</span>
+            <h1 className="mt-2 text-display-md">Projects</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {total === 0 ? 'No results' : `${total} project${total === 1 ? '' : 's'}`}
+              <span className="mx-2 text-border">·</span>
+              <span>Filter, sort, and pivot the board.</span>
             </p>
           </div>
           {canCreate ? (
-            <Button onClick={() => router.push('/projects/new')}>New Project</Button>
+            <Button onClick={() => setNewOpen(true)}>New Project</Button>
           ) : null}
         </div>
 
-        <div className="mt-6 flex flex-col gap-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Input
-              value={queryInput}
-              onChange={(e) => setQueryInput(e.target.value)}
-              placeholder="Search by name"
-              aria-label="Search projects"
-              className="sm:max-w-sm"
-            />
-            <Select value={sort} onValueChange={(v) => setParam({ sort: v })}>
-              <SelectTrigger className="sm:w-56" aria-label="Sort">
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                {SORT_KEYS.map((k) => (
-                  <SelectItem key={k} value={k}>
-                    {SORT_LABEL[k]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        {canCreate ? (
+          <NewProjectDialog open={newOpen} onOpenChange={setNewOpen} />
+        ) : null}
 
-          <div
-            className="flex flex-wrap items-center gap-2"
-            role="group"
-            aria-label="Filter by status"
-          >
-            <span className="text-xs text-muted-foreground">Status:</span>
-            {PROJECT_STATUSES.map((s) => {
-              const active = statusList.includes(s);
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => toggleStatus(s)}
-                  aria-pressed={active}
-                  className={
-                    'rounded-full border px-3 py-0.5 text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ' +
-                    (active
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-input bg-background hover:bg-muted')
-                  }
-                >
-                  {STATUS_LABEL[s]}
-                </button>
-              );
-            })}
-          </div>
+        <div className="mt-6 rounded-md border border-border bg-card px-4 py-3 surface-edge-highlight">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Input
+                value={queryInput}
+                onChange={(e) => setQueryInput(e.target.value)}
+                placeholder="Search by name…"
+                aria-label="Search projects"
+                className="sm:max-w-sm"
+              />
+              <Select value={sort} onValueChange={(v) => setParam({ sort: v })}>
+                <SelectTrigger className="sm:w-56" aria-label="Sort">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_KEYS.map((k) => (
+                    <SelectItem key={k} value={k}>
+                      {SORT_LABEL[k]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              Deadline from
-              <input
-                type="date"
-                aria-label="Deadline from"
-                value={deadlineFrom ?? ''}
-                onChange={(e) =>
-                  setParam({ deadlineFrom: e.target.value || null })
-                }
-                className="h-8 rounded-md border bg-background px-2 text-xs"
-              />
-            </label>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              Deadline to
-              <input
-                type="date"
-                aria-label="Deadline to"
-                value={deadlineTo ?? ''}
-                onChange={(e) =>
-                  setParam({ deadlineTo: e.target.value || null })
-                }
-                className="h-8 rounded-md border bg-background px-2 text-xs"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => setParam({ createdBy: createdByMe ? null : 'me' })}
-              aria-pressed={createdByMe}
-              className={
-                'rounded-full border px-3 py-0.5 text-xs transition-colors ' +
-                (createdByMe
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-input bg-background hover:bg-muted')
-              }
+            <div
+              className="flex flex-wrap items-center gap-1.5"
+              role="group"
+              aria-label="Filter by status"
             >
-              Created by me
-            </button>
+              <span className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground mr-1">Status</span>
+              {PROJECT_STATUSES.map((s) => {
+                const active = statusList.includes(s);
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => toggleStatus(s)}
+                    aria-pressed={active}
+                    className={
+                      'rounded-full border px-2.5 h-6 inline-flex items-center text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background ' +
+                      (active
+                        ? 'border-primary/40 bg-primary/15 text-foreground'
+                        : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground')
+                    }
+                  >
+                    {STATUS_LABEL[s]}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                From
+                <input
+                  type="date"
+                  aria-label="Deadline from"
+                  value={deadlineFrom ?? ''}
+                  onChange={(e) =>
+                    setParam({ deadlineFrom: e.target.value || null })
+                  }
+                  className="h-7 rounded-md border border-border bg-background px-2 text-xs text-foreground"
+                />
+              </label>
+              <label className="flex items-center gap-2 text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+                To
+                <input
+                  type="date"
+                  aria-label="Deadline to"
+                  value={deadlineTo ?? ''}
+                  onChange={(e) =>
+                    setParam({ deadlineTo: e.target.value || null })
+                  }
+                  className="h-7 rounded-md border border-border bg-background px-2 text-xs text-foreground"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => setParam({ createdBy: createdByMe ? null : 'me' })}
+                aria-pressed={createdByMe}
+                className={
+                  'rounded-full border px-2.5 h-6 inline-flex items-center text-[11px] font-medium transition-colors ' +
+                  (createdByMe
+                    ? 'border-primary/40 bg-primary/15 text-foreground'
+                    : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground')
+                }
+              >
+                Created by me
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="mt-6">
           {isLoading ? (
             <div
-              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
               data-testid="projects-loading"
             >
               {Array.from({ length: 3 }).map((_, i) => (
@@ -301,7 +312,7 @@ function ProjectsPageInner() {
                   <>
                     <p className="text-sm">No projects yet.</p>
                     {canCreate ? (
-                      <Button onClick={() => router.push('/projects/new')}>
+                      <Button onClick={() => setNewOpen(true)}>
                         Create your first project
                       </Button>
                     ) : null}
@@ -311,24 +322,35 @@ function ProjectsPageInner() {
             </Card>
           ) : (
             <div
-              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
               data-testid="projects-grid"
             >
               {items.map((p) => (
                 <Link
                   key={p.id}
                   href={`/projects/${p.id}`}
-                  className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
+                  className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
                 >
-                  <Card className="h-full transition-colors hover:bg-accent/40">
-                    <CardHeader className="flex flex-row items-start justify-between gap-2">
-                      <CardTitle className="text-base">{p.name}</CardTitle>
-                      <Badge variant={STATUS_VARIANT[p.status]}>{STATUS_LABEL[p.status]}</Badge>
+                  <Card className="h-full transition-colors hover:border-[#34343a] hover:bg-accent/40">
+                    <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
+                      <div className="space-y-1 min-w-0">
+                        <span className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">Project</span>
+                        <CardTitle className="text-[15px] truncate">{p.name}</CardTitle>
+                      </div>
+                      <Badge variant={STATUS_VARIANT[p.status]} className="shrink-0">{STATUS_LABEL[p.status]}</Badge>
                     </CardHeader>
-                    <CardContent className="space-y-2 text-xs text-muted-foreground">
+                    <CardContent className="space-y-3 text-xs text-muted-foreground">
                       <ProjectProgress progress={p.progress} variant="card" />
-                      <p>Deadline {fmtDate(p.deadline)}</p>
-                      <p>Created {fmtDate(p.createdAt)}</p>
+                      <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground/70">Deadline</div>
+                          <div className="text-foreground mt-0.5">{fmtDate(p.deadline)}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground/70">Created</div>
+                          <div className="text-foreground mt-0.5">{fmtDate(p.createdAt)}</div>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </Link>
