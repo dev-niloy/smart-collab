@@ -1,5 +1,5 @@
 const SPLINE_URL =
-  'https://my.spline.design/liquidgradientabstractbackground-2MLLKMUNNElHMN2YpOPnNAzi/';
+  'https://my.spline.design/liquidgradientabstractbackground-2MLLKMUNNElHMN2YpOPnNAzi/?v=2';
 
 export function SplineBackground() {
   return (
