@@ -16,8 +16,6 @@ export function SplineBackground() {
       />
       {/* Dimmer keeps body text readable on top of the scene. */}
       <div className="absolute inset-0 bg-background/55" />
-      {/* Hide the "Built with Spline" badge tucked bottom-right. */}
-      <div className="absolute right-0 bottom-0 h-16 w-44 bg-background" />
     </div>
   );
 }
