@@ -3,14 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { ArrowUpRight, Home, Info, LogIn, Mail, Menu, X, type LucideIcon } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { cn } from '@/lib/utils';
 
-const NAV_LINKS = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' },
+type NavLink = { href: string; label: string; icon: LucideIcon };
+
+const NAV_LINKS: NavLink[] = [
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/about', label: 'About', icon: Info },
+  { href: '/contact', label: 'Contact', icon: Mail },
 ];
 
 export function MarketingNav() {
@@ -40,20 +42,25 @@ export function MarketingNav() {
 
           {/* Center links */}
           <nav className="hidden flex-1 items-center justify-center md:flex">
-            {NAV_LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={cn(
-                  'rounded-full px-3.5 py-1.5 text-[13.5px] transition-colors',
-                  pathname === l.href
-                    ? 'text-foreground'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {l.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((l) => {
+              const Icon = l.icon;
+              const active = pathname === l.href;
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13.5px] transition-colors',
+                    active
+                      ? 'bg-card/60 text-foreground'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <Icon className="size-3.5" />
+                  {l.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Auth */}
@@ -69,15 +76,17 @@ export function MarketingNav() {
               <>
                 <Link
                   href="/login"
-                  className="inline-flex h-8 items-center rounded-full px-4 text-[13px] text-muted-foreground hover:text-foreground"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[13px] text-muted-foreground hover:text-foreground"
                 >
+                  <LogIn className="size-3.5" />
                   Log In
                 </Link>
                 <Link
                   href="/signup"
-                  className="inline-flex h-8 items-center rounded-full bg-primary px-4 text-[13px] font-medium text-primary-foreground hover:bg-[#828fff]"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full bg-primary pl-4 pr-3 text-[13px] font-medium text-primary-foreground hover:bg-[#828fff]"
                 >
                   Get Started
+                  <ArrowUpRight className="size-3.5" />
                 </Link>
               </>
             )}
@@ -100,21 +109,25 @@ export function MarketingNav() {
         <div className="mx-auto mt-2 max-w-[420px] px-4 md:hidden">
           <div className="rounded-2xl border border-border/70 bg-background/90 p-3 backdrop-blur-xl">
             <nav className="flex flex-col gap-1">
-              {NAV_LINKS.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    'rounded-md px-3 py-2 text-sm',
-                    pathname === l.href
-                      ? 'bg-card text-foreground'
-                      : 'text-muted-foreground hover:bg-card hover:text-foreground',
-                  )}
-                >
-                  {l.label}
-                </Link>
-              ))}
+              {NAV_LINKS.map((l) => {
+                const Icon = l.icon;
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md px-3 py-2 text-sm',
+                      pathname === l.href
+                        ? 'bg-card text-foreground'
+                        : 'text-muted-foreground hover:bg-card hover:text-foreground',
+                    )}
+                  >
+                    <Icon className="size-4" />
+                    {l.label}
+                  </Link>
+                );
+              })}
               <div className="mt-2 flex flex-col gap-2 border-t border-border/60 pt-3">
                 {user ? (
                   <Link
