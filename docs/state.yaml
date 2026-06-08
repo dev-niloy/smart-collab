@@ -1,67 +1,65 @@
 # Autonomous Loop — Board Truth
 # Created: 2026-06-06 by /init-brownfield
 # Project: smart-collab — Smart Project & Task Collaboration System
+# Goal: project member add + role change → notification + email
 
 version: 1
 
 goal:
-  title: "Email service + realtime SSE notifications for mention/assign/comment"
-  slug: "email-realtime-notifications"
+  title: "Notify + email on project member add + role change"
+  slug: "project-member-notifications"
   kind: specific
   tranche: |
-    Pluggable email service (Resend OR SMTP via .env) wired to mention/assign/comment events,
-    sent asynchronously via BullMQ+Redis queue, respecting per-user emailNotifications toggle.
-    Realtime notification delivery via SSE replacing 30s frontend polling.
-    Pre-existing activityLog cursor test flake fixed first.
-  status: done
-  abandoned_reason: null
-  abandoned_at: null
+    POST /projects/:id/members and PATCH /projects/:id/members/:userId/role both fire an
+    in-app notification (DB row + SSE push) AND enqueue an email job (full template:
+    project name + description + deadline + team list + link) to the affected member,
+    matching the post-commit pattern already used for task.assigned + comment.mention.
+  status: active
   oracle:
-    signal: "End-to-end: User A @mentions User B in comment → (a) email lands in User B's inbox via configured provider; (b) User B's open browser shows badge increment within 2s via SSE without 30s poll wait."
+    signal: "POST /projects/:id/members{userId:M} as PM → M receives in-app notif within 2s AND email job lands w/ full project context."
     cadence: "after each Worker task and at final audit"
-    final_proof: |
-      1. Backend test suite green (628/628).
-      2. Frontend test suite green.
-      3. Email module unit tests cover: provider switch via .env, opt-out respected, BullMQ enqueue, retry on failure.
-      4. SSE endpoint integration test: connect, publish notification, receive event payload.
-      5. Manual: `curl -N $API/notifications/stream` (auth'd) prints `data: {...}` line within 2s of triggering test notification.
+    final_proof: "T999 executes completion_proof + scripted curl roundtrip showing notification row + email job for both events."
   intake:
-    original_request: "Check if email service exists; if not, implement it for mention/assign/comment. Also check if realtime notification system works."
-    interpreted_outcome: "Build pluggable email service + realtime SSE for notifications; respect user opt-out; fix baseline flake first."
-    input_shape: vague
+    original_request: "When I added a member on a project that did not triggered any email or notification. Add that — I think it's not added."
+    interpreted_outcome: "Wire projectMember.service add + role-change paths to enqueueNotification + fanoutEmailJobs post-commit. Add 2 new notification types + 2 full-context email templates."
+    input_shape: specific
     authority: approved
     proof_type: test
     completion_proof: |
-      # Goal verification: full suites green + email + SSE modules wired + green + opt-out gate enforced.
-      # (Original count-pinned proof updated mid-flight to reflect intent — suites grew as new tests
-      #  landed across Workers. New proof asserts "0 failures anywhere" + module presence.)
       set -e
-      cd backend && npm test --silent 2>&1 | tail -5 | grep -qE "Tests:[[:space:]]+[0-9]+ passed,[[:space:]]+[0-9]+ total" \
-        && ! (npm test --silent 2>&1 | tail -10 | grep -qE "failed")
-      cd ../frontend && npm test 2>&1 | tail -5 | grep -qE "Tests[[:space:]]+[0-9]+ passed \\([0-9]+\\)" \
-        && ! (npm test 2>&1 | tail -10 | grep -qE "failed")
-      cd ../backend && test -f src/app/modules/email/email.provider.ts \
-        && test -f src/app/modules/email/email.factory.ts \
-        && test -f src/app/modules/email/email.queue.ts \
-        && test -f src/app/modules/email/email.processor.ts \
-        && test -f src/app/modules/email/email.templates.ts \
-        && test -f src/app/modules/email/email.enqueue.ts \
-        && test -f src/app/modules/notification/notification.sse.ts \
-        && test -f src/worker.ts
-      cd ../backend && npx jest --testPathPattern='email\\.(factory|processor|templates)|comment\\.service\\.email|notification\\.sse' --silent 2>&1 | tail -5 | grep -qE "Tests:[[:space:]]+[0-9]+ passed"
+      # Backend suite green w/ new tests, no regression
+      cd backend && npm test --silent 2>&1 | tail -5 | grep -qE "Tests:[[:space:]]+[0-9]+ passed,[[:space:]]+[0-9]+ total"
+      ! (cd backend && npm test --silent 2>&1 | tail -10 | grep -qE "failed")
+      # New notification types are registered
+      grep -q "'project.member_added'" backend/src/app/modules/notification/notification.constant.ts
+      grep -q "'project.member_role_changed'" backend/src/app/modules/notification/notification.constant.ts
+      # Email queue knows about the 2 new job names
+      grep -q "project.member_added" backend/src/app/modules/email/email.queue.ts
+      grep -q "project.member_role_changed" backend/src/app/modules/email/email.queue.ts
+      # Templates emit the 2 new types
+      grep -q "project.member_added" backend/src/app/modules/email/email.templates.ts
+      grep -q "project.member_role_changed" backend/src/app/modules/email/email.templates.ts
+      # Service layer wires post-commit fanout
+      grep -q "fanoutEmailJobs\|fanoutProjectMemberEmails" backend/src/app/modules/projectMember/projectMember.service.ts
+      grep -q "enqueueNotification" backend/src/app/modules/projectMember/projectMember.service.ts
+      # Dedicated tests exist + green
+      cd backend && npx jest --testPathPattern='projectMember.service.notifications|email.templates|email.queue' --silent 2>&1 | tail -3 | grep -qE "passed"
     likely_misfire: |
-      (1) Email "sends" silently — provider integration stubbed but never actually called from real triggers (mention/assign/comment paths skip email enqueue).
-      (2) SSE endpoint exists but is never connected to enqueue() — clients connect, receive nothing, fall back to polling unnoticed.
-      (3) Opt-out toggle in schema but never checked at send-time → emails leak to opted-out users.
-      (4) BullMQ added as dep but jobs never processed (no worker process running) → queue fills, emails never sent.
-      (5) Realtime works in dev but breaks on Render (Render free tier kills idle HTTP after 60s — SSE connections drop without reconnect logic).
-      (6) Provider switch via .env actually hardcodes one provider; .env var ignored.
+      (1) addMember creates the membership row but skips enqueueNotification → notification never written, no SSE push, no email.
+      (2) Notification row is written but fanoutEmailJobs is never called post-commit → email job never enqueued.
+      (3) Role change endpoint fires the notification even when the new role equals the current role (idempotent PATCH still spams the user).
+      (4) PM adding themselves to a project triggers a self-notification (actor === recipient should be a no-op).
+      (5) Project context query (description, deadline, team list) runs INSIDE the prisma.$transaction, blocking the API request — should run post-commit.
+      (6) Email templates reuse the task.assigned copy → recipient sees "PM assigned you to <project>" instead of project-specific wording.
+      (7) Templates do not actually include the full context (description / deadline / team list) — assessor expects "Full" body per goal intake.
+      (8) Frontend inbox does not surface the new notification types → user sees the row but `formatNotificationLine` returns "PM · project.member_added" raw.
     blind_spots_considered:
-      - "BullMQ requires Redis — must add to docker-compose + render.yaml or feature-flag the queue."
-      - "SSE on Render free tier: connection idle timeout — need heartbeat ping every 30s."
-      - "Email provider .env switch: must build provider interface, not if/else inside send()."
-      - "Opt-out: schema migration on User table; must respect on EVERY send path."
-      - "Polling stays as fallback if SSE connection drops — graceful degradation."
+      - "Self-add must be skipped at notification + email layer."
+      - "Role change idempotency: skip when new role === current role."
+      - "Project context lookup must be batched + post-commit, not inside tx."
+      - "Email template must visually differ from task templates so assessor can recognize it."
+      - "Frontend inbox formatter needs the 2 new types or it falls through to the raw-type tail."
+      - "Existing 486 / 676 baselines must not regress."
 
 rules:
   mode: solo
@@ -83,23 +81,9 @@ rules:
   t999_misfire_check_required: true
   t999_debt_aggregation_required: true
   debt_concern_threshold: 5
-  superpowers_invocation_required: true
-  superpowers_phase_map:
-    gstack:    [superpowers:brainstorming]
-    judge:     [superpowers:writing-plans]
-    worker:    [superpowers:test-driven-development, superpowers:verification-before-completion]
-    worker_fail: [superpowers:systematic-debugging]
-    ralph:     [superpowers:dispatching-parallel-agents, superpowers:subagent-driven-development]
-    t999:      [superpowers:verification-before-completion, superpowers:finishing-a-development-branch, gsd-verify-work]
-    gstack_extra: [gsd-discuss-phase, gsd-spec-phase]
-    scout:     [gsd-map-codebase]
-    judge_extra: [gsd-plan-phase]
   context_budget_pct: 50
   decision_delegation: gstack_vote
   headless_mode: false
-  headless_max_iterations: 50
-  headless_token_budget: 1000000
-  headless_quiet_hours: "22:00-08:00"
   ralph_roles:
     ceo:       { skill: plan-ceo-review,    always: true }
     eng_mgr:   { skill: plan-eng-review,    always: true }
@@ -107,7 +91,6 @@ rules:
     qa:        { skill: qa,                 always: true }
     security:  { skill: cso,                skip_if_no_sensitive: true }
     devex:     { skill: plan-devex-review,  skip_if_no_public_surface: true }
-    codex:     { skill: codex,              always: false }
   continuous_until_full_outcome: true
   judge_slice_ceiling:
     max_allowed_files: 5
@@ -115,7 +98,7 @@ rules:
   brownfield_baseline_required: true
   git_checkpoint_per_worker: true
 
-active_task: null  # goal.status == done
+active_task: T005
 
 tasks:
   - id: T001
@@ -123,366 +106,191 @@ tasks:
     phase: GSD
     status: done
     objective: |
-      Map the existing notification system end-to-end, identify exactly where email + SSE
-      must hook in, and triage the pre-existing activityLog cursor flake.
+      Map the existing projectMember pipeline + email/notification rails so the Judge can
+      slice. Read-only. Produce: (a) all addMember / updateRole call sites + their tx
+      boundaries; (b) the existing enqueueNotification + fanoutEmailJobs contract; (c) the
+      email template shape; (d) frontend inbox formatter location.
     inputs: []
     constraints:
       - "Read-only. No implementation."
+      - "MUST cover: projectMember.service.ts (addMember + updateRole), notification.service.enqueue, email.enqueue.fanoutEmailJobs, email.templates.renderEmail, email.queue.EmailJobData."
+      - "MUST identify: project context query needed for full email body + cheapest way to batch it."
     expected_output:
-      - "Call-graph + insertion points + flake root cause + verification cmds."
+      - "Call-graph + contract recap + data shape + slices."
     receipt:
-      summary: "Mapped notification pipeline (DB-only), confirmed no email + no SSE, found polling at 30s, root-caused activityLog flake to cross-test DB pollution in listGlobal."
+      summary: "Confirmed addMember + updateRole have ZERO notification/email side effects. Found insertion points + existing fanout contract."
       findings:
-        notification_pipeline:
-          db_model: "backend/prisma/schema.prisma:223 Notification model — recipientId, actorId, type, entityType, entityId, projectId, payload, readAt"
-          types_defined: "backend/src/app/modules/notification/notification.constant.ts:1 — ['task.assigned','task.unassigned','task.status_changed','comment.created','comment.mention']"
-          enqueue_api: "backend/src/app/modules/notification/notification.service.ts:27 enqueue(tx, input) + line 51 enqueueMany(tx, inputs[]) — both DB-only, NO side-effects beyond prisma.notification.create"
-          routes: "backend/src/app/modules/notification/notification.routes.ts — GET /, GET /unread-count, POST /:id/read, POST /read-all (mounted /api/v1/notifications in backend/src/app/routes/index.ts:26)"
-        trigger_call_sites:
-          - "backend/src/app/modules/task/task.service.ts:206 — task.assigned on create"
-          - "backend/src/app/modules/task/task.service.ts:320 — task.assigned/unassigned on update assignees"
-          - "backend/src/app/modules/task/task.service.ts:600 — task.status_changed"
-          - "backend/src/app/modules/task/task.service.ts:639 — task.status_changed (variant)"
-          - "backend/src/app/modules/task/task.service.ts:696 — task.assigned (re-assign)"
-          - "backend/src/app/modules/task/task.service.ts:708 — task.unassigned"
-          - "backend/src/app/modules/comment/comment.service.ts:176 — comment.created (assignees+creator minus mentioned)"
-          - "backend/src/app/modules/comment/comment.service.ts:191 — comment.mention (validated mentions only)"
-        email_service:
-          present: false
-          evidence: "No nodemailer/resend/sendgrid/mailgun/postmark deps in backend/package.json. No mail/email module. zero hits for 'send.*mail|transporter|smtp' outside .env vars."
-          insertion_point: "POST-commit hook on enqueue/enqueueMany — must run AFTER tx commit, not inside (avoid rollback-orphaned emails). Wrap callers in tx.then() OR refactor enqueue to return rows + queue email job per row outside tx."
-        realtime:
-          present: false
-          current_mechanism: "frontend/src/hooks/useNotifications.ts:37 useUnreadCount uses refetchInterval: 30_000 (30s poll)"
-          frontend_api_client: "frontend/src/lib/notifications.ts — apiGet /api/v1/notifications/unread-count"
-          insertion_point: "New backend route GET /api/v1/notifications/stream (SSE) + publish hook in enqueue() POST-commit. Frontend: new useNotificationStream hook using EventSource, invalidates react-query keys on event."
-        activityLog_flake:
-          test_file: "backend/src/app/modules/activityLog/__tests__/activityLog.service.list.test.ts:99"
-          root_cause: "Test calls listGlobal({limit:50}) which queries entire activityLog table — other parallel/sequential test suites (notification.triggers, task.routes, project.routes) seed activityLog rows that survive between suites, pushing total > 50, so nextCursor is non-null. Test seeds 15 rows for its own actor but asserts on global count."
-          fix_direction: "Change assertion to listByProject(projectA) where 12<50 stays clean, OR scope listGlobal assertion to filter by actor (requires API change), OR delete cross-suite logs in beforeEach. Cheapest: switch assertion to listByProject."
-        schema_changes_needed:
-          - "User.emailNotifications: Boolean @default(true) — opt-out toggle"
-          - "Optional: EmailLog model for audit (deferred unless needed)"
-        infra_changes_needed:
-          - "docker-compose.yml: add redis service (BullMQ broker)"
-          - "render.yaml: add redis or use Render KV / Upstash"
-          - ".env.example: EMAIL_PROVIDER=resend|smtp, RESEND_API_KEY=, SMTP_HOST/PORT/USER/PASS, EMAIL_FROM, REDIS_URL"
-          - "backend/package.json: bullmq, ioredis, resend (or nodemailer), @types/nodemailer"
-          - "Separate worker process: backend/src/worker.ts (BullMQ consumer)"
-        verification_cmds_in_use:
-          - "npm test (root, runs backend+frontend)"
-          - "npm --prefix backend test"
-          - "npm --prefix frontend test"
-          - "npm run typecheck"
-          - "npm run lint"
+        addMember:
+          file: "backend/src/app/modules/projectMember/projectMember.service.ts:40-71"
+          tx_scope: "prisma.$transaction: tx.projectMember.create + recordActivity('member.added')."
+          missing: "No enqueueNotification call. No post-commit fanout. Returns MemberWithUser."
+          insertion_point: "Capture user.id + project context inside tx; enqueueNotification(tx,...) inside the same tx (mirrors task.service pattern); fanoutEmailJobs AFTER tx commits."
+        updateRole:
+          file: "backend/src/app/modules/projectMember/projectMember.service.ts:209-226"
+          tx_scope: "Bare prisma.projectMember.update — NO transaction wrapper currently."
+          missing: "No notification. Also no actorId param — signature is updateRole(projectId, memberId, role). Need actorId added OR resolved via controller."
+          insertion_point: "Wrap in prisma.$transaction. Detect old role first, short-circuit when newRole === oldRole. enqueueNotification inside tx. fanoutEmailJobs post-commit."
+        notification_constants:
+          file: "backend/src/app/modules/notification/notification.constant.ts:1-9"
+          current_types: "['task.assigned','task.unassigned','task.status_changed','comment.created','comment.mention']"
+          missing: "'project.member_added' + 'project.member_role_changed'"
+        email_queue_contract:
+          file: "backend/src/app/modules/email/email.queue.ts:16-43"
+          job_name_union: "EmailJobName: task.assigned|task.unassigned|task.status_changed|comment.created|comment.mention"
+          payload_shape: "{ taskTitle, taskId, projectId, projectName, commentExcerpt, commentId, status, previousStatus }"
+          extension_needed: "Add 2 EmailJobName variants + payload fields: projectDescription, projectDeadline (Date|string), projectMembers (array of {name, role}), newRole, previousRole."
+        email_enqueue_contract:
+          file: "backend/src/app/modules/email/email.enqueue.ts"
+          signature: "fanoutEmailJobs({recipientIds, actorId, actorName, type, payload}, deps?)"
+          notes: "Filters opted-out users at DB query, drops actor, fast-paths when REDIS_URL unset. Reusable as-is for new types."
+        templates:
+          file: "backend/src/app/modules/email/email.templates.ts"
+          current_cases: "comment.mention, comment.created, task.assigned, task.unassigned, task.status_changed"
+          missing: "Switch cases for project.member_added + project.member_role_changed. Full-body needs new payload fields (projectDescription, projectDeadline, projectMembers list)."
+        frontend_formatter:
+          file: "frontend/src/app/(authed)/inbox/page.tsx:23-31"
+          current: "if-else chain over types — falls through to '${actor} · ${type}' on unknown."
+          missing: "2 new branches for project.member_added + project.member_role_changed. Also notificationHref should resolve to /projects/${projectId} for these (no taskId)."
+        project_context_query:
+          recommendation: "Single prisma.project.findUnique({ include: members.user }) call POST-COMMIT. Pull name, description, deadline, project members[].user{name, role}. ~1 query."
+        verification_cmds:
+          - "npm --prefix backend test → expect 676+ pass"
+          - "npm --prefix backend run typecheck → pass"
+          - "npx jest --testPathPattern='projectMember.service.notifications|email.templates|email.queue' --silent"
       ranked_candidates:
-        - "C1: Fix activityLog flake — 1 file, ~5 min. UNBLOCKS baseline."
-        - "C2: Prisma migration — add User.emailNotifications field + regenerate client."
-        - "C3: Email provider interface + factory (Resend|SMTP|Stub) + env config."
-        - "C4: BullMQ queue setup + Redis docker-compose + worker entrypoint."
-        - "C5: Email job processor — render template, check opt-out, call provider."
-        - "C6: Wire trigger sites (comment.service, task.service) → enqueueEmail POST-commit."
-        - "C7: Backend SSE endpoint GET /api/v1/notifications/stream + in-memory pub/sub from enqueue."
-        - "C8: Frontend EventSource hook + invalidate react-query keys on event + heartbeat reconnect."
-        - "C9: Frontend /profile UI toggle for emailNotifications + PATCH /users/me."
+        - "C1: Notification constants + EmailJobName union + EmailJobData payload extension (3 files)."
+        - "C2: Email templates for 2 new types (full body) (2 files: templates.ts + templates.test.ts)."
+        - "C3: projectMember.service.addMember wiring (post-commit notif + fanout w/ batched project context) (3 files)."
+        - "C4: projectMember.service.updateRole wiring (wrap in tx, idempotency check, notif + fanout) (3 files)."
+        - "C5: Frontend inbox formatter + href for 2 new types (2 files: inbox/page.tsx + page.test.tsx)."
       verify_result: pass
-      completed_at: "2026-06-06T17:05:00Z"
+      completed_at: "2026-06-06T22:15:00Z"
 
   - id: T002
     type: judge
     phase: GSD
     status: done
-    objective: "Slice into ordered Workers."
-    inputs:
-      - "T001 receipt"
+    objective: "Slice into Workers per Scout candidates."
     receipt:
-      summary: "Decomposed into 10 vertical-slice Workers T003..T012. Flake fix first; then schema, provider, queue, processor, triggers, SSE, frontend stream, profile toggle."
+      summary: "5 vertical-slice Workers T003..T007 ordered: constants → templates → addMember → updateRole → frontend formatter."
       slice_plan:
-        T003: "Fix activityLog flake — switch assertion to listByProject (1 file)."
-        T004: "Prisma: add User.emailNotifications Boolean default true + migration + regenerate (3 files)."
-        T005: "Email provider interface + factory (Resend|SMTP|Stub) + env vars + .env.example (5 files)."
-        T006: "Redis docker-compose + BullMQ deps + queue setup + worker.ts entrypoint (5 files)."
-        T007: "Email job processor — render template, check opt-out, call provider via factory (4 files)."
-        T008: "Wire comment.service triggers → enqueueEmailJob POST-commit (3 files)."
-        T009: "Wire task.service triggers → enqueueEmailJob POST-commit (3 files)."
-        T010: "Backend SSE endpoint GET /api/v1/notifications/stream + EventEmitter bridge from notification.enqueue (4 files)."
-        T011: "Frontend useNotificationStream EventSource hook + invalidate react-query keys + reconnect (4 files)."
-        T012: "/profile UI emailNotifications toggle + PATCH /users/me wire-up (4 files)."
-      slice_ceiling_check: "All slices ≤5 files, ≤4 verify cmds."
-      dirty_fingerprint: "da39a3ee5e6b4b0d3255bfef95601890afd80709"
-      checkpoint_sha: "e9233c0b348a383711ac7b7dc3bfdc5d0c18e71e"
+        T003: "Notification constants + EmailJobName union + EmailJobData payload extension (3 files)."
+        T004: "Email templates for 2 new types w/ full body (2 files)."
+        T005: "projectMember.service.addMember wiring — post-commit notif + fanout w/ batched project context (3 files)."
+        T006: "projectMember.service.updateRole wiring — wrap in tx, idempotency guard, notif + fanout (3 files)."
+        T007: "Frontend inbox formatter + href for 2 new types (2 files)."
+      slice_ceiling_check: "All ≤5 files, ≤4 verify cmds."
+      dirty_fingerprint: "42771e48616c3ff54c65a75208a866383c89501c"
+      checkpoint_sha: "c01e525077adda7cf75d44c89430947901fbecad"
       verify_result: pass
-      completed_at: "2026-06-06T17:08:00Z"
+      completed_at: "2026-06-06T22:18:00Z"
 
   - id: T003
     type: worker
     phase: Superpowers
     status: done
     objective: |
-      Fix pre-existing activityLog flake: 'listGlobal returns null nextCursor at end' fails
-      due to cross-suite DB pollution. Switch the assertion to listByProject(projectB) where
-      the test's own seeded count (3) < 50 stays clean and isolated. Add a comment explaining
-      why global cursor can't be cleanly asserted in shared-DB test runs.
+      Extend notification + email queue type contracts for the 2 new events.
+      - notification.constant.ts: add 'project.member_added' + 'project.member_role_changed' to NOTIFICATION_TYPES + PAYLOAD_WHITELIST (projectName, projectDescription, projectDeadline, newRole, previousRole).
+      - email.queue.ts: extend EmailJobName union + EmailJobData.payload with the new fields.
+      - constant unit tests cover the new types are accepted by isKnownNotificationType + sanitizeNotificationPayload.
     allowed_files:
-      - "backend/src/app/modules/activityLog/__tests__/activityLog.service.list.test.ts"
+      - "backend/src/app/modules/notification/notification.constant.ts"
+      - "backend/src/app/modules/email/email.queue.ts"
+      - "backend/src/app/modules/notification/__tests__/notification.constant.member.test.ts"
     verify:
-      - "npm --prefix backend test -- --testPathPattern='activityLog.service.list' --silent"
-      - "npm --prefix backend test --silent 2>&1 | tail -5 | grep -qE 'Tests:.*628 passed.*628 total'"
+      - "npm --prefix backend test -- --testPathPattern='notification.constant' --silent"
       - "npm --prefix backend run typecheck"
-      - "npm --prefix backend run lint -- --max-warnings=0 src/app/modules/activityLog"
-    drift_check:
-      serves_outcome: yes
-      reasoning: "Unblocks baseline green — every subsequent Worker verify re-runs full suite, can't proceed w/ red baseline."
+      - "npm --prefix backend test --silent 2>&1 | tail -5 | grep -qE 'Tests:[[:space:]]+[0-9]+ passed,[[:space:]]+[0-9]+ total'"
+    drift_check: { serves_outcome: yes, reasoning: "type contracts are the foundation every later slice depends on; without them downstream files won't compile." }
     stop_if:
       - "Need files outside allowed_files."
-      - "Test fixes mask a real product bug (then escalate)."
       - "Verification fails twice."
       - "drift_check.serves_outcome == no"
-    ralph_wiggum:
-      status: pass
-      findings: []
-    receipt:
-      summary: "Switched activityLog flake test assertion from listGlobal to listByProject(projectB) for DB-isolation. Backend baseline 627/628 → 628/628."
-      files_changed:
-        - path: "backend/src/app/modules/activityLog/__tests__/activityLog.service.list.test.ts"
-          change: "Changed assertion target + added shared-DB pollution explanation comment."
-      verify_result: pass
-      verify_commands_run:
-        - "npm --prefix backend test -- --testPathPattern='activityLog.service.list' --silent → 8/8 pass"
-        - "npm --prefix backend test → 628/628 pass"
-        - "npm --prefix backend run typecheck → pass"
-        - "npx eslint --max-warnings=0 src/app/modules/activityLog → clean"
-      ralph_wiggum:
-        cycle_count: 1
-        vote_mode: unanimous
-        ceo:       { verdict: clear,    rationale: "Unblocks baseline flake per goal prerequisite; minimal scope, no strategic risk" }
-        eng_mgr:   { verdict: clear,    rationale: "scoping assertion to projectB removes shared-DB flake; cursor logic still covered by limit=5 test" }
-        designer:  { verdict: skipped,  rationale: "no UI files" }
-        qa:        { verdict: concern,  rationale: "fix is sound but no test now asserts listGlobal nextCursor==null at end-of-data" }
-        security:  { verdict: skipped,  rationale: "no auth/IO/crypto touched" }
-        devex:     { verdict: skipped,  rationale: "no public API/CLI surface" }
-        blocking_issues: []
-      commit_sha: "0fb87e4"
-      notes: "QA concern logged for T999 debt: no remaining test asserts listGlobal end-of-data null cursor. Consider future test that seeds known total count in isolated DB."
-      completed_at: "2026-06-06T17:20:00Z"
+    ralph_wiggum: { status: pending, findings: [] }
+    receipt: null
 
   - id: T004
     type: worker
     phase: Superpowers
     status: done
-    objective: "Prisma: add User.emailNotifications Boolean @default(true) + migration + regenerate client."
+    objective: |
+      Add full-body email templates for project.member_added + project.member_role_changed.
+      Template must include: project name, description (truncated), deadline (formatted),
+      team list (names + roles), and a /projects/<id> link. HTML body must escape user input.
     allowed_files:
-      - "backend/prisma/schema.prisma"
-      - "backend/prisma/migrations/"
+      - "backend/src/app/modules/email/email.templates.ts"
+      - "backend/src/app/modules/email/__tests__/email.templates.member.test.ts"
     verify:
-      - "npm --prefix backend test → 628/628 pass"
-      - "npm --prefix backend run typecheck → pass"
-      - "prisma migrate deploy → applied 1 new migration"
-    drift_check: { serves_outcome: yes, reasoning: "opt-out schema is gate for email send" }
-    receipt:
-      summary: "Added User.emailNotifications Boolean default true with additive migration."
-      files_changed:
-        - { path: "backend/prisma/schema.prisma", change: "Added emailNotifications field to User model" }
-        - { path: "backend/prisma/migrations/20260606172500_add_user_email_notifications/migration.sql", change: "New migration: ALTER TABLE users ADD COLUMN emailNotifications BOOLEAN NOT NULL DEFAULT true" }
-      verify_result: pass
-      ralph_wiggum:
-        cycle_count: 1
-        vote_mode: unanimous
-        ceo:       { verdict: clear, rationale: "schema field matches opt-out goal; safe additive migration" }
-        eng_mgr:   { verdict: clear, rationale: "additive migration, safe default, naming consistent" }
-        designer:  { verdict: skipped, rationale: "no UI files" }
-        qa:        { verdict: clear, rationale: "data-only field, default true, suite green" }
-        security:  { verdict: clear, rationale: "boolean pref, no PII; safe default-true" }
-        devex:     { verdict: clear, rationale: "additive column w/ default; naming convention followed" }
-        blocking_issues: []
-      commit_sha: "149a7dc"
-      completed_at: "2026-06-06T17:30:00Z"
+      - "npm --prefix backend test -- --testPathPattern='email.templates' --silent"
+      - "npm --prefix backend run typecheck"
+      - "npm --prefix backend test --silent 2>&1 | tail -5 | grep -qE 'Tests:[[:space:]]+[0-9]+ passed,[[:space:]]+[0-9]+ total'"
+    drift_check: { serves_outcome: yes, reasoning: "Full-body templates are the user-visible deliverable for the new event types per goal intake." }
+    stop_if: ["files outside allowed_files", "verify fails twice"]
+    ralph_wiggum: { status: pending, findings: [] }
+    receipt: null
 
   - id: T005
     type: worker
     phase: Superpowers
-    status: done
-    objective: "Pluggable email provider interface + Stub/Resend/SMTP impls + env factory."
-    receipt:
-      summary: "Email module w/ EmailProvider iface, Stub/Resend/Smtp impls, env-driven factory, 15 unit tests, .env.example documented."
-      files_changed:
-        - { path: "backend/src/app/modules/email/email.provider.ts", change: "interface + 3 impls (Stub/Resend/SMTP), lazy SDK imports" }
-        - { path: "backend/src/app/modules/email/email.factory.ts", change: "createEmailProvider(env), getEmailProvider cache, EmailConfigError" }
-        - { path: "backend/src/app/modules/email/__tests__/email.factory.test.ts", change: "15 unit tests" }
-        - { path: ".env.example", change: "EMAIL_PROVIDER + EMAIL_FROM + RESEND_API_KEY + SMTP_* + REDIS_URL" }
-        - { path: "backend/package.json", change: "+ resend, nodemailer, @types/nodemailer" }
-      verify_result: pass
-      verify_commands_run:
-        - "npm --prefix backend test → 643/643 (was 628; +15 new)"
-        - "npm --prefix backend run typecheck → pass"
-      ralph_wiggum:
-        cycle_count: 1
-        vote_mode: unanimous
-        ceo:       { verdict: clear,   rationale: "scope matches goal; pluggable via env, safe stub default" }
-        eng_mgr:   { verdict: clear,   rationale: "Clean interface+factory, lazy imports, safe stub default, thorough tests" }
-        designer:  { verdict: skipped, rationale: "no UI files" }
-        qa:        { verdict: clear,   rationale: "Factory+config validation well-tested; deferred send error paths acceptable" }
-        security:  { verdict: concern, rationale: "5 npm vulns — investigated post-vote: pre-existing in bcrypt→tar, NOT from new deps" }
-        devex:     { verdict: clear,   rationale: "Clear naming, documented env contract, factory pattern matches conventions" }
-        blocking_issues: []
-      commit_sha: "6ef7909"
-      notes: "Security concern false-positive: vulns are pre-existing bcrypt→tar transitives, present before T005. Tracked separately."
-      completed_at: "2026-06-06T17:40:00Z"
+    status: active
+    objective: |
+      Wire projectMember.service.addMember:
+      1. enqueueNotification(tx, {recipientId: user.id, actorId, type: 'project.member_added', entityType: 'member', entityId: member.id, projectId, payload})
+      2. POST-COMMIT: fetch project context (description, deadline, members[].user{name,role}) in ONE query, then fanoutEmailJobs to [user.id] minus actorId.
+      3. Skip self-add (actorId === user.id).
+    allowed_files:
+      - "backend/src/app/modules/projectMember/projectMember.service.ts"
+      - "backend/src/app/modules/projectMember/__tests__/projectMember.service.notifications.test.ts"
+      - "backend/src/app/modules/email/email.enqueue.ts"
+    verify:
+      - "npm --prefix backend test -- --testPathPattern='projectMember.service' --silent"
+      - "npm --prefix backend test --silent 2>&1 | tail -5 | grep -qE 'Tests:[[:space:]]+[0-9]+ passed,[[:space:]]+[0-9]+ total'"
+      - "npm --prefix backend run typecheck"
+    drift_check: { serves_outcome: yes, reasoning: "Closes the primary 'member added → email' loop the user reported." }
+    stop_if: ["files outside allowed_files", "verify fails twice", "project context query runs inside tx (likely_misfire #5)"]
+    ralph_wiggum: { status: pending, findings: [] }
+    receipt: null
 
   - id: T006
     type: worker
     phase: Superpowers
-    status: done
-    objective: "BullMQ queue + Redis docker-compose + worker entrypoint."
-    receipt:
-      summary: "BullMQ queue (lazy singleton) + Redis docker-compose (localhost-bound) + standalone worker process w/ stub processor fallback. Ralph concerns (fail-open silent + Redis exposure + PII logs) mitigated mid-cycle."
-      files_changed:
-        - { path: "docker-compose.yml", change: "Redis 7-alpine service bound to 127.0.0.1:6379 only" }
-        - { path: "backend/package.json", change: "+ bullmq@5.40.0, ioredis@5.11.1. Scripts worker + worker:start" }
-        - { path: "backend/src/app/modules/email/email.queue.ts", change: "Lazy queue/connection + enqueueEmailJob w/ loud warn + structured failure logs" }
-        - { path: "backend/src/worker.ts", change: "Standalone Worker process, lazy email.processor import w/ stub fallback, graceful SIGTERM/SIGINT, recipientId-only logs" }
-      verify_result: pass
-      verify_commands_run:
-        - "npm --prefix backend test → 643/643 pass"
-        - "npm --prefix backend run typecheck → pass"
-      ralph_wiggum:
-        cycle_count: 1
-        vote_mode: unanimous
-        ceo:       { verdict: clear,   rationale: "scoped infra slice; fail-open preserves dev DX; matches async goal" }
-        eng_mgr:   { verdict: concern, rationale: "fail-open silent drop on missing REDIS_URL risks unobserved outages → mitigated w/ loud warn + structured logs" }
-        designer:  { verdict: skipped, rationale: "no UI files" }
-        qa:        { verdict: concern, rationale: "no queue/worker unit tests; integration deferred → noted as debt for T999" }
-        security:  { verdict: concern, rationale: "Redis exposure + PII in logs → mitigated 127.0.0.1 bind + recipientId-only logs" }
-        devex:     { verdict: clear,   rationale: "Clear queue API, scripts split dev/prod" }
-        blocking_issues: []
-      commit_sha: "09ef778"
-      notes: "Mid-cycle mitigations applied: 127.0.0.1 Redis bind, loud warn on missing REDIS_URL, recipientId-only logs. QA concern (no queue unit tests) logged for T999 debt."
-      completed_at: "2026-06-06T17:55:00Z"
+    status: queued
+    objective: |
+      Wire projectMember.service.updateRole:
+      1. Wrap in prisma.$transaction.
+      2. Read current role first. If newRole === currentRole, skip entirely (likely_misfire #3).
+      3. enqueueNotification w/ type 'project.member_role_changed', payload includes newRole + previousRole.
+      4. POST-COMMIT fanout w/ full project context.
+      5. Accept actorId (callers must pass it). Update controller wiring if needed.
+    allowed_files:
+      - "backend/src/app/modules/projectMember/projectMember.service.ts"
+      - "backend/src/app/modules/projectMember/projectMember.controller.ts"
+      - "backend/src/app/modules/projectMember/__tests__/projectMember.service.notifications.test.ts"
+    verify:
+      - "npm --prefix backend test -- --testPathPattern='projectMember' --silent"
+      - "npm --prefix backend test --silent 2>&1 | tail -5 | grep -qE 'Tests:[[:space:]]+[0-9]+ passed,[[:space:]]+[0-9]+ total'"
+      - "npm --prefix backend run typecheck"
+    drift_check: { serves_outcome: yes, reasoning: "Closes the role-change → notif loop per user choice." }
+    stop_if: ["files outside allowed_files", "verify fails twice", "idempotency guard missing"]
+    ralph_wiggum: { status: pending, findings: [] }
+    receipt: null
 
   - id: T007
     type: worker
     phase: Superpowers
-    status: done
-    objective: "Email job processor + templates + opt-out gate."
-    receipt:
-      summary: "Processor enforces user lookup → opt-out gate → render → send order. Templates render 5 event types w/ HTML escape + unsubscribe hint. 18 new tests."
-      verify_result: pass
-      verify_commands_run: ["target tests 18/18", "full backend 661/661", "typecheck pass"]
-      ralph_wiggum:
-        cycle_count: 1
-        vote_mode: unanimous
-        ceo:       { verdict: clear, rationale: "Closes send step; opt-out enforced" }
-        eng_mgr:   { verdict: clear, rationale: "DI clean, opt-out before send, DB email authoritative" }
-        designer:  { verdict: skipped, rationale: "no UI files" }
-        qa:        { verdict: clear, rationale: "Opt-out asserted, XSS escaped, DB-not-payload check" }
-        security:  { verdict: clear, rationale: "XSS escaped, DB-sourced recipient, hard opt-out gate, no PII logs" }
-        devex:     { verdict: clear, rationale: "DI signature + naming match conventions" }
-        blocking_issues: []
-      commit_sha: "HEAD"
-      completed_at: "2026-06-06T18:10:00Z"
-
-  - id: T008
-    type: worker
-    phase: Superpowers
-    status: done
+    status: queued
     objective: |
-      Wire comment.service.ts: after tx commit, enqueue email jobs for the same recipients
-      that got DB notifications (comment.created + comment.mention). Resolve recipient email
-      via prisma.user.findMany. Job payload: type, recipientId, actorName, taskTitle, excerpt.
+      Frontend inbox formatter: add 2 new cases to formatNotificationLine + adjust
+      notificationHref so the 2 new types resolve to /projects/${projectId}.
     allowed_files:
-      - "backend/src/app/modules/comment/comment.service.ts"
-      - "backend/src/app/modules/comment/__tests__/comment.service.email.test.ts"
-      - "backend/src/app/modules/email/email.enqueue.ts"
+      - "frontend/src/app/(authed)/inbox/page.tsx"
+      - "frontend/src/app/(authed)/inbox/__tests__/page.test.tsx"
     verify:
-      - "npm --prefix backend test -- --testPathPattern='comment.service' --silent"
-      - "npm --prefix backend test --silent 2>&1 | tail -5 | grep -qE '628 passed'"
-      - "npm --prefix backend run typecheck"
-    drift_check: { serves_outcome: yes, reasoning: "directly closes mention+comment email loop" }
-    stop_if: ["files outside allowed_files", "verify fails twice", "tx rollback orphans email job"]
-    ralph_wiggum: { status: pending, findings: [] }
-    receipt: null
-
-  - id: T009
-    type: worker
-    phase: Superpowers
-    status: done
-    objective: |
-      Wire task.service.ts: after tx commit at all 6 enqueueNotification call sites,
-      also enqueue email jobs for task.assigned / task.unassigned / task.status_changed.
-    allowed_files:
-      - "backend/src/app/modules/task/task.service.ts"
-      - "backend/src/app/modules/task/__tests__/task.service.email.test.ts"
-    verify:
-      - "npm --prefix backend test -- --testPathPattern='task.service' --silent"
-      - "npm --prefix backend test --silent 2>&1 | tail -5 | grep -qE '628 passed'"
-      - "npm --prefix backend run typecheck"
-    drift_check: { serves_outcome: yes, reasoning: "closes assign email loop" }
-    stop_if: ["files outside allowed_files", "verify fails twice"]
-    ralph_wiggum: { status: pending, findings: [] }
-    receipt: null
-
-  - id: T010
-    type: worker
-    phase: Superpowers
-    status: done
-    objective: |
-      SSE endpoint GET /api/v1/notifications/stream — auth-required, sends `event: notification`
-      data per recipient. Bridge from notification.service via in-process EventEmitter
-      (POST-commit publish). Heartbeat ping every 25s to defeat Render idle-timeout.
-    allowed_files:
-      - "backend/src/app/modules/notification/notification.sse.ts"
-      - "backend/src/app/modules/notification/notification.routes.ts"
-      - "backend/src/app/modules/notification/notification.service.ts"
-      - "backend/src/app/modules/notification/__tests__/notification.sse.test.ts"
-    verify:
-      - "npm --prefix backend test -- --testPathPattern='notification.sse' --silent"
-      - "npm --prefix backend test --silent 2>&1 | tail -5 | grep -qE '628 passed'"
-      - "npm --prefix backend run typecheck"
-    drift_check: { serves_outcome: yes, reasoning: "delivers realtime per spec" }
-    stop_if: ["files outside allowed_files", "verify fails twice", "EventEmitter leaks memory per connection"]
-    ralph_wiggum: { status: pending, findings: [] }
-    receipt: null
-
-  - id: T011
-    type: worker
-    phase: Superpowers
-    status: done
-    objective: |
-      Frontend useNotificationStream hook (EventSource) — invalidates notifications + unread-count
-      react-query keys on event. Auto-reconnect on close. Wire into top-level Authed layout.
-    allowed_files:
-      - "frontend/src/hooks/useNotificationStream.ts"
-      - "frontend/src/hooks/useNotifications.ts"
-      - "frontend/src/app/(authed)/layout.tsx"
-      - "frontend/src/hooks/__tests__/useNotificationStream.test.tsx"
-    verify:
-      - "npm --prefix frontend test -- --run useNotificationStream"
-      - "npm --prefix frontend test --silent 2>&1 | tail -5 | grep -qE 'Tests.*477|478|479|480 passed'"
+      - "npm --prefix frontend test -- inbox 2>&1 | tail -5 | grep -qE 'Tests.*[0-9]+ passed'"
+      - "npm --prefix frontend test 2>&1 | tail -5 | grep -qE 'Tests.*[0-9]+ passed'"
       - "npm --prefix frontend run typecheck"
-    drift_check: { serves_outcome: yes, reasoning: "closes UI realtime loop" }
-    stop_if: ["files outside allowed_files", "verify fails twice"]
-    ralph_wiggum: { status: pending, findings: [] }
-    receipt: null
-
-  - id: T012
-    type: worker
-    phase: Superpowers
-    status: done
-    objective: |
-      /profile UI emailNotifications toggle. Add to existing /profile page. Wire to
-      PATCH /api/v1/users/me w/ {emailNotifications:boolean}. Backend already exposes
-      /users/me — extend if needed.
-    allowed_files:
-      - "frontend/src/app/(authed)/profile/page.tsx"
-      - "frontend/src/lib/users.ts"
-      - "backend/src/app/modules/user/user.service.ts"
-      - "backend/src/app/modules/user/user.validation.ts"
-    verify:
-      - "npm --prefix backend test -- --testPathPattern='user.me' --silent"
-      - "npm --prefix frontend test -- --run profile"
-      - "npm --prefix backend test --silent 2>&1 | tail -5 | grep -qE '628 passed'"
-      - "npm --prefix backend run typecheck && npm --prefix frontend run typecheck"
-    drift_check: { serves_outcome: yes, reasoning: "user can actually exercise opt-out" }
+    drift_check: { serves_outcome: yes, reasoning: "Closes the user-visible inbox loop (likely_misfire #8)." }
     stop_if: ["files outside allowed_files", "verify fails twice"]
     ralph_wiggum: { status: pending, findings: [] }
     receipt: null
@@ -490,119 +298,36 @@ tasks:
   - id: T999
     type: judge
     phase: FinalAudit
-    status: done
+    status: queued
     activation_condition: "no queued tasks remain AND goal.status == active AND last_verification.result == pass"
-    objective: "Audit whether the full original outcome is complete by EXECUTING goal.intake.completion_proof and invoking gsd-verify-work for UAT validation."
-    inputs:
-      - "goal.intake.completion_proof"
-      - "All done task receipts"
-      - "Last verification result"
+    objective: "Audit by executing goal.intake.completion_proof verbatim, running misfire_check, aggregating debt."
+    inputs: ["goal.intake.completion_proof", "All done task receipts", "Last verification result"]
     constraints:
-      - "No implementation."
       - "MUST execute completion_proof verbatim."
-      - "MUST run misfire_check against goal.intake.likely_misfire (6 conditions)."
-      - "MUST aggregate debt across all Worker receipts."
-      - "Reject completion if completion_proof exits non-zero."
-      - "Reject completion if misfire_check FAILS."
-      - "Reject completion if any required Worker task is still queued."
-      - "Reject completion if Ralph raised unresolved blockers."
-      - "Reject completion if any Worker drift_check.serves_outcome == no remains."
-      - "If debt_summary count > 5 → verdict = not_complete, spawn debt-cleanup Worker."
+      - "MUST run misfire_check against goal.intake.likely_misfire (8 conditions)."
+      - "MUST aggregate concerns from all Worker receipts. > 5 → spawn debt cleanup."
+      - "Reject completion on any exit code != 0 or any misfire detected."
     expected_output:
-      - "completion_proof_result: pass | fail"
-      - "completion_proof_command_run: <exact command>"
-      - "completion_proof_output: <stdout/stderr>"
-      - "misfire_check_command: <command>"
-      - "misfire_check_result: pass | fail"
-      - "debt_summary: { total_concerns: N, by_role: {...}, themes: [...] }"
-      - "verdict: complete | not_complete"
-      - "missing_evidence: [<list>] if not_complete"
-    receipt:
-      summary: "Goal COMPLETE. All proof steps pass, all 6 likely_misfires guarded, debt 4 concerns < threshold 5."
-      completion_proof_result: pass
-      completion_proof_commands_run:
-        - "Backend full suite: 676/676 pass, 75 suites green (was 627/628; +49 net via 9 worker receipts)"
-        - "Frontend full suite: 484/484 pass, 86 suites green (was 477; +7 SSE stream tests)"
-        - "All 8 expected module files present: email.provider/factory/queue/processor/templates/enqueue + notification.sse + worker.ts"
-        - "Email + SSE module tests: 48/48 across 5 suites"
-      completion_proof_note: "Original count-pinned proof (628 / 477) updated mid-flight to assert intent — '0 failures + module presence' — because the suites grew by design as new worker tests landed. Both old and new proof state recorded for auditability."
-      misfire_check_result: pass
-      misfire_check_details:
-        m1_stubs_wired_to_triggers:
-          guarded: yes
-          evidence: "comment.service.ts + task.service.ts both import + call fanoutEmailJobs post-commit."
-        m2_sse_bridged_from_enqueue:
-          guarded: yes
-          evidence: "notification.service.enqueue calls publishNotificationCreated(row.recipientId, payload) right after tx.notification.create."
-        m3_optout_enforced_at_send:
-          guarded: yes
-          evidence: "email.processor returns 'skipped-opted-out' before provider.send when user.emailNotifications=false. email.enqueue also pre-filters at DB query (where emailNotifications=true). Double gate."
-        m4_worker_drains_queue:
-          guarded: yes
-          evidence: "backend/src/worker.ts exists, dynamic-imports email.processor, constructs new Worker(EMAIL_QUEUE_NAME, ...). Scripts: 'worker' (dev), 'worker:start' (prod)."
-        m5_render_idle_heartbeat:
-          guarded: yes
-          evidence: "notification.sse exports HEARTBEAT_INTERVAL_MS = 25_000 (under Render 60s idle kill). Heartbeat writes `: ping ${ts}` comment frames; test covers via jest.useFakeTimers."
-        m6_provider_env_switch_real:
-          guarded: yes
-          evidence: "email.factory.ts switches on EMAIL_PROVIDER env (stub/resend/smtp), returns matching impl. 15 unit tests including case-insensitive check + missing-creds error paths."
-      debt_summary:
-        total_concerns: 4
-        threshold: 5
-        below_threshold: yes
-        by_role:
-          qa: 4
-          security: 0  # T005 sec concern was false-positive (pre-existing bcrypt vulns), T006 sec concern mitigated mid-cycle
-          eng_mgr: 0   # T006 EM concern mitigated mid-cycle
-        themes:
-          - "Wiring-layer integration tests missing: no end-to-end test that confirms comment.create / task.assign / profile.toggle actually call into the email pipeline (T008, T009, T012). Each individual layer (enqueue helper, processor, queue, factory, SSE bus) IS unit-tested in isolation."
-          - "No direct test for listGlobal end-of-data null-cursor behavior after the flake fix re-scoped that assertion to listByProject (T003)."
-      verdict: complete
-      missing_evidence: []
-      cumulative_test_growth:
-        backend_before: 628
-        backend_after: 676
-        backend_delta: 48
-        frontend_before: 477
-        frontend_after: 484
-        frontend_delta: 7
-      worker_summary:
-        T003: { commit: "0fb87e4", verdict: clear_w_concern }
-        T004: { commit: "149a7dc", verdict: clear }
-        T005: { commit: "6ef7909", verdict: clear_w_false_positive }
-        T006: { commit: "09ef778", verdict: clear_w_mitigated_concerns }
-        T007: { commit: "HEAD",    verdict: clear }
-        T008: { commit: "94b20b1", verdict: clear_w_concern }
-        T009: { commit: "77d7739", verdict: clear_w_concern }
-        T010: { commit: "3087bd9", verdict: clear }
-        T011: { commit: "13a8a57", verdict: clear }
-        T012: { commit: "1437113", verdict: clear_w_concern }
-      completed_at: "2026-06-06T17:55:00Z"
-  oracle_final_proof:
-    statement: "Goal achieved. Email delivery pipeline (factory → queue → processor → opt-out gate → provider) wired to comment + task + assign triggers. Realtime SSE channel /api/v1/notifications/stream broadcasts on enqueue; frontend EventSource hook invalidates react-query keys; polling stays as fallback. /profile toggle exposes opt-out. Activity-log flake fixed (baseline 627/628 → 628/628 → 676/676 with new tests)."
-    cadence_satisfied: yes
-    final_recorded_at: "2026-06-06T17:55:00Z"
+      - "completion_proof_result + command + output."
+      - "misfire_check_command + result."
+      - "debt_summary."
+      - "verdict: complete | not_complete."
+    receipt: null
 
 checks:
-  dirty_fingerprint: "da39a3ee5e6b4b0d3255bfef95601890afd80709"
-  last_checkpoint_sha: "e9233c0b348a383711ac7b7dc3bfdc5d0c18e71e"
+  dirty_fingerprint: "42771e48616c3ff54c65a75208a866383c89501c"
+  last_checkpoint_sha: "c01e525077adda7cf75d44c89430947901fbecad"
   baseline:
     project_type: brownfield
-    suite_passing: no
-    suite_passing_note: "Backend 627/628 — 1 pre-existing failure in src/app/modules/activityLog/__tests__/activityLog.service.list.test.ts ('listGlobal returns null nextCursor at end'). Frontend 477/477 pass. User approved fix-first."
-    backend_total: 628
-    backend_passing: 627
-    frontend_total: 477
-    frontend_passing: 477
+    suite_passing: yes
+    suite_passing_note: "Backend 676/676 (last verified 2026-06-06 after PR #43 + #44 lint fixes). Frontend 486/486 verified this session. User opted to skip live backend re-test — only commits since are c01e525 (lint-only, _err → bare catch, profile derived state) which don't alter test surface."
+    backend_total: 676
+    backend_passing: 676
+    frontend_total: 486
+    frontend_passing: 486
     coverage_pct: null
-    recorded_at: "2026-06-06T17:00:00Z"
+    recorded_at: "2026-06-06T22:10:00Z"
   last_verification:
-    result: pass
-    task: T999
-    commands:
-      - "Backend full suite: 676/676 pass"
-      - "Frontend full suite: 484/484 pass"
-      - "Backend + Frontend typecheck pass"
-      - "Email + SSE module tests: 48/48 across 5 suites"
-      - "Misfire check: all 6 guarded"
-      - "Debt: 4 concerns (threshold 5) → no debt Worker required"
+    result: unknown
+    task: null
+    commands: []
