@@ -36,7 +36,7 @@ export function ShellLayout({
           </MobileDrawer>
           <div className="flex-1">{topbar ?? <Topbar />}</div>
         </header>
-        <main data-testid="shell-main" className="flex-1 overflow-auto">
+        <main data-testid="shell-main" className="flex-1 overflow-auto scroll-smooth">
           {children}
         </main>
       </div>
@@ -49,7 +49,7 @@ export function ShellLayout({
       <Panel collapsed={panelCollapsed}>{panel}</Panel>
       <div className="flex flex-1 flex-col overflow-hidden">
         {topbar ?? <Topbar />}
-        <main data-testid="shell-main" className="flex-1 overflow-auto">
+        <main data-testid="shell-main" className="flex-1 overflow-auto scroll-smooth">
           {children}
         </main>
       </div>

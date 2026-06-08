@@ -5,12 +5,13 @@ import type { ReactNode } from 'react';
  * shell's secondary panel. Prefix-matched in declaration order so the most
  * specific prefix wins (mirror Rail's active-route rule).
  */
-export type PanelKey = 'dashboard' | 'projects' | 'inbox' | null;
+export type PanelKey = 'dashboard' | 'projects' | 'inbox' | 'profile' | null;
 
 const ROUTES: { prefix: string; key: PanelKey }[] = [
   { prefix: '/projects', key: 'projects' },
   { prefix: '/dashboard', key: 'dashboard' },
   { prefix: '/inbox', key: 'inbox' },
+  { prefix: '/profile', key: 'profile' },
 ];
 
 export const getPanelKey = (pathname: string | null): PanelKey => {

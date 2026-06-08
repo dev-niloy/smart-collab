@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Pin, PinOff } from 'lucide-react';
 import { useProjects } from '@/hooks/useProjects';
+import { useRole } from '@/hooks/useUser';
 import type { Project } from '@/lib/schemas/project';
 import { ProjectProgress } from '@/components/projects/ProjectProgress';
+import { NewProjectDialog } from '@/components/projects/NewProjectDialog';
 
 export const PINNED_STORAGE_KEY = 'sc:projects:pinned';
 
@@ -101,6 +103,9 @@ function ProjectRow({
 export function ProjectsPanel() {
   const [activeChip, setActiveChip] = useState<ChipKey>('all');
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [newOpen, setNewOpen] = useState(false);
+  const { role } = useRole();
+  const canCreate = role === 'admin' || role === 'project_manager';
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- mount hydration: SSR cannot read localStorage
@@ -130,15 +135,21 @@ export function ProjectsPanel() {
     <div data-testid="projects-panel" className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold">Projects</h2>
-        <Link
-          href="/projects/new"
-          aria-label="New project"
-          className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:opacity-90"
-        >
-          <Plus className="h-3 w-3" strokeWidth={2} aria-hidden />
-          New
-        </Link>
+        {canCreate ? (
+          <button
+            type="button"
+            aria-label="New project"
+            onClick={() => setNewOpen(true)}
+            className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:opacity-90"
+          >
+            <Plus className="h-3 w-3" strokeWidth={2} aria-hidden />
+            New
+          </button>
+        ) : null}
       </div>
+      {canCreate ? (
+        <NewProjectDialog open={newOpen} onOpenChange={setNewOpen} />
+      ) : null}
 
       <div
         role="tablist"
