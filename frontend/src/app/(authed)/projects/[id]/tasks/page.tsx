@@ -557,7 +557,7 @@ function ProjectTasksPageInner() {
           )}
         </div>
 
-        {items.length > 0 ? (
+        {items.length > 0 && totalPages > 1 ? (
           <div className="mt-6 flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
               Page {page} of {totalPages}
