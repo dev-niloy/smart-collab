@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -51,6 +52,15 @@ export default function TaskDetailPage() {
   return (
     <div className="flex flex-1 flex-col">
       <main className="w-full flex-1 px-8 py-10">
+        <div className="mb-4">
+          <Link
+            href={`/projects/${projectId}/tasks`}
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="size-3.5" />
+            Back to tasks
+          </Link>
+        </div>
 
         {isLoading ? (
           <Card className="mt-4">
