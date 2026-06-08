@@ -20,9 +20,9 @@ export function MarketingNav() {
 
   return (
     <header className="sticky top-0 z-40 w-full">
-      <div className="mx-auto flex justify-center px-4 pt-5">
-        {/* Floating pill */}
-        <div className="surface-edge-highlight relative flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-2 py-1.5 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+      <div className="mx-auto max-w-[1080px] px-6 pt-5">
+        {/* Floating pill — spans the content container width */}
+        <div className="surface-edge-highlight relative flex w-full items-center justify-between gap-3 rounded-full border border-border/70 bg-background/70 px-2 py-1.5 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 pl-3 pr-2">
             <span
@@ -39,7 +39,7 @@ export function MarketingNav() {
           </Link>
 
           {/* Center links */}
-          <nav className="hidden items-center md:flex">
+          <nav className="hidden flex-1 items-center justify-center md:flex">
             {NAV_LINKS.map((l) => (
               <Link
                 key={l.href}
